@@ -1,0 +1,92 @@
+/* The Dial: its face (SVG typography in viewBox units), its counts, its details. Layout: the view
+   under the shared title block; the counts in a column left of a landscape face, under a portrait one. */
+#view-dial { display: grid; padding-top: 0; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.dl-face { position: relative; min-width: 0; min-height: 0; }
+/* the SVG fills the whole view, under the header and the counts, so a zoom spreads under them; the face rests in .dl-face, the room they leave (zoom.ts) */
+#dl-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: pointer; user-select: none; -webkit-user-select: none; }
+#dl-svg.zoomed { cursor: grab; }
+.dl-face { pointer-events: none; z-index: 1; }
+.dl-sun { position: absolute; left: 0; bottom: 14px; font-family: var(--mono); font-size: 12px; color: var(--gold-hi); line-height: 1.6; pointer-events: none; text-shadow: 0 0 4px #050504; }
+.dl-sun .rev { color: var(--silver); }
+.stage[data-view=dial] .foot { display: none; }
+/* the title block on the Dial: the weekday and course, then the date and the Sun */
+#vh-prim { font-family: var(--mono); font-size: 20px; color: var(--ivory); display: flex; gap: 22px; white-space: nowrap; margin-top: 4px; }
+#vh-prim[hidden] { display: none; } #vh-prim small { font-size: 12px; color: var(--gold); }
+.dl-wd { color: var(--ivory); } .dl-crs { color: var(--gold-hi); }
+/* the counts: label over value, columns aligned */
+.dl-ledger { position: relative; z-index: 1; pointer-events: none; transition: opacity .25s; text-shadow: 0 0 4px #050504, 0 0 8px #050504; align-self: start; margin: calc(var(--head-h, 140px) + 4px) 24px 0 40px; display: grid; grid-template-columns: max-content; gap: 12px; }
+.dl-ledger dt { font-family: var(--cond); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ivory3); }
+.dl-ledger dd { font-family: var(--mono); font-size: 12px; color: var(--ivory2); white-space: nowrap; font-variant-numeric: tabular-nums; margin: 1px 0 0; }
+.dl-ledger dd small { color: var(--gold); font-size: 11px; }
+.dl-ledger .en { color: var(--sage, #8fb08a); } .dl-ledger .hold dd { color: var(--silver); }
+#dl-svg.zoomed ~ .dl-ledger { opacity: .6; }   /* zoomed in, the counts step back from the face under them */
+/* the details panel */
+.dl-side .section { margin-bottom: 18px; }
+.dl-side .section { margin-bottom: 18px; } .dl-side .section.first { margin-top: 0; }
+.dl-side .read { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-family: var(--mono); font-size: 11.5px; margin-top: 8px; }
+.dl-side .read dt { color: var(--ivory3); } .dl-side .read dd { color: var(--ivory); margin: 0; }
+.dl-side .read dt.down, .dl-side .read dt.down + dd { opacity: .5; }
+.dl-side .read dt.hit, .dl-side .read dt.hit + dd { color: var(--gold-hi); }
+.dl-side .note { font-size: 12px; line-height: 1.55; color: var(--ivory2); margin-top: 6px; }
+.dl-sel { border: 1px solid var(--gold-dim); padding: 12px 14px; background: rgba(214,178,106,.04); }
+.dl-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; } .dl-links a.btn { text-decoration: none; }
+.dl-links input { width: 70px; font-family: var(--mono); background: #0b0a08; color: var(--ivory); border: 1px solid var(--rule2); padding: 6px; }
+.dl-explore { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.dl-skyopts dd { display: flex; flex-wrap: wrap; gap: 5px; } .dl-skyopts dt { align-self: center; }
+/* SVG typography (viewBox units) */
+.dl-card { font-family: var(--serif); font-size: 22px; fill: var(--ivory); font-weight: 600; }
+.dl-tiny { font-family: var(--mono); font-size: 9px; fill: var(--ivory3); }
+.dl-star { font-family: var(--serif); font-style: italic; font-size: 11px; fill: var(--ivory3); }
+.dl-body { font-family: var(--mono); font-size: 10px; fill: var(--ivory2); }
+.dl-moon { font-family: var(--mono); font-size: 11px; fill: var(--ivory); }
+.dl-below { opacity: .45; }
+.dl-um { font-family: var(--mono); font-size: 13px; fill: #4d6149; } .dl-um.dl-on { fill: #b9d4b2; font-weight: 500; }
+.dl-month { font-family: var(--mono); font-size: 19px; fill: #c9a08f; } .dl-month.dl-on { fill: #fff3e6; }
+.dl-geez { font-family: var(--geez); font-size: 11px; fill: #a77f6c; }
+.dl-cor { font-family: var(--mono); font-size: 10px; fill: var(--silver-dim); } .dl-cor.dl-on { fill: var(--silver); }
+.dl-course { font-family: var(--cond); font-size: 11.5px; fill: var(--gold); letter-spacing: .02em; }
+.dl-num { font-family: var(--mono); font-size: 8.5px; fill: var(--gold-dim); }
+.dl-on-dark { fill: #120e08 !important; font-weight: 600; }
+.dl-part { font-family: var(--mono); font-size: 14px; fill: var(--ivory2); } .dl-part.dl-on { fill: var(--gold-hi); font-weight: 500; }
+.dl-chart-lbl { font-family: var(--mono); font-size: 5.5px; fill: var(--ivory2); letter-spacing: .04em; }
+.dl-chart-card { font-family: var(--serif); font-size: 9px; fill: var(--ivory2); font-weight: 600; }
+.dl-centre-above .dl-portal { fill-opacity: .4; } .dl-centre-above .dl-cmp { opacity: .55; }
+.dl-centre-up { display: none; }
+.dl-geez-s { font-family: var(--geez); font-size: 10px; fill: var(--bronze); }
+.dl-cmp { font-family: var(--serif); font-size: 20px; fill: var(--ivory2); font-weight: 600; } .dl-north { fill: #d9614f; }
+.dl-trace { width: 100%; height: 170px; display: block; margin-top: 8px; }
+@media (max-width: 1100px), (max-aspect-ratio: 1/1) {
+  #view-dial { padding-top: var(--head-h, 140px); grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--face-h, minmax(0, 1fr)) auto minmax(0, 1fr); }
+  .dl-face { grid-row: 1; } .dl-ledger { grid-row: 2; margin: 6px 16px 0; grid-template-columns: repeat(4, max-content); gap: 6px 24px; }
+  #vh-prim { font-size: 16px; } .dl-sun { font-size: 10.5px; padding: 0 10px; bottom: 4px; }
+}
+@media (max-width: 700px) {
+  #vh-prim { font-size: 15px; gap: 18px; }
+  .dl-ledger { grid-template-columns: repeat(2, max-content); gap: 5px 28px; } .dl-ledger dd { font-size: 11px; }
+  .dl-sun { display: none; }
+}
+/* phones: the counts are one row that scrolls sideways, faded at the edge, at the foot of the view just above the bar;
+   the face at the top keeps the width, the space between them is the face's margin (class set by view.ts) */
+@media (max-width: 700px) {
+  #view-dial { grid-template-rows: var(--face-h, minmax(0, 1fr)) minmax(0, 1fr) auto; }
+  .dl-face { grid-row: 1 / 3; }                                     /* the face rests at the top (zoom.ts), and zoomed spreads into the room under it */
+  .dl-ledger.dl-row { pointer-events: auto; grid-row: 3; margin: 0 0 6px 16px; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: max-content; gap: 0 22px; overflow-x: auto; scrollbar-width: none; padding-right: 32px;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent); touch-action: pan-x; }
+  .dl-ledger.dl-row::-webkit-scrollbar { display: none; }
+}
+/* Info off: the reading, the counts and the Sun's line fold away, the framing and Info stay; the face takes the whole view, centred */
+.stage.dl-noinfo .view-head h1, .stage.dl-noinfo #vh-prim, .stage.dl-noinfo .dl-ledger, .stage.dl-noinfo .dl-sun { display: none; }
+.stage.dl-noinfo .view-head .opts { margin-top: 0; max-width: calc(100vw - 132px); }
+.stage.dl-noinfo #view-dial { padding-top: var(--head-h, 140px); grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.stage.dl-noinfo .dl-face { grid-row: 1; grid-column: 1; }
+@media (max-width: 1100px), (max-aspect-ratio: 1/1) { .stage.dl-noinfo .view-head .opts { max-width: calc(100vw - 78px); } }
+/* A phone turned sideways: the desktop arrangement, scaled down. The title block and the counts share a column on the left,
+   the face takes the full height on the right (the view's top padding goes; the counts start under the title block). */
+@media (orientation: landscape) and (max-height: 600px) and (pointer: coarse) {
+  #view-dial { padding-top: 0; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+  .dl-face { grid-row: 1; grid-column: 2; }
+  .dl-ledger, .dl-ledger.dl-row { grid-row: 1; grid-column: 1; margin: calc(var(--head-h, 100px) - 6px) 8px 0 16px; grid-template-columns: repeat(2, max-content); grid-auto-flow: row; grid-auto-columns: auto; gap: 4px 18px;
+    overflow: visible; padding-right: 0; -webkit-mask-image: none; mask-image: none; }
+  .dl-ledger dt { font-size: 9px; } .dl-ledger dd { font-size: 10.5px; }
+  .dl-sun { display: none; }
+}

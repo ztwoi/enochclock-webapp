@@ -1,0 +1,1205 @@
+{
+ "source": "pyswisseph 2.10.03",
+ "switches": [
+  {
+   "block_start": -12600,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -2881092.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 7.84080071836305
+  },
+  {
+   "block_start": -12600,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -2881092.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 7.84080071836305
+  },
+  {
+   "block_start": -12600,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -2881092.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 7.84080071836305
+  },
+  {
+   "block_start": -12000,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -2661942.4941376443,
+   "days_from_boundary": 0.005862355697900057,
+   "delta_t_days": 7.201639594330938
+  },
+  {
+   "block_start": -12000,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -2661942.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 7.201639611065633
+  },
+  {
+   "block_start": -12000,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -2661942.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 7.201639611065633
+  },
+  {
+   "block_start": -11400,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -2442792.4941444877,
+   "days_from_boundary": 0.005855512339621782,
+   "delta_t_days": 6.589628152742999
+  },
+  {
+   "block_start": -11400,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -2442792.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 6.589628168732745
+  },
+  {
+   "block_start": -11400,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -2442792.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 6.589628168732745
+  },
+  {
+   "block_start": -10800,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -2223642.4941525185,
+   "days_from_boundary": 0.005847481545060873,
+   "delta_t_days": 6.004766376120987
+  },
+  {
+   "block_start": -10800,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -2223642.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 6.00476639136438
+  },
+  {
+   "block_start": -10800,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -2223642.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 6.00476639136438
+  },
+  {
+   "block_start": -10200,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -2004492.4941607267,
+   "days_from_boundary": 0.0058392733335494995,
+   "delta_t_days": 5.447054264461954
+  },
+  {
+   "block_start": -10200,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -2004492.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 5.447054278960545
+  },
+  {
+   "block_start": -10200,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -2004492.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 5.447054278960545
+  },
+  {
+   "block_start": -9600,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -1785342.4941702106,
+   "days_from_boundary": 0.0058297894429415464,
+   "delta_t_days": 4.916491817768422
+  },
+  {
+   "block_start": -9600,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -1785342.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 4.916491831521236
+  },
+  {
+   "block_start": -9600,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -1785342.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 4.916491831521236
+  },
+  {
+   "block_start": -9000,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -1566192.4941799124,
+   "days_from_boundary": 0.005820087622851133,
+   "delta_t_days": 4.413079036037555
+  },
+  {
+   "block_start": -9000,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -1566192.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 4.413079049046451
+  },
+  {
+   "block_start": -9000,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -1566192.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 4.413079049046451
+  },
+  {
+   "block_start": -8400,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -1347042.4941901262,
+   "days_from_boundary": 0.005809873808175325,
+   "delta_t_days": 3.9368159192698906
+  },
+  {
+   "block_start": -8400,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -1347042.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 3.9368159315361955
+  },
+  {
+   "block_start": -8400,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -1347042.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 3.9368159315361955
+  },
+  {
+   "block_start": -7800,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -1127892.4942008462,
+   "days_from_boundary": 0.005799153819680214,
+   "delta_t_days": 3.487702467465228
+  },
+  {
+   "block_start": -7800,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -1127892.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 3.487702478990464
+  },
+  {
+   "block_start": -7800,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -1127892.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 3.487702478990464
+  },
+  {
+   "block_start": -7200,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -908742.4942109693,
+   "days_from_boundary": 0.005789030692540109,
+   "delta_t_days": 3.0657386806213247
+  },
+  {
+   "block_start": -7200,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -908742.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 3.0657386914092597
+  },
+  {
+   "block_start": -7200,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -908742.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 3.0657386914092597
+  },
+  {
+   "block_start": -6600,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -689592.4942218259,
+   "days_from_boundary": 0.005778174148872495,
+   "delta_t_days": 2.6709245587407153
+  },
+  {
+   "block_start": -6600,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -689592.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 2.6709245687925836
+  },
+  {
+   "block_start": -6600,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -689592.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 2.6709245687925836
+  },
+  {
+   "block_start": -6000,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -470442.4942323505,
+   "days_from_boundary": 0.005767649505287409,
+   "delta_t_days": 2.3032601018214054
+  },
+  {
+   "block_start": -6000,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -470442.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 2.3032601111404327
+  },
+  {
+   "block_start": -6000,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -470442.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 2.3032601111404327
+  },
+  {
+   "block_start": -5400,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -251292.49424277444,
+   "days_from_boundary": 0.005757225560955703,
+   "delta_t_days": 1.9627453098638636
+  },
+  {
+   "block_start": -5400,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -251292.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.9627453184528083
+  },
+  {
+   "block_start": -5400,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -251292.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.9627453184528083
+  },
+  {
+   "block_start": -4800,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": -32142.494253512996,
+   "days_from_boundary": 0.00574648700421676,
+   "delta_t_days": 1.649380182868697
+  },
+  {
+   "block_start": -4800,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": -32142.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.6493801907297094
+  },
+  {
+   "block_start": -4800,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": -32142.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.6493801907297094
+  },
+  {
+   "block_start": -4200,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 187007.50573675887,
+   "days_from_boundary": 0.005736758874263614,
+   "delta_t_days": 1.3631647208341384
+  },
+  {
+   "block_start": -4200,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 187007.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.363164727971138
+  },
+  {
+   "block_start": -4200,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 187007.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.363164727971138
+  },
+  {
+   "block_start": -3600,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 406157.50572719914,
+   "days_from_boundary": 0.005727199139073491,
+   "delta_t_days": 1.1040989237615075
+  },
+  {
+   "block_start": -3600,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 406157.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.1040989301770936
+  },
+  {
+   "block_start": -3600,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 406157.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.1040989301770936
+  },
+  {
+   "block_start": -3000,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 625307.5057185575,
+   "days_from_boundary": 0.005718557513318956,
+   "delta_t_days": 0.8721827916501198
+  },
+  {
+   "block_start": -3000,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 625307.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.8721827973475751
+  },
+  {
+   "block_start": -3000,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 625307.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.8721827973475751
+  },
+  {
+   "block_start": -2400,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 844457.505710724,
+   "days_from_boundary": 0.005710724042728543,
+   "delta_t_days": 0.6674163245004123
+  },
+  {
+   "block_start": -2400,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 844457.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.667416329482583
+  },
+  {
+   "block_start": -2400,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 844457.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.667416329482583
+  },
+  {
+   "block_start": -1800,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 1063607.5057033908,
+   "days_from_boundary": 0.005703390808776021,
+   "delta_t_days": 0.4897995223129164
+  },
+  {
+   "block_start": -1800,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 1063607.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.48979952658211756
+  },
+  {
+   "block_start": -1800,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 1063607.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.48979952658211756
+  },
+  {
+   "block_start": -1200,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 1282757.5056973132,
+   "days_from_boundary": 0.005697313230484724,
+   "delta_t_days": 0.3393323850873453
+  },
+  {
+   "block_start": -1200,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 1282757.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.3393323886461787
+  },
+  {
+   "block_start": -1200,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 1282757.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.3393323886461787
+  },
+  {
+   "block_start": -600,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 1501907.505691746,
+   "days_from_boundary": 0.005691746016964316,
+   "delta_t_days": 0.21358614472881426
+  },
+  {
+   "block_start": -600,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 1501907.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.21358614777695134
+  },
+  {
+   "block_start": -600,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 1501907.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.21358614777695134
+  },
+  {
+   "block_start": 0,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 1721057.5056874438,
+   "days_from_boundary": 0.00568744377233088,
+   "delta_t_days": 0.12273459567606945
+  },
+  {
+   "block_start": 0,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 1721057.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.12273459755557431
+  },
+  {
+   "block_start": 0,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 1721057.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.12273459755557431
+  },
+  {
+   "block_start": 600,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 1940207.505684143,
+   "days_from_boundary": 0.005684142932295799,
+   "delta_t_days": 0.053458550041569596
+  },
+  {
+   "block_start": 600,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 1940207.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.053458551807023864
+  },
+  {
+   "block_start": 600,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 1940207.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.053458551807023864
+  },
+  {
+   "block_start": 1200,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 2159357.5056815636,
+   "days_from_boundary": 0.005681563634425402,
+   "delta_t_days": 0.009365621652111945
+  },
+  {
+   "block_start": 1200,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 2159357.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.009365622032894287
+  },
+  {
+   "block_start": 1200,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 2159357.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.009365622032894287
+  },
+  {
+   "block_start": 1800,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 2378496.5056786067,
+   "days_from_boundary": 0.0056786066852509975,
+   "delta_t_days": 0.00021877329492999233
+  },
+  {
+   "block_start": 1800,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 2378487.555370702,
+   "days_from_boundary": -8.944629298057407,
+   "delta_t_days": 0.00021888872350805887
+  },
+  {
+   "block_start": 1800,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 2378487.555384761,
+   "days_from_boundary": -8.94461523881182,
+   "delta_t_days": 0.0002188887233087263
+  },
+  {
+   "block_start": 2400,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 2597651.35914675,
+   "days_from_boundary": 9.85914675006643,
+   "delta_t_days": 0.006014486560881661
+  },
+  {
+   "block_start": 2400,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 2597656.457452472,
+   "days_from_boundary": 14.957452471833676,
+   "delta_t_days": 0.006014930831760489
+  },
+  {
+   "block_start": 2400,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 2597656.457452472,
+   "days_from_boundary": 14.957452471833676,
+   "delta_t_days": 0.006014930831760489
+  },
+  {
+   "block_start": 3000,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 2816787.505687197,
+   "days_from_boundary": 0.005687197204679251,
+   "delta_t_days": 0.03810619826609364
+  },
+  {
+   "block_start": 3000,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 2816787.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.03810619709470945
+  },
+  {
+   "block_start": 3000,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 2816787.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.03810619709470945
+  },
+  {
+   "block_start": 3600,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 3035932.505696215,
+   "days_from_boundary": 0.005696215201169252,
+   "delta_t_days": 0.09678424168887169
+  },
+  {
+   "block_start": 3600,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 3035932.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.09678423981168763
+  },
+  {
+   "block_start": 3600,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 3035932.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.09678423981168763
+  },
+  {
+   "block_start": 4200,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 3255078.5057063345,
+   "days_from_boundary": 0.005706334486603737,
+   "delta_t_days": 0.1825448357567384
+  },
+  {
+   "block_start": 4200,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 3255078.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.18254483317102352
+  },
+  {
+   "block_start": 4200,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 3255078.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.18254483317102352
+  },
+  {
+   "block_start": 4800,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 3474223.505719738,
+   "days_from_boundary": 0.005719738081097603,
+   "delta_t_days": 0.29538719779137584
+  },
+  {
+   "block_start": 4800,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 3474223.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.29538719449273787
+  },
+  {
+   "block_start": 4800,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 3474223.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.29538719449273787
+  },
+  {
+   "block_start": 5400,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 3693369.5057329684,
+   "days_from_boundary": 0.00573296844959259,
+   "delta_t_days": 0.43531235763357495
+  },
+  {
+   "block_start": 5400,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 3693369.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.43531235361881954
+  },
+  {
+   "block_start": 5400,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 3693369.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.43531235361881954
+  },
+  {
+   "block_start": 6000,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 3912514.505748614,
+   "days_from_boundary": 0.005748614203184843,
+   "delta_t_days": 0.6023190382814004
+  },
+  {
+   "block_start": 6000,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 3912514.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.6023190335452699
+  },
+  {
+   "block_start": 6000,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 3912514.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.6023190335452699
+  },
+  {
+   "block_start": 6600,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 4131660.5057631982,
+   "days_from_boundary": 0.005763198249042034,
+   "delta_t_days": 0.7964087638984664
+  },
+  {
+   "block_start": 6600,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 4131660.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.7964087584380977
+  },
+  {
+   "block_start": 6600,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 4131660.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 0.7964087584380977
+  },
+  {
+   "block_start": 7200,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 4350805.505778357,
+   "days_from_boundary": 0.00577835738658905,
+   "delta_t_days": 1.0175797631581092
+  },
+  {
+   "block_start": 7200,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 4350805.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.0175797569692844
+  },
+  {
+   "block_start": 7200,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 4350805.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.0175797569692844
+  },
+  {
+   "block_start": 7800,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 4569951.505791941,
+   "days_from_boundary": 0.005791940726339817,
+   "delta_t_days": 1.2658340545480065
+  },
+  {
+   "block_start": 7800,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 4569951.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.2658340476288574
+  },
+  {
+   "block_start": 7800,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 4569951.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.2658340476288574
+  },
+  {
+   "block_start": 8400,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 4789096.505805375,
+   "days_from_boundary": 0.005805375054478645,
+   "delta_t_days": 1.54116937241741
+  },
+  {
+   "block_start": 8400,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 4789096.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.54116936476478
+  },
+  {
+   "block_start": 8400,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 4789096.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.54116936476478
+  },
+  {
+   "block_start": 9000,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 5008242.505816128,
+   "days_from_boundary": 0.005816128104925156,
+   "delta_t_days": 1.843588229576669
+  },
+  {
+   "block_start": 9000,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 5008242.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.843588221191099
+  },
+  {
+   "block_start": 9000,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 5008242.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 1.843588221191099
+  },
+  {
+   "block_start": 9600,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 5227387.505826087,
+   "days_from_boundary": 0.005826086737215519,
+   "delta_t_days": 2.173087866051678
+  },
+  {
+   "block_start": 9600,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 5227387.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 2.1730878569317578
+  },
+  {
+   "block_start": 9600,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 5227387.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 2.1730878569317578
+  },
+  {
+   "block_start": 10200,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 5446533.505832593,
+   "days_from_boundary": 0.005832592956721783,
+   "delta_t_days": 2.5296712889757265
+  },
+  {
+   "block_start": 10200,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 5446533.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 2.529671279124823
+  },
+  {
+   "block_start": 10200,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 5446533.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 2.529671279124823
+  },
+  {
+   "block_start": 10800,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 5665678.505838091,
+   "days_from_boundary": 0.005838090553879738,
+   "delta_t_days": 2.913335244051883
+  },
+  {
+   "block_start": 10800,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 5665678.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 2.9133352334702183
+  },
+  {
+   "block_start": 10800,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 5665678.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 2.9133352334702183
+  },
+  {
+   "block_start": 11400,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 5884824.505840364,
+   "days_from_boundary": 0.005840363912284374,
+   "delta_t_days": 3.324083232737573
+  },
+  {
+   "block_start": 11400,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 5884824.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 3.3240832214300293
+  },
+  {
+   "block_start": 11400,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 5884824.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 3.3240832214300293
+  },
+  {
+   "block_start": 12000,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 6103969.505840814,
+   "days_from_boundary": 0.0058408137410879135,
+   "delta_t_days": 3.7619115064103865
+  },
+  {
+   "block_start": 12000,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 6103969.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 3.7619114943801604
+  },
+  {
+   "block_start": 12000,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 6103969.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 3.7619114943801604
+  },
+  {
+   "block_start": 12600,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 6323115.505839098,
+   "days_from_boundary": 0.005839098244905472,
+   "delta_t_days": 4.226824060855014
+  },
+  {
+   "block_start": 12600,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 6323115.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 4.226824048106716
+  },
+  {
+   "block_start": 12600,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 6323115.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 4.226824048106716
+  },
+  {
+   "block_start": 13200,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 6542260.505834708,
+   "days_from_boundary": 0.0058347079902887344,
+   "delta_t_days": 4.718816653121353
+  },
+  {
+   "block_start": 13200,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 6542260.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 4.718816639661584
+  },
+  {
+   "block_start": 13200,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 6542260.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 4.718816639661584
+  },
+  {
+   "block_start": 13800,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 6761406.505829432,
+   "days_from_boundary": 0.005829432047903538,
+   "delta_t_days": 5.237893773322893
+  },
+  {
+   "block_start": 13800,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 6761406.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 5.237893759154885
+  },
+  {
+   "block_start": 13800,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 6761406.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 5.237893759154885
+  },
+  {
+   "block_start": 14400,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 6980551.505822055,
+   "days_from_boundary": 0.0058220550417900085,
+   "delta_t_days": 5.784050684184062
+  },
+  {
+   "block_start": 14400,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 6980551.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 5.784050669314489
+  },
+  {
+   "block_start": 14400,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 6980551.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 5.784050669314489
+  },
+  {
+   "block_start": 15000,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 7199697.505813997,
+   "days_from_boundary": 0.005813997238874435,
+   "delta_t_days": 6.357292370142029
+  },
+  {
+   "block_start": 15000,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 7199697.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 6.357292354574537
+  },
+  {
+   "block_start": 15000,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 7199697.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 6.357292354574537
+  },
+  {
+   "block_start": 15600,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 7418842.5058047,
+   "days_from_boundary": 0.005804699845612049,
+   "delta_t_days": 6.957613599598824
+  },
+  {
+   "block_start": 15600,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 7418842.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 6.957613583338879
+  },
+  {
+   "block_start": 15600,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 7418842.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 6.957613583338879
+  },
+  {
+   "block_start": 16200,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 7637988.505795325,
+   "days_from_boundary": 0.00579532515257597,
+   "delta_t_days": 7.585019851315553
+  },
+  {
+   "block_start": 16200,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 7637988.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 7.585019834365672
+  },
+  {
+   "block_start": 16200,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 7637988.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 7.585019834365672
+  },
+  {
+   "block_start": 16800,
+   "file": "sepl",
+   "body": "sun",
+   "switch_jd_tt": 7857133.505785752,
+   "days_from_boundary": 0.005785752087831497,
+   "delta_t_days": 8.239505399371636
+  },
+  {
+   "block_start": 16800,
+   "file": "semo",
+   "body": "sun",
+   "switch_jd_tt": 7857133.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 8.239505381734748
+  },
+  {
+   "block_start": 16800,
+   "file": "semo",
+   "body": "moon",
+   "switch_jd_tt": 7857133.5,
+   "days_from_boundary": 0.0,
+   "delta_t_days": 8.239505381734748
+  }
+ ]
+}

@@ -1,0 +1,19 @@
+/* The details sheet (tablets and phones) and the ⋯ button that opens it. Same media query as NARROW in sheet.ts. */
+.sheet-bar, .sheet-ctl { display: none; }
+.more { display: none; flex: none; margin-left: auto; height: 44px; width: 48px; border: 1px solid var(--rule2); font-size: 20px; line-height: 1; color: var(--ivory2); touch-action: manipulation; }
+.more.on { color: #120e08; background: var(--gold); border-color: var(--gold); }
+@media (max-width: 1100px), (max-aspect-ratio: 1/1) {
+  .more { display: inline-block; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: var(--foot-h, 60px); z-index: 6; max-height: calc(100dvh - var(--foot-h, 60px) - 72px); overflow: auto; border: 0; border-top: 1px solid var(--gold-dim);
+    background: #0a0908; padding: 0 16px 16px; transform: translateY(calc(100% + var(--foot-h, 60px))); visibility: hidden; transition: transform .25s ease, visibility 0s .25s; box-shadow: 0 -12px 30px rgba(0,0,0,.6); }
+  .side-open .sheet { transform: none; visibility: visible; transition: transform .25s ease; }
+  .sheet-bar { display: flex; align-items: center; position: sticky; top: 0; z-index: 1; background: #0a0908; margin: 0 -16px 12px; padding: 0 6px 0 16px; height: 48px; border-bottom: 1px solid var(--rule); touch-action: none; cursor: grab; }
+  .sheet-bar .grab { position: absolute; left: 50%; top: 6px; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--ivory3); }
+  .sheet-t { font-family: var(--cond); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ivory3); }
+  .sheet-x { margin-left: auto; width: 44px; height: 44px; font-size: 16px; color: var(--ivory2); }
+  .sheet-ctl { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--rule); }
+  .sheet-ctl .btn { min-height: 44px; }
+}
+@media (max-width: 420px) { .more { width: 42px; } }
+/* the view's options that live in the sheet on a phone (Sky's Refraction and Portal ★) */
+.sheet-opts { margin: 0; flex-basis: 100%; max-width: none; }

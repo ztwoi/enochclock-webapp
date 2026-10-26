@@ -1,0 +1,11 @@
+# Builds the site and serves it with nginx on http://127.0.0.1:4176 (set ENOCH_BIND in .env to change the address).
+#   docker compose up -d --build
+services:
+  enochclock:
+    build:
+      context: .
+      args:
+        VITE_SOURCE_URL: ${VITE_SOURCE_URL:-}
+    ports:
+      - "${ENOCH_BIND:-127.0.0.1}:4176:80"
+    restart: unless-stopped

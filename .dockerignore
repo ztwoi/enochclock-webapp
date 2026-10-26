@@ -1,0 +1,8 @@
+node_modules
+dist
+ephe
+public/calculator
+public/legal
+film
+.git
+.env

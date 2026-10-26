@@ -1,0 +1,113 @@
+// Inspector panels, one per view. Every number comes from the calculator; text is quoted
+// from the book's text (Charles 1912).
+import { correctionSection, courseSection } from './cycleui';
+import { civil } from './dates';
+import { annual, fmt, GEEZ, ROMAN } from './model';
+import { C } from './stage';
+import type { SkyInfo } from './skyview';
+import type { DeepDoc, YearDoc } from './types';
+
+function legend() {
+  const sw = (s: string, dash = '', w = 1.4) => `<svg viewBox="0 0 26 8"><line x1="0" y1="4" x2="26" y2="4" stroke="${s}" stroke-width="${w}" stroke-dasharray="${dash}"/></svg>`;
+  return `<div class="section"><div class="eyebrow">Layers</div><div class="legend"><span>${sw(C.ivory)}Computed</span><span>${sw(C.gold, '', 2)}Calendar</span><span>${sw(C.bronze, '3 2')}Textual</span><span>${sw(C.silver, '1 2', 2)}Derived · Δ</span></div></div>`;
+}
+const verse = (text: string, ref: string) => `<div class="verse">“${text}”<cite>1 ENOCH ${ref} · CHARLES 1912</cite></div>`;
+
+
+
+
+export function deepPanel(deep: DeepDoc, year: number, doc?: YearDoc, i?: number) {
+  const r = deep.window?.rows.find((x) => x.year === year), S = deep.stats;
+  const cyc = deep.cycle_years.filter((v) => v <= year).at(-1);
+  if (!r) return `<div class="section"><div class="eyebrow">Selected year · ${year}</div><p class="note">Outside the loaded window.</p></div>${legend()}`;
+  return `
+  <div class="section"><div class="eyebrow">Selected year · ${year}</div>
+   <div class="big" data-k="offset">${fmt.signed(r.enoch)}<small> d</small></div>
+   <div class="sub">Enoch Day 1 falls ${r.enoch >= 0 ? 'after' : 'before'} the March equinox</div>
+   <dl class="read"><dt>Enoch year</dt><dd class="cal" data-k="enoch-year">${r.enoch_year}</dd>
+   <dt>Day 1 (TT grid)</dt><dd class="cal">${civil(r.day1_date)}</dd>
+   <dt>Day 1 JD</dt><dd>${r.jd_tt.toFixed(6)} TT</dd>
+   <dt>Equinox JD</dt><dd>${r.equinox_jd_tt.toFixed(6)} TT</dd>
+   <dt>March 21 TT</dt><dd class="der">${fmt.signed(r.greg)} d</dd>
+   <dt>294-year cycle</dt><dd class="cal">boundary ${cyc ?? '—'}</dd></dl></div>
+  <div class="section"><div class="eyebrow">Across ${S.n.toLocaleString('en-US')} annual starts</div>
+   <dl class="read"><dt>Within ±1 day</dt><dd>${S.enoch.within_1_day_pct.toFixed(2)} % · <span style="color:var(--silver)">${S.greg.within_1_day_pct.toFixed(2)} %</span></dd>
+   <dt>Within ±½ day</dt><dd>${S.enoch.within_half_day_pct.toFixed(2)} % · <span style="color:var(--silver)">${S.greg.within_half_day_pct.toFixed(2)} %</span></dd>
+   <dt>Std. deviation</dt><dd>${S.enoch.std.toFixed(3)} d · <span style="color:var(--silver)">${S.greg.std.toFixed(3)} d</span></dd>
+   <dt>Range</dt><dd>${S.enoch.min.toFixed(2)} … ${S.enoch.max.toFixed(2)} d</dd></dl>
+   <p class="note">Gold: Enoch Day 1. Silver: the March 21 TT benchmark.</p></div>
+  ${doc && i !== undefined ? correctionSection(doc, i) + courseSection(doc, i) : ''}
+  ${legend()}`;
+}
+
+
+const sgn = (v: number, n = 3) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(n)}`;
+const portalText = (p: SkyInfo['selected'] extends infer S ? S extends { portal: infer P } ? P : never : never, verb: string) =>
+  !p ? `never ${verb} here` : p.where === 'within' ? `${verb} in portal ${ROMAN[p.portal!]} <span class="geez">${GEEZ[p.portal!]}</span>` : p.where === 'seam' ? `${verb} in a seam between portals` : `${verb} outside the six portals`;
+
+export function skyPanel(doc: YearDoc, i: number, part: number, sky: SkyInfo | null) {
+  const days = annual(doc), r = days[i], next = doc.rows[i + 1];
+  if (!sky) return `<div class="section"><div class="eyebrow">Sky</div><p class="note">Loading the stars…</p></div>`;
+  const local = new Intl.DateTimeFormat('en-GB', { timeZone: doc.calculation.timezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZoneName: 'short' })
+    .format(new Date((sky.jd - 2440587.5) * 86400000));
+  let sel = '';
+  const S = sky.selection;
+  if (S?.kind === 'star' && sky.selected) {
+    const s = S.star, q = sky.selected;
+    sel = `<div class="section"><div class="eyebrow">Selected star</div>
+     <div class="big" style="font-size:30px" data-k="star">${s.name ?? s.designation ?? s.id}</div>
+     <div class="sub">${[s.designation && s.name ? s.designation : '', s.constellation, s.spectral_type].filter(Boolean).join(' · ')}</div>
+     <dl class="read"><dt>Catalogue ID</dt><dd>${s.id}${s.hip ? ` · HIP ${s.hip}` : ''}</dd>
+     <dt>V · B−V</dt><dd>${s.mag_v.toFixed(2)} · ${s.bv === null ? '—' : s.bv.toFixed(2)}</dd>
+     <dt>RA · Dec J2000</dt><dd>${s.ra_deg.toFixed(4)}° · ${sgn(s.dec_deg, 4)}°</dd>
+     <dt>Dec of date</dt><dd>${sgn(q.dec, 4)}°</dd>
+     <dt>Now</dt><dd>az ${q.az.toFixed(3)}° · alt ${sgn(q.alt, 3)}°</dd>
+     <dt>Rises</dt><dd data-k="rise">${q.rise === null ? '—' : `${q.rise.toFixed(3)}°`}</dd>
+     <dt>Sets</dt><dd>${q.set === null ? '—' : `${q.set.toFixed(3)}°`}</dd></dl>
+     <p class="note" data-k="portal-star">${portalText(q.portal, 'Rises')}; ${portalText(q.portalWest, 'sets').replace(/^S/, 's')}.</p></div>`;
+  } else if (S?.kind === 'planet' && sky.selected) {
+    const q = sky.selected, p = sky.planets.find((x) => x.name === S.name)!;
+    sel = `<div class="section"><div class="eyebrow">Selected planet</div><div class="big" style="font-size:30px" data-k="planet">${S.name}</div>
+     <dl class="read"><dt>Now</dt><dd>az ${q.az.toFixed(3)}° · alt ${sgn(q.alt, 3)}°${q.alt < 0 ? ' (below the horizon)' : ''}</dd>
+     <dt>Magnitude</dt><dd>${p.mag.toFixed(2)}</dd>
+     <dt>Dec of date</dt><dd>${sgn(q.dec, 4)}°</dd>
+     <dt>Rises</dt><dd data-k="rise">${q.rise === null ? '—' : `${q.rise.toFixed(3)}°`}</dd>
+     <dt>Sets</dt><dd>${q.set === null ? '—' : `${q.set.toFixed(3)}°`}</dd></dl>
+     <p class="note" data-k="portal-planet">${portalText(q.portal, 'Rises')}; ${portalText(q.portalWest, 'sets').replace(/^S/, 's')} today. A planet moves against the stars, so where it rises shifts from day to day.</p></div>`;
+  } else if (S?.kind === 'sun' || S?.kind === 'moon') {
+    const b = S.kind === 'sun' ? sky.sun : sky.moon;
+    sel = `<div class="section"><div class="eyebrow">Selected</div><div class="big" style="font-size:30px">${S.kind === 'sun' ? 'Sun' : 'Moon'}</div>
+     <dl class="read"><dt>Now</dt><dd>az ${b.az.toFixed(4)}° · alt ${sgn(b.alt, 4)}°</dd>${S.kind === 'moon' ? `<dt>Illuminated</dt><dd>${(sky.moon.fraction * 100).toFixed(2)} %</dd>` : ''}</dl></div>`;
+  }
+  return `
+  <div class="section"><div class="eyebrow">Instant · all around</div>
+   <div class="big" data-k="part">${part.toFixed(2)}<small> / 18</small></div>
+   <div class="sub">part of Enoch ${r.enoch_date} · sunrise ${fmt.time(r.sunrise_local)} to next sunrise ${fmt.time(next.sunrise_local)}</div>
+   <dl class="read"><dt>Local</dt><dd>${local}</dd>
+   <dt>JD</dt><dd data-k="sky-jd">${sky.jd.toFixed(6)} UT</dd>
+   <dt>Sun</dt><dd>az ${sky.sun.az.toFixed(4)}° · alt ${sgn(sky.sun.alt, 3)}°</dd>
+   <dt>Moon</dt><dd>az ${sky.moon.az.toFixed(3)}° · alt ${sgn(sky.moon.alt, 3)}° · ${(sky.moon.fraction * 100).toFixed(1)} %</dd>
+   <dt>Planets up</dt><dd data-k="planets-up">${sky.planets.filter((p) => p.alt > 0).map((p) => p.name).join(' · ') || 'none'}</dd>
+   <dt>Stars drawn</dt><dd>${sky.shown.toLocaleString('en-US')}</dd></dl></div>
+  ${sel}
+  ${correctionSection(doc, i)}${courseSection(doc, i)}
+  ${namesSection(doc, S)}
+  <div class="section"><div class="eyebrow">Conventions</div><p class="note">Gold stars rise (or set) within the six portals: the Sun's declination band. Gold dashes: the ecliptic of date.</p></div>
+  <div class="section"><div class="eyebrow">Sources</div><p class="note">HYG 4.1 (David Nash / Astronomy Nexus) and Stellarium figures, CC BY-SA 4.0, modified exports. <a href="/sky/HYG-LICENSE.txt">HYG licence</a> · <a href="/sky/STELLARIUM-LICENSE.md">Stellarium terms</a> · <a href="/legal/ASTRONOMY-ENGINE-LICENSE.txt">Astronomy Engine (MIT)</a></p></div>
+  ${legend()}`;
+}
+
+
+function namesSection(doc: YearDoc, S: SkyInfo['selection']) {
+  const N = doc.text.names, Q = doc.text.quotes;
+  const sun = N.sun.map((n) => `${n.name} <span class="ref">${n.verse}</span>`).join(' · '), moon = N.moon.map((n) => n.name).join(' · ');
+  const quotes = S?.kind === 'sun' ? verse(Q['72:4'], '72:4') + verse(Q['78:1'], '78:1') : S?.kind === 'moon' ? verse(Q['78:2'], '78:2') : '';
+  return `<div class="section"><div class="eyebrow">The luminaries named · 1 Enoch</div>
+   <dl class="read"><dt>Sun</dt><dd class="txt" style="white-space:normal" data-k="sun-names">${sun}</dd>
+   <dt>Moon</dt><dd class="txt" data-k="moon-names">${moon} <span class="ref">78:2</span></dd></dl>
+   ${quotes || '<p class="note">Select the Sun or the Moon for the verses that name them.</p>'}</div>
+  <div class="section"><div class="eyebrow">Who showed it · Uriel · 72:1, 75:3</div>
+   ${verse(Q['72:1 Uriel'], '72:1')}${verse(Q['75:3'], '75:3')}
+   <p class="note">The courses of the luminaries are shown to Enoch by the holy angel Uriel, whom the Lord of glory set over them. The calendar is given to Enoch by Uriel; no Watcher is its source.</p></div>`;
+}
+

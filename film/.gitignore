@@ -1,0 +1,6 @@
+node_modules/
+out/
+
+# Copied from the app by scripts/stage.mjs
+public/fonts/
+public/sky/

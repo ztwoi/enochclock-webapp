@@ -1,0 +1,2 @@
+/* The app sizes scene layers inside .view; films mount them in .scene-host. */
+.scene-host canvas.gl, .scene-host svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }

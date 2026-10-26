@@ -1,0 +1,26 @@
+/* Shared by the app and the films: palette and scene-label typography (no fonts here). */
+:root {
+  --bg: #090807; --rule: rgba(236,227,207,.09); --rule2: rgba(236,227,207,.16);
+  --ivory: #ece3cf; --ivory2: #a39a86; --ivory3: #635d51;
+  --gold: #d6b26a; --gold-hi: #f4dc9f; --gold-dim: #7d6a43;
+  --bronze: #a8875a; --bronze-dim: #5e4c33; --silver: #8fb3bd; --silver-dim: #4b6268;
+  --serif: "Cormorant", "Ethiopic", serif; --mono: "Plex Mono", ui-monospace, monospace; --cond: "Plex Cond", sans-serif; --geez: "Ethiopic", serif;
+}
+
+/* overlay typography (SVG, design units) */
+.lbl-mono { font-family: var(--mono); fill: var(--ivory); font-size: 10.5px; }
+.lbl-cond { font-family: var(--cond); fill: var(--ivory3); font-size: 10.5px; letter-spacing: .24em; }
+.serif-it { font-family: var(--serif); font-style: italic; }
+.geez { font-family: var(--geez); }
+.halo { stroke: #0c0b09; stroke-width: 4px; paint-order: stroke; }
+.silver-dim { fill: var(--silver-dim); }
+[data-month].active, text[data-portal].active { fill: var(--gold-hi); }
+.card-big { font-family: var(--mono); font-weight: 300; font-size: 32px; fill: var(--gold-hi); }
+.pick { cursor: crosshair; } .pick-days { cursor: ns-resize; }
+#part { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: ew-resize; }
+.mini { font-family: var(--mono); font-size: 11px; color: var(--ivory2); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.mini select { font: inherit; background: #0b0a08; color: var(--ivory); border: 1px solid var(--rule2); padding: 3px 4px; }
+.inspector a { color: var(--bronze); text-decoration-color: var(--bronze-dim); }
+.inspector a:hover { color: var(--gold-hi); }
+.dim { fill: var(--ivory3); } .ivory2 { fill: var(--ivory2); } .gold { fill: var(--gold); }
+.gold-hi { fill: var(--gold-hi); } .bronze { fill: var(--bronze); } .silver { fill: var(--silver); } .small { font-size: 9px; }

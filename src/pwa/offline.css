@@ -1,0 +1,30 @@
+/* Offline: a quiet section at the foot of the inspector, and a once-only invitation. The instrument's own tokens and button; nothing new. */
+.offline { border-top: 1px solid var(--rule); margin-top: 18px; padding: 18px 0 4px; display: grid; gap: 10px; }
+.offline[hidden], .offline [hidden] { display: none; }
+.offline-main { width: 100%; min-height: 44px; text-align: center; background: linear-gradient(90deg, rgba(214,178,106,.22) var(--p, 0%), transparent var(--p, 0%)); }
+.offline-main:disabled { cursor: default; }
+.offline-meta { font-family: var(--mono); font-size: 10.5px; line-height: 1.5; color: var(--ivory3); }
+.offline-err { font-family: var(--mono); font-size: 11px; line-height: 1.5; color: #e3a07a; }
+.offline-links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.offline-links:empty { display: none; }
+.offline .link { border: 0; padding: 6px 0; font-family: var(--mono); font-size: 10.5px; min-height: 32px; color: var(--bronze); text-decoration: underline; text-decoration-color: var(--bronze-dim); text-underline-offset: 3px; }
+.offline .link:hover { color: var(--gold-hi); }
+/* The licence line: where the AGPL's source offer lives. */
+.legal { display: flex; flex-wrap: wrap; gap: 2px 16px; margin: 6px 0 0; padding: 10px 0 2px; font-family: var(--mono); font-size: 10.5px; }
+.legal a { color: var(--bronze); text-decoration: underline; text-decoration-color: var(--bronze-dim); text-underline-offset: 3px; padding: 6px 0; }
+.legal a:hover { color: var(--gold-hi); }
+#calc-status.has-update::after { content: ''; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--gold-hi); }
+.more { position: relative; }
+.more.update-dot::after { content: ''; position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--gold-hi); box-shadow: 0 0 6px rgba(244,220,159,.7); }
+.more.on.update-dot::after { background: #120e08; box-shadow: none; }
+.offline-invite { position: absolute; right: 24px; bottom: 56px; z-index: 5; display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 16px; max-width: calc(100% - 32px);
+  background: rgba(9,8,7,.94); border: 1px solid var(--gold-dim); box-shadow: 0 8px 30px rgba(0,0,0,.6); }
+.offline-invite div { display: grid; gap: 3px; font-family: var(--cond); }
+.offline-invite b { font-weight: 500; font-size: 14px; color: var(--ivory); letter-spacing: .04em; } .offline-invite span { font-size: 13px; color: var(--ivory2); }
+.offline-invite .btn { min-height: 40px; min-width: 76px; }
+.offline-invite .film-no { border: 0; width: 32px; height: 32px; color: var(--ivory3); font-size: 13px; } .offline-invite .film-no:hover { color: var(--gold-hi); }
+@media (max-width: 1100px), (max-aspect-ratio: 1/1) { .offline-invite { right: 12px; left: 12px; bottom: 12px; } }
+/* A year is being calculated: the status icon breathes (after a beat, so an instant load never flashes). */
+#calc-status.busy svg { animation: calc-pulse 1s ease-in-out .15s infinite alternate; }
+@keyframes calc-pulse { from { opacity: 1; } to { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { #calc-status.busy svg { animation: none; opacity: .5; } }

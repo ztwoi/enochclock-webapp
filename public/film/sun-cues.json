@@ -1,0 +1,132 @@
+{
+ "film": "The courses of the luminaries",
+ "fade": 0.6,
+ "cues": [
+  {
+   "start": 5.556,
+   "end": 7.444,
+   "text": "…which Uriel, the holy angel, who was with me, who is their guide, showed me",
+   "ref": "1 Enoch 72:1",
+   "geez": "እለ አርአየኒ ኡርኤል መልአክ ቅዱስ ዘሀሎ ምስሌየ ዘውእቱ መራሒሆሙ"
+  },
+  {
+   "start": 7.556,
+   "end": 10.622,
+   "text": "And all these Uriel, the holy angel who is the leader of them all, showed to me…",
+   "ref": "1 Enoch 74:2",
+   "geez": "ወኵሎ አርአየኒ ኡርኤል መልአክ ቅዱስ ዘውእቱ መራኂሆሙ ለኵሎሙ"
+  },
+  {
+   "start": 15.556,
+   "end": 19.333,
+   "text": "And this is the first law of the luminaries: the luminary the Sun has its rising in the eastern portals of the heaven, and its setting in the western portals of the heaven.",
+   "ref": "1 Enoch 72:2",
+   "geez": "ወዝንቱ ውእቱ ትእዛዝ ቀዳማዊ ዘብርሃናት ፀሐይ ብርሃን ሙፃኡ በኀዋኅወ ሰማይ እለ መንገለ ጽባሕ ወምዕራቢሁ በኀዋኅወ ሰማይ ዘምዕራብ"
+  },
+  {
+   "start": 19.667,
+   "end": 24,
+   "text": "…and the sun goes down from the heaven and returns through the north in order to reach the east, and is so guided that he comes to the appropriate portal and shines in the face of the heaven.",
+   "ref": "1 Enoch 72:5",
+   "geez": "ወየዐርብ ፀሐይ እምሰማይ ወይገብእ እንተ መስዕ ከመ ይሑር ምሥራቀ ወይትመራሕ ከመ ይባእ ኀበ ዝኩ ኆኅት ወያበርህ በገጸ ሰማይ"
+  },
+  {
+   "start": 24.333,
+   "end": 31.333,
+   "text": "…and the moon rises and sets in these portals, and the leaders of the stars and those whom they lead…",
+   "ref": "1 Enoch 72:3",
+   "geez": "ወወርኅ በውእቶን ኀዋኅው ይሠርቅ ወየዐርብ ወመራሒሆሙ ለከዋክብት ምስለ እለ ይመርሕዎሙ"
+  },
+  {
+   "start": 31.556,
+   "end": 40.889,
+   "text": "…the day is longer than the night by a ninth part, and the day amounts exactly to ten parts and the night to eight parts.",
+   "ref": "1 Enoch 72:10",
+   "geez": ""
+  },
+  {
+   "start": 41.111,
+   "end": 45.778,
+   "text": "On that day the day becomes longer than the night, and the day becomes double the night, and the day becomes twelve parts, and the night is shortened and becomes six parts.",
+   "ref": "1 Enoch 72:14",
+   "geez": "ወበይእቲ ዕለት ትነውኅ ዕለት እምሌሊት ወትከውን ዕለት ካዕበተ ሌሊት ወትከውን ዕለት ፲ ወ ፪ ክፍለ"
+  },
+  {
+   "start": 46,
+   "end": 59.111,
+   "text": "And the sun mounts up to make the day shorter and the night longer… and when thirty mornings are accomplished, the day decreases by exactly one part.",
+   "ref": "1 Enoch 72:15",
+   "geez": ""
+  },
+  {
+   "start": 60.667,
+   "end": 67.222,
+   "text": "…and the moon rises and sets in these portals, and the leaders of the stars and those whom they lead…",
+   "ref": "1 Enoch 72:3",
+   "geez": "ወወርኅ በውእቶን ኀዋኅው ይሠርቅ ወየዐርብ ወመራሒሆሙ ለከዋክብት ምስለ እለ ይመርሕዎሙ"
+  },
+  {
+   "start": 68.222,
+   "end": 77.889,
+   "text": "And it returns to the east and enters into the sixth portal, and rises and sets in the sixth portal one and thirty mornings on account of its sign.",
+   "ref": "1 Enoch 72:13",
+   "geez": "ወይገብእ ፀሐይ ለጽባሕ ወይበውእ ውስተ ሳድስት ኆኅት ወይወፅእ ወየዐርብ በሳድስት ኆኅት ፴ ወ ፩ ጽባሐ በእንተ ትእምርተ ዚአሃ"
+  },
+  {
+   "start": 79.778,
+   "end": 84.667,
+   "text": "When the sun rises in the heaven, he comes forth through that fourth portal thirty mornings in succession, and sets accurately in the fourth portal in the west of the heaven.",
+   "ref": "1 Enoch 72:8",
+   "geez": ""
+  },
+  {
+   "start": 84.889,
+   "end": 91.333,
+   "text": "…and rises in the fourth portal for one and thirty mornings on account of its sign, and sets in the west.",
+   "ref": "1 Enoch 72:19",
+   "geez": ""
+  },
+  {
+   "start": 91.556,
+   "end": 97.111,
+   "text": "…entering into and departing from the portals for thirty days… together with the four which are intercalated which divide the four portions of the year…",
+   "ref": "1 Enoch 82:4",
+   "geez": ""
+  },
+  {
+   "start": 100,
+   "end": 103.778,
+   "text": "And God blessed the seventh day, and sanctified it: because that in it he had rested from all his work which God created and made.",
+   "ref": "Genesis 2:3",
+   "geez": ""
+  },
+  {
+   "start": 106,
+   "end": 112.222,
+   "text": "These were the orderings of them in their service to come into the house of the LORD, according to their manner, under Aaron their father, as the LORD God of Israel had commanded him.",
+   "ref": "1 Chronicles 24:19",
+   "geez": ""
+  },
+  {
+   "start": 122.889,
+   "end": 125.778,
+   "text": "…one in the first portal and one in the third, and one in the fourth and one in the sixth…",
+   "ref": "1 Enoch 82:6",
+   "geez": "፩ በቀዳሚት ኆኅት ወ ፩ በሣልሲት ወ ፩ በራብዕት ወ ፩ በሳድስት"
+  },
+  {
+   "start": 125.889,
+   "end": 129.778,
+   "text": "…and the night is equal to the day and the year is exactly as to its days three hundred and sixty-four.",
+   "ref": "1 Enoch 72:32",
+   "geez": "ወይትዔረይ ሌሊት ምስለ መዓልት ወይከውን ዓመት ጥንቁቀ መዋዕለ ፫፻ ወ ፷ ወረብዐ"
+  },
+  {
+   "start": 132.667,
+   "end": 137.111,
+   "text": "And in that fourth portal from which the sun rises in the first month are twelve window-openings, from which proceed a flame when they are opened in their season.",
+   "ref": "1 Enoch 72:7",
+   "geez": ""
+  }
+ ]
+}
