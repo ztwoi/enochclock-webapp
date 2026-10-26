@@ -1,10 +1,14 @@
 # Enoch Clock
 
+**Live: <https://enochclock.com>**
+
 An Enoch-driven clock, calendar and compass: the 364-day calendar of the Astronomical Book (1 Enoch 72–82) with its
 294-day correction, calculated against the Swiss Ephemeris for any site and any Enoch year beginning between 12999 BCE and
 16995 CE, and drawn as an interactive instrument.
 
 It is a static site. Every calculation runs in your browser; nothing is sent to a server, not even your location.
+
+[![The Dial: every layer of the calendar on one face](docs/img/dial.png)](https://enochclock.com)
 
 ## The instrument
 
@@ -17,6 +21,10 @@ Three views share one time cursor:
   bright stars. Frame it north-up, Sun-up or by compass.
 - **Deep Time.** About 30,000 annual Day 1s against the independently solved March equinox, with the 294-year cycle
   boundaries. Click a year to open it.
+
+| Sky | Deep Time | On a phone |
+|---|---|---|
+| ![Sky: the six eastern portals and the Sun rising](docs/img/sky.png) | ![Deep Time: thirty thousand years of Day 1 against the March equinox](docs/img/deep-time.png) | <img src="docs/img/dial-phone.png" alt="The Dial on a phone" width="200"> |
 
 **Playback** is one bar on every view: step or play by the Day or by the Degree (1° is 1/360 of sunrise to sunrise), at
 0.5× to 16×, forwards or in reverse. Playing past the end of an Enoch year carries on into the next one. **Now** follows the
