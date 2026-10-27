@@ -5,7 +5,8 @@
 // convention's own refraction (below) on every drawn altitude when Refraction is on, and
 // always where a quantity is compared with the portal edges.
 import { BaryState, Body, C_AUDAY, Equator, EquatorFromVector, GeoVector, Illumination, ObserverVector, RotateVector, Rotation_ECT_EQJ, Rotation_EQJ_EQD, Vector, VectorFromSphere, Spherical, type AstroTime } from 'astronomy-engine';
-import type { Portal } from '../types';
+import { dayIndexAt } from '../model';
+import type { Portal, Row, YearDoc } from '../types';
 import { skyFrame, starVector } from './astronomy';
 import type { Star } from './catalogue';
 
@@ -116,3 +117,47 @@ export function portalAt(az: number, portals: Portal[]) {
 
 /** UT Julian day of a fractional part (0–18, equal parts) of the Enoch day from sunrise `a` to next sunrise `b`. */
 export const jdOfPart = (a: number, b: number, part: number) => a + (part / 18) * (b - a);
+
+/**
+ * The portals the Sun rises and sets in on the Enoch day that contains `jd`: where that day's sunrise and sunset bearings fall within a portal's common span
+ * (the east's for the rising, the west's for the setting), or null: in a seam, outside the portals, or `jd` outside the year.
+ */
+export function litPortals(doc: YearDoc, jd: number): { east: number | null; west: number | null } {
+  const k = dayIndexAt(doc, jd), e = doc.extended[k];
+  if (k < 0 || !e) return { east: null, west: null };
+  return { east: portalAt(doc.rows[k].azimuth_deg, doc.portals).portal, west: portalAt(e.sunset_azimuth_deg, doc.portals_west).portal };
+}
+
+/** A morning on which the Sun rose (east) or set (west) within a portal's common span. */
+export interface Passage { k: number; row: Row; azimuth: number; daysAgo: number }
+
+/**
+ * The latest morning, up to the one containing `jd`, on which the Sun rose (east) or set (west) within the portal's common span: the Enoch day's sunrise or
+ * sunset bearing is inside the span, the same test that lights an arch. A bearing in a seam, or outside the portals, counts for neither. Null when none yet
+ * this Enoch year (the last passage was in the year before) or `jd` is outside the year.
+ */
+export function lastPassage(doc: YearDoc, side: 'east' | 'west', portal: number, jd: number): Passage | null {
+  const now = dayIndexAt(doc, jd), p = (side === 'east' ? doc.portals : doc.portals_west).find((q) => q.portal === portal);
+  if (now < 0 || !p) return null;
+  for (let k = now; k >= 0; k--) {
+    const row = doc.rows[k], az = side === 'east' ? row.azimuth_deg : doc.extended[k]?.sunset_azimuth_deg;
+    if (!row.closing_boundary && az !== undefined && az >= p.common[0] && az <= p.common[1]) return { k, row, azimuth: az, daysAgo: now - k };
+  }
+  return null;
+}
+
+/**
+ * The mornings of the last pass through a portal: the unbroken run of mornings, ending at `lastPassage`, whose sunrise (east) or sunset (west) bearing was
+ * inside the portal's common span, oldest first. Each is one tick on the horizon, at the bearing where the Sun crossed it.
+ */
+export function passageRun(doc: YearDoc, side: 'east' | 'west', portal: number, jd: number): Passage[] {
+  const last = lastPassage(doc, side, portal, jd), p = (side === 'east' ? doc.portals : doc.portals_west).find((q) => q.portal === portal);
+  if (!last || !p) return [];
+  const out: Passage[] = [];
+  for (let k = last.k; k >= 0; k--) {
+    const row = doc.rows[k], az = side === 'east' ? row.azimuth_deg : doc.extended[k]?.sunset_azimuth_deg;
+    if (row.closing_boundary || az === undefined || az < p.common[0] || az > p.common[1]) break;
+    out.unshift({ k, row, azimuth: az, daysAgo: last.daysAgo + (last.k - k) });
+  }
+  return out;
+}

@@ -11,11 +11,11 @@ import { StarField } from './sky/starfield';
 import * as THREE from 'three';
 import { skyFrame, starVector } from './sky/astronomy';
 import type { Star } from './sky/catalogue';
-import { aberrated, aberration, declinationOfDate, ecliptic, horizonAzimuth, moon, planet, portalAt, refracted } from './sky/instrument';
+import { aberrated, aberration, declinationOfDate, ecliptic, horizonAzimuth, litPortals, moon, passageRun, planet, portalAt, refracted } from './sky/instrument';
 import { PCOL, PLANETS } from './dial/state';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { easeHeading, mod360, wrap180 } from './sky/heading';
-import { GEEZ, pillars } from './model';
+import { dayIndexAt, GEEZ, PORTAL_ALT, pillars } from './model';
 import { C, createStage, hatchMaterial, headClearance, sprite, svgEl, UNTILED, type Pt } from './stage';
 import type { Portal, YearDoc } from './types';
 
@@ -36,7 +36,7 @@ const inFrameTo = (alt: number, low: number) => alt >= low && alt <= altMax;
 /** The heading's time constant (s): the view eases to a new heading, the same at any frame rate. */
 const TURN_TAU = 0.1;
 
-export type Selection = { kind: 'star'; star: Star } | { kind: 'sun' } | { kind: 'moon' } | { kind: 'planet'; name: string } | null;
+export type Selection = { kind: 'star'; star: Star } | { kind: 'sun' } | { kind: 'moon' } | { kind: 'planet'; name: string } | { kind: 'portal'; portal: number; side: Side } | null;
 interface SkyPlanet { name: string; az: number; alt: number; mag: number; dec: number }
 export interface SkyInfo {
   jd: number; refraction: boolean; sun: { az: number; alt: number }; moon: { az: number; alt: number; fraction: number }; planets: SkyPlanet[];
@@ -84,13 +84,38 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     fixed.clear(); fixedLabels.replaceChildren(); pinned.replaceChildren();
     placeDaylight();
     for (let a = belowOn ? -80 : 10; a <= 80; a += 10) if (a) text(0, skyY(a) + 3.5, `${a < 0 ? '−' : ''}${Math.abs(a)}°`, 'lbl-mono dim halo', { 'text-anchor': 'start', 'font-size': 9.5, 'data-alt': a }, pinned);
-    drawAround(); st.resize();
+    drawAround(); showLit(); st.resize();
   }
   function lineObj(pts: Pt[], color: string, width: number, opacity: number, z = 0) {
     const l = line(pts, color, width, opacity, undefined, z); scene.remove(l); return l; // re-parented under `fixed`
   }
   /** The frame all around: the marks over one turn (the portals where the Sun rises and where it sets); spans across it drawn once over three turns. */
+  /** The arches the Sun rises and sets in at the shown instant are lit: a brighter line over each (hidden until its portal is the one) and its numeral. A selected portal
+   *  is outlined, and a mark stands at the bearing where the Sun last rose (east) or set (west) in it. */
+  let litArches: { portal: number; east: boolean; lines: THREE.Object3D[]; outline: THREE.Object3D; numeral: Element }[] = [];
+  let marks: THREE.Object3D[] = [], marksKey = '';
+  /** Day ticks on the horizon, each at the bearing where the Sun crossed it: today's sunrise and sunset, and, for a selected portal, every morning of its last pass (the latest brightest). */
+  function showMarks(sel: Extract<Selection, { kind: 'portal' }> | null) {
+    const k = dayIndexAt(doc, jd), run = sel ? passageRun(doc, sel.side, sel.portal, jd) : [], key = `${k}|${sel ? `${sel.side}:${sel.portal}:${run.length ? run[run.length - 1].k : -1}` : ''}`;
+    if (key === marksKey) return;
+    for (const o of marks) o.removeFromParent();
+    marks = []; marksKey = key;
+    const add = (az: number, h: number, color: string, w: number, z: number) => { const x = skyX(az), o = lineObj([[x, SL.horizon], [x, SL.horizon - h]], color, w, 1, z); fixed.add(o); marks.push(o); };
+    if (k >= 0) { add(doc.rows[k].azimuth_deg, 9, C.gold, 1.6, 3.4); const e = doc.extended[k]; if (e) add(e.sunset_azimuth_deg, 9, C.gold, 1.6, 3.4); }
+    run.forEach((q, i) => { const latest = i === run.length - 1; add(q.azimuth, latest ? 17 : 12, latest ? C.goldHi : C.goldDim, latest ? 2.4 : 1.3, latest ? 3.6 : 3.5); });
+  }
+  function showLit() {
+    const lit = litPortals(doc, jd), sel = selection?.kind === 'portal' ? selection : null;
+    for (const a of litArches) {
+      const on = (a.east ? lit.east : lit.west) === a.portal;
+      for (const l of a.lines) l.visible = on;
+      a.outline.visible = !!sel && sel.portal === a.portal && (sel.side === 'east') === a.east;
+      a.numeral.classList.toggle('gold-hi', on); a.numeral.classList.toggle('gold', !on);
+    }
+    showMarks(sel);
+  }
   function drawAround() {
+    litArches = []; marks = []; marksKey = '';
     const far0 = SL.x0 - TURN, far1 = SL.x0 + 2 * TURN, once = <T extends THREE.Object3D>(o: T) => { o.layers.set(UNTILED); return o; };
     const g = new THREE.Mesh(new THREE.PlaneGeometry(far1 - far0, bottom() - SL.horizon + 30), new THREE.MeshBasicMaterial({ color: '#050403', transparent: true, opacity: ground(), side: THREE.DoubleSide, depthWrite: false }));
     g.position.set((far0 + far1) / 2, (SL.horizon + bottom() + 30) / 2, 1.5); fixed.add(once(g));
@@ -105,16 +130,19 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     fixed.add(once(lineObj([[far0, SL.horizon], [far1, SL.horizon]], C.ivory, 1.2, 1, 2)));
     for (const [P, caption, mid] of [[doc.portals, 'the six portals in which the sun rises — 72:3', 90], [doc.portals_west, 'the six portals in which the sun sets — 72:3', 270]] as const) {
       for (const p of P) {
-        const [lo, hi] = p.common, x0 = skyX(lo), x1 = x0 + wrap180(hi - lo) * K, xm = (x0 + x1) / 2, h = 44;
+        const [lo, hi] = p.common, x0 = skyX(lo), x1 = x0 + wrap180(hi - lo) * K, xm = (x0 + x1) / 2, h = PORTAL_ALT * K;
         const pts: Pt[] = [[x0, SL.horizon], [x0, SL.horizon - h * 0.55]];
         for (let k = 0; k <= 24; k++) { const t = Math.PI - (k / 24) * Math.PI; pts.push([xm + Math.cos(t) * (x1 - x0) / 2, SL.horizon - h * 0.55 - Math.sin(t) * h * 0.45]); }
         pts.push([x1, SL.horizon]);
         fixed.add(lineObj(pts, C.bronze, 1, 0.9, 2));
-        text(xm, SL.horizon + 40, GEEZ[p.portal], 'geez gold', { 'text-anchor': 'middle', 'font-size': 15, 'data-portal': p.portal }, fixedLabels);
+        const halo = lineObj(pts, C.goldHi, 5, 0.18, 2.5), core = lineObj(pts, C.goldHi, 1.6, 1, 3), outline = lineObj(pts, C.ivory, 1.4, 0.9, 3.2);
+        halo.visible = core.visible = outline.visible = false; fixed.add(halo, core, outline);
+        const numeral = text(xm, SL.horizon + 40, GEEZ[p.portal], 'geez gold', { 'text-anchor': 'middle', 'font-size': 15, 'data-portal': p.portal }, fixedLabels);
+        litArches.push({ portal: p.portal, east: P === doc.portals, lines: [halo, core], outline, numeral });
       }
       for (const [a, b] of pillars(P)) {
         const xa = skyX(a), w = wrap180(b - a) * K;
-        const r = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(1, w), 44), hatchMaterial(0.7)); r.position.set(xa + w / 2, SL.horizon - 22, 2); fixed.add(r);
+        const r = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(1, w), PORTAL_ALT * K), hatchMaterial(0.7)); r.position.set(xa + w / 2, SL.horizon - (PORTAL_ALT * K) / 2, 2); fixed.add(r);
       }
       text(skyX(mid), SL.horizon + 62, caption, 'serif-it bronze', { 'text-anchor': 'middle', 'font-size': 13 }, fixedLabels);
     }
@@ -172,6 +200,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     // limb meets the horizon at the measured sunrise) or at true altitudes; daylight and twilight stay on the Sun's true altitude
     const truth = skyFrame(jd, lat, lon, elev), ab = aberration(truth.time), app = aberrated(truth, ab);
     const air = (fr: typeof truth) => (refractionOn ? refracted(fr, hpa, celsius) : fr), f = air(app);
+    showLit();
     field.sync(); fit(field.n);
     const proj = field.projector(truth, ab, refractionOn ? { hpa, celsius } : null);
     const sun = f.sun, mo = moon(f), day = truth.sun.alt > -0.833, twilight = daylightOn ? Math.max(0, Math.min(1, (truth.sun.alt + 18) / 18)) : 0;   // Daylight off: a night sky at every hour
@@ -301,6 +330,17 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   const placeHit = () => { hit.setAttribute('x', String(SL.x0 - TURN)); hit.setAttribute('width', String(3 * TURN)); hit.setAttribute('height', String(bottom() - SL.top + 20)); };
   /** x − x0 in design units, the shorter way round. */
   const dx = (x: number, x0: number) => mod360(((x - x0) / K) + 180) * K - TURN / 2;
+  /** The portal under a tap: the arch's height above the horizon and its numeral below it, over the portal's common span, a finger's width of slack either side. */
+  function portalAtPoint(p: { x: number; y: number }, reach: (px: number, du: number) => number): Selection {
+    if (p.y < SL.horizon - PORTAL_ALT * K - reach(8, 4) || p.y > SL.horizon + 52) return null;
+    const az = mod360((p.x - SL.x0) / K), tol = reach(12, 3) / K;
+    let best: { portal: number; side: Side; d: number } | null = null;
+    for (const [side, PP] of [['east', doc.portals], ['west', doc.portals_west]] as const) for (const q of PP) {
+      const d = az < q.common[0] ? q.common[0] - az : az > q.common[1] ? az - q.common[1] : 0;
+      if (d <= tol && (!best || d < best.d)) best = { portal: q.portal, side, d };
+    }
+    return best ? { kind: 'portal', portal: best.portal, side: best.side } : null;
+  }
   hit.addEventListener('click', (ev) => {
     const { clientX: cx, clientY: cy } = ev as MouseEvent, p = st.fromScreen(cx, cy), p1 = st.fromScreen(cx + 10, cy); if (!p || !info) return;
     // reach in screen pixels (a finger on a phone), never less than the design's own: design units per pixel at this zoom
@@ -311,9 +351,9 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     else if (moonD < reach(30, 14)) selection = { kind: 'moon' };
     else if (planetsOn && info.planets.some((q) => dist(q.az, q.alt) < reach(22, 14))) selection = { kind: 'planet', name: [...info.planets].sort((a, b) => dist(a.az, a.alt) - dist(b.az, b.alt))[0].name };
     else {
-      const r = reach(18, 12); let best = -1;                // the brightest star within reach (the first of equals, as a stable sort gave)
+      const inPortal = portalAtPoint(p, reach), r = inPortal ? reach(9, 6) : reach(18, 12); let best = -1;   // the brightest star within reach (the first of equals, as a stable sort gave); inside a portal's arch, among its many faint stars, a star must be tapped closely or the portal is the pick
       for (let k = 0; k < nShown; k++) if (Math.hypot(dx(shownX[k], p.x), shownY[k] - p.y) < r && (best < 0 || field.mag[shownIdx[k]] < field.mag[shownIdx[best]])) best = k;
-      selection = best >= 0 ? { kind: 'star', star: field.stars[shownIdx[best]] } : null;
+      selection = best >= 0 ? { kind: 'star', star: field.stars[shownIdx[best]] } : inPortal;
     }
     update(); onSelect(selection);
   });

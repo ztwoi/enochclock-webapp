@@ -11,3 +11,5 @@ public/legal/
 # Rendered by film/ (see film/README.md)
 public/film/*.mp4
 public/film/story/
+
+_hold/

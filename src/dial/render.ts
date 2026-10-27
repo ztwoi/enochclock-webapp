@@ -3,7 +3,8 @@
 // computed azimuth); the world layer (compass, portals, the Sun's path) is a group turned by the
 // framing; the bodies and the needle are redrawn per instant. Angles are clockwise from the top.
 // build() runs once per Enoch day; update() once per instant.
-import { GEEZ } from '../model';
+import { GEEZ, pillars } from '../model';
+import { archPath, seamPath, within } from './portals';
 import type { YearDoc } from '../types';
 import { PCOL, ringRotation, type DialState } from './state';
 
@@ -83,6 +84,10 @@ export function createDial(svg: SVGSVGElement) {
   svg.replaceChildren();
   const defs = el('defs', {}, svg), grad = el('radialGradient', { id: 'dl-glow' }, defs);
   el('stop', { offset: '0', 'stop-color': '#f4dc9f', 'stop-opacity': 0.8 }, grad); el('stop', { offset: '1', 'stop-color': '#d6b26a', 'stop-opacity': 0 }, grad);
+  const hw = 5 / Math.SQRT2, hatch = el('pattern', { id: 'dl-hatch', width: hw, height: hw, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+  el('rect', { x: (0.12 * hw - 0.283).toFixed(3), y: 0, width: 0.566, height: hw, fill: C.silver }, hatch);
+  const lit = el('filter', { id: 'dl-lit', x: '-60%', y: '-60%', width: '220%', height: '220%' }, defs);
+  el('feGaussianBlur', { stdDeviation: 2.2, result: 'b' }, lit); const mg = el('feMerge', {}, lit); el('feMergeNode', { in: 'b' }, mg); el('feMergeNode', { in: 'SourceGraphic' }, mg);
   const root = el('g', { class: 'dl-root' }, svg);
   let rings: Ring[] = [], world: Layer | null = null, centre: Layer | null = null, chart: SVGGElement | null = null, bodies: SVGGElement | null = null, needle: SVGGElement | null = null, parts: Element[] = [], built = '';
   const keyOf = (doc: YearDoc, s: DialState) => `${doc.calculation.enoch_year}:${s.i}:${doc.calculation.latitude}:${doc.calculation.longitude_east}`;
@@ -111,6 +116,16 @@ export function createDial(svg: SVGSVGElement) {
     const tr = s.trace; let d = ''; tr.forEach((p, k) => { if (p.alt > 0) d += `${k && tr[k - 1].alt > 0 ? 'L' : 'M'}${P(altRadius(p.alt), p.az)}`; });
     el('path', { d, fill: 'none', stroke: C.goldDim, 'stroke-width': 0.9, 'stroke-dasharray': '2 3', class: 'dl-sunpath' }, W);
     s.path.forEach((p, k) => { if (p.alt > 0 && k < 18) { const [x, y] = polar(altRadius(p.alt), p.az); el('circle', { cx: x, cy: y, r: 1.6, fill: C.gold, opacity: 0.7 }, W); } });
+    // the portals, standing on the horizon as the Sky draws them: a hatched pillar over each seam, an arch over each portal's common span; the arches the Sun
+    // rises and sets in today are lit (today's sunrise and sunset bearings, as the marks in the centre)
+    for (const [PP, bearing] of [[doc.portals, s.row.azimuth_deg], [doc.portals_west, e.sunset_azimuth_deg]] as const) {
+      for (const [lo, hi] of pillars(PP)) el('path', { d: seamPath(lo, hi, altRadius), fill: 'url(#dl-hatch)', 'fill-opacity': 0.7, class: 'dl-seam', 'pointer-events': 'none' }, W);
+      for (const p of PP) {
+        const on = within(p, bearing);
+        el('path', { d: archPath(p, altRadius), fill: on ? 'rgba(244,220,159,.1)' : 'none', stroke: on ? C.goldHi : C.bronze, 'stroke-width': on ? 1.6 : 1, 'stroke-opacity': on ? 1 : 0.9,
+          'stroke-linejoin': 'round', filter: on ? 'url(#dl-lit)' : undefined, class: on ? 'dl-arch dl-arch-on' : 'dl-arch', 'data-portal': p.portal, 'pointer-events': 'none' }, W);
+      }
+    }
     // centre: the disc, the optional sky chart (redrawn per instant, screen angles), then on top the
     // compass, the six portals east and west, today's sunrise and sunset bearings (true bearings)
     el('circle', { r: DR.cmp, fill: '#0b0a08', stroke: C.ivory3, 'stroke-width': 0.8 }, W);
@@ -141,8 +156,10 @@ export function createDial(svg: SVGSVGElement) {
         layer.label((DR.mo0 + DR.mo1) / 2 + 3, (a0 + a1) / 2, String(m), { class: on ? 'dl-month dl-on' : 'dl-month' });
         layer.label((DR.mo0 + DR.mo1) / 2 - 11, (a0 + a1) / 2, GEEZ[m], { class: 'dl-geez' });
       }
-      let tk = ''; for (let p = 0; p <= 364; p++) { const len = MS.includes(p + 1) ? 8 : p % 10 === 0 ? 5 : 3; tk += `M${P(DR.pos0 - len, at(p))}L${P(DR.pos0 + 2, at(p))}`; }
-      el('path', { d: tk, stroke: C.goldDim, 'stroke-width': 0.6 }, g);
+      let tk = '', tn = '', tm = ''; for (let p = 0; p <= 364; p++) { const month = MS.includes(p + 1), ten = p % 10 === 0, seg = `M${P(DR.pos0 - (month ? 14 : ten ? 9 : 5), at(p))}L${P(DR.pos0 + 2, at(p))}`;
+        if (month) tm += seg; else if (ten) tn += seg; else tk += seg; }
+      el('path', { d: tk, stroke: C.gold, 'stroke-width': 0.9, 'stroke-opacity': 0.85 }, g); el('path', { d: tn, stroke: C.goldHi, 'stroke-width': 1.3 }, g); el('path', { d: tm, stroke: C.goldHi, 'stroke-width': 1.8 }, g);
+      el('circle', { r: DR.pos0 + 2, fill: 'none', stroke: C.gold, 'stroke-width': 0.8, 'stroke-opacity': 0.8 }, g);
       for (const q of [91, 182, 273, 364]) { const a = at(q - 0.5), [x, y] = polar(DR.mo1 + 1, a); el('path', { d: `M${x} ${y - 4}l4 4l-4 4l-4-4z`, fill: C.goldHi, transform: `rotate(${a} ${x} ${y})` }, g); }
       doc.extended.forEach((x, k) => { if (x.hold && k < doc.rows.length - 1) tri(DR.pos0 - 10, at(doc.rows[k].corrected_doy - 0.5), 'l-4 7h8z', C.silver, g); });
     }

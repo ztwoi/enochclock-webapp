@@ -29,10 +29,19 @@ export function partOfDay(doc: YearDoc, i: number, jd: number): number {
 /** The stage's design space (1480 × 908 units, y down), shared by the WebGL scene and the label overlay. */
 export const W = 1480, H = 908;
 
-/** Where adjacent portals' passages disagree: [northern common edge of the southern portal's neighbour, ...]. */
+/**
+ * The altitude, in degrees, to which a portal's arch and its seam pillars stand on the horizon. One value for every view, so a portal is the same height
+ * in the Sky and on the Dial: the Sky draws it 44 units tall at its scale of 1360/180 units a degree.
+ */
+export const PORTAL_ALT = 44 / ((1420 - 60) / 180);
+
+/**
+ * The seams: where adjacent portals' two passes of the Sun disagree, as [low, high] azimuths between one portal's common span and the next's, in azimuth order.
+ * The east's portals are numbered with falling azimuth and the west's with rising, so the neighbours are taken by azimuth, not by number.
+ */
 export function pillars(portals: Portal[]): [number, number][] {
-  const out: [number, number][] = [];
-  for (let i = 0; i < portals.length - 1; i++) out.push([portals[i + 1].common[1], portals[i].common[0]]);
+  const byAz = [...portals].sort((a, b) => a.common[0] - b.common[0]), out: [number, number][] = [];
+  for (let i = 0; i < byAz.length - 1; i++) { const lo = byAz[i].common[1], hi = byAz[i + 1].common[0]; if (hi > lo) out.push([lo, hi]); }
   return out;
 }
 

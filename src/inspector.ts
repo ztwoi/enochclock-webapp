@@ -3,6 +3,7 @@
 import { correctionSection, courseSection } from './cycleui';
 import { civil } from './dates';
 import { annual, fmt, GEEZ, ROMAN } from './model';
+import { lastPassage, litPortals, passageRun } from './sky/instrument';
 import { C } from './stage';
 import type { SkyInfo } from './skyview';
 import type { DeepDoc, YearDoc } from './types';
@@ -45,6 +46,24 @@ const sgn = (v: number, n = 3) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(
 const portalText = (p: SkyInfo['selected'] extends infer S ? S extends { portal: infer P } ? P : never : never, verb: string) =>
   !p ? `never ${verb} here` : p.where === 'within' ? `${verb} in portal ${ROMAN[p.portal!]} <span class="geez">${GEEZ[p.portal!]}</span>` : p.where === 'seam' ? `${verb} in a seam between portals` : `${verb} outside the six portals`;
 
+/** A selected portal: where the Sun rises (east) or sets (west) in it, when it last did so, and the calendar's two passes through it. */
+function portalSection(doc: YearDoc, S: { portal: number; side: 'east' | 'west' }, jd: number) {
+  const rising = S.side === 'east', P = (rising ? doc.portals : doc.portals_west).find((q) => q.portal === S.portal);
+  if (!P) return '';
+  const noun = rising ? 'sunrise' : 'sunset', verb = rising ? 'rose' : 'set', pas = lastPassage(doc, S.side, S.portal, jd), run = passageRun(doc, S.side, S.portal, jd), lit = litPortals(doc, jd)[S.side] === S.portal;
+  const ago = (n: number) => (n === 0 ? 'today' : n === 1 ? 'yesterday' : `${n} days ago`);
+  const last = pas
+    ? `<dt>The Sun last ${verb} here</dt><dd class="cal" data-k="portal-last">${ago(pas.daysAgo)}</dd><dt>On</dt><dd>${pas.row.enoch_date} · ${civil(pas.row.civil_date)}</dd><dt>At bearing</dt><dd>${pas.azimuth.toFixed(3)}°</dd><dt>That pass</dt><dd data-k="portal-run">${run.length} ${run.length === 1 ? 'morning' : 'mornings'} · ${run[0].row.month}/${run[0].row.day} → ${run[run.length - 1].row.month}/${run[run.length - 1].row.day}</dd>`
+    : `<dt>The Sun last ${verb} here</dt><dd data-k="portal-last">before this Enoch year</dd>`;
+  const passes = P.passes.map((q) => `<dt>Month ${q.month} · ${q.verse}</dt><dd>${civil(q.start_date)} → ${civil(q.end_date)}</dd>`).join('');
+  return `<div class="section"><div class="eyebrow">Selected portal</div>
+   <div class="big" style="font-size:30px" data-k="portal">${ROMAN[S.portal]} <span class="geez">${GEEZ[S.portal]}</span></div>
+   <div class="sub">where the Sun ${rising ? 'rises' : 'sets'} · ${S.side}${lit ? ` · lit: the Sun ${rising ? 'rose' : 'sets'} here today` : ''}</div>
+   <dl class="read"><dt>Common span</dt><dd>${P.common[0].toFixed(3)}° – ${P.common[1].toFixed(3)}°</dd>${last}</dl>
+   <div class="eyebrow" style="margin-top:14px">The calendar's passes through it</div><dl class="read">${passes}</dl>
+   <p class="note">A morning counts when its ${noun} bearing falls within the portal's common span; a ${noun} in a seam between two portals counts for neither. Each tick on the horizon is one morning of the last pass, at the bearing where the Sun crossed the horizon; the brightest is the latest. The Sun keeps moving after it rises, about 0.15° of bearing a minute, so a few minutes later it has drifted past its own tick.</p></div>`;
+}
+
 export function skyPanel(doc: YearDoc, i: number, part: number, sky: SkyInfo | null) {
   const days = annual(doc), r = days[i], next = doc.rows[i + 1];
   if (!sky) return `<div class="section"><div class="eyebrow">Sky</div><p class="note">Loading the stars…</p></div>`;
@@ -74,6 +93,8 @@ export function skyPanel(doc: YearDoc, i: number, part: number, sky: SkyInfo | n
      <dt>Rises</dt><dd data-k="rise">${q.rise === null ? '—' : `${q.rise.toFixed(3)}°`}</dd>
      <dt>Sets</dt><dd>${q.set === null ? '—' : `${q.set.toFixed(3)}°`}</dd></dl>
      <p class="note" data-k="portal-planet">${portalText(q.portal, 'Rises')}; ${portalText(q.portalWest, 'sets').replace(/^S/, 's')} today. A planet moves against the stars, so where it rises shifts from day to day.</p></div>`;
+  } else if (S?.kind === 'portal') {
+    sel = portalSection(doc, S, sky.jd);
   } else if (S?.kind === 'sun' || S?.kind === 'moon') {
     const b = S.kind === 'sun' ? sky.sun : sky.moon;
     sel = `<div class="section"><div class="eyebrow">Selected</div><div class="big" style="font-size:30px">${S.kind === 'sun' ? 'Sun' : 'Moon'}</div>
