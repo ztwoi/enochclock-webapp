@@ -1,0 +1,10 @@
+/* feedback dialog (src/feedback.ts); the dialog's base look is style.css's */
+#feedback-dialog textarea { font-family: var(--mono); font-size: 13px; line-height: 1.5; background: #0b0a08; color: var(--ivory); border: 1px solid var(--rule2); padding: 8px 10px; resize: vertical; min-height: 120px; max-height: 50dvh; }
+#feedback-dialog textarea:focus, #feedback-dialog input:focus { outline: 1px solid var(--gold-dim); outline-offset: 0; }
+#feedback-dialog .fb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.fb-ctx { margin: 0; font-family: var(--mono); font-size: 10.5px; color: var(--ivory3); }
+.fb-status { margin: 0; min-height: 1.4em; font-family: var(--mono); font-size: 11.5px; color: var(--ivory2); }
+.fb-status[data-error="1"] { color: #d98c6a; }
+.legal-btn { font: inherit; background: none; border: 0; padding: 6px 0; cursor: pointer; color: var(--bronze); text-decoration: underline; text-decoration-color: var(--bronze-dim); text-underline-offset: 3px; }
+.legal-btn:hover { color: var(--gold-hi); }
+@media (pointer: coarse) { #feedback-dialog textarea { font-size: 16px; } }

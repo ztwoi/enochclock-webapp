@@ -5,6 +5,8 @@ import {disposeCalculator,onCalculatorProgress} from './calculator/provider';
 import {mountOffline,setCalcBusy} from './pwa/ui';
 import {watchHomeScreen} from './pwa/homescreen';
 import {mountLegal} from './legal';
+import {mountFeedback} from './feedback';
+import './feedback.css';
 import {registerServiceWorker} from './pwa/register';
 import {pruneStaleVersions,verifyInstalled} from './pwa/install';
 import './style.css';
@@ -589,6 +591,7 @@ async function start() {
   if (await verifyInstalled()) pruneStaleVersions().catch(() => undefined);   // a pack the browser has evicted is offered for install again; old versions' caches go
   mountOffline({ after: $('insp'), stage: $('stage'), chip: $('calc-status'), more: $('more'), disposeCalculator, openDetails: () => sheet.open(), });
   mountLegal($('offline'));
+  mountFeedback($('legal'), () => ({ mode: VIEWS[state.view].name, page: state.doc ? `Enoch year ${state.doc.calculation.enoch_year}` : '' }));
   onCalculatorProgress(calculatorNote);
   bindTransport(); bindSite(); bindOptions();
   const P = new URLSearchParams(location.search), urlSite = siteFromUrl(P);
