@@ -96,7 +96,7 @@ repository; [`film/`](film/README.md) holds the Remotion project that renders th
 | `src/` | the app (TypeScript, Three.js, Vite) |
 | `src/calculator/` | the browser calculator: a worker that runs the Swiss Ephemeris (WebAssembly) and `engine/`, the calendar, sunrise and cycle arithmetic |
 | `src/dial/`, `src/sky/`, `src/compass/`, `src/pwa/` | the Dial, the sky, the compass and magnetic declination, and offline install |
-| `public/` | fonts, icons, the star catalogue (`sky/`), Deep Time's data (`deep/`) and the Primer and Phoenix pages |
+| `public/` | fonts, icons, the star catalogue (`sky/`), Deep Time's data (`deep/`) and the Tutorial, Primer (Enoch) and Evidence (Phoenix) pages |
 | `scripts/` | the ephemeris download and the build's staging steps |
 | `tests/` | unit tests and their fixtures |
 | `sw/`, `nginx/`, `nginx.conf` | the service worker and the web server configuration |

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 const dist=path.resolve(import.meta.dirname,'../dist'),digest=b=>createHash('sha256').update(b).digest('hex');
-const EXCLUDE=[/^\/film\//,/^\/primer\//,/^\/phoenix\//,/^\/sw\.js$/,/^\/offline-manifest\.json$/,/\.DS_Store$/];
+const EXCLUDE=[/^\/film\//,/^\/tutorial\//,/^\/primer\//,/^\/phoenix\//,/^\/sw\.js$/,/^\/offline-manifest\.json$/,/\.DS_Store$/];
 const walk=(d)=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(d,e.name)):[path.join(d,e.name)]);
 const files=walk(dist).map(f=>'/'+path.relative(dist,f).split(path.sep).join('/')).filter(p=>!EXCLUDE.some(r=>r.test(p))).sort()
  .map(p=>{const data=fs.readFileSync(path.join(dist,p));return {path:p,size:data.length,sha256:digest(data)};});

@@ -1,0 +1,419 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090807"><title>How the Enoch clock works · Tutorial</title><link rel="icon" href="data:,">
+<style>
+@font-face { font-family: Cormorant; src: url(/fonts/CormorantGaramond.ttf); font-weight: 300 700; }
+@font-face { font-family: Cormorant; src: url(/fonts/CormorantGaramond-Italic.ttf); font-style: italic; font-weight: 300 700; }
+@font-face { font-family: Mono; src: url(/fonts/IBMPlexMono-Regular.ttf); }
+@font-face { font-family: Cond; src: url(/fonts/IBMPlexSansCondensed-Regular.ttf); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 64px; } @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { background: #090807; color: #ddd4c0; font-family: Cormorant, Georgia, serif; font-size: 21px; line-height: 1.55; }
+.bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 18px; padding: 10px max(16px, env(safe-area-inset-left)); background: rgba(9,8,7,.94); border-bottom: 1px solid #26221b; backdrop-filter: blur(6px); }
+.bar a { font-family: Cond, sans-serif; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: #d6b26a; text-decoration: none; white-space: nowrap; }
+.bar nav { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; } .bar nav::-webkit-scrollbar { display: none; }
+.bar nav a { font-family: Mono, monospace; letter-spacing: 0; color: #a39a86; border: 1px solid #2e2920; min-width: 34px; height: 30px; display: grid; place-items: center; }
+.bar nav a.on, .bar nav a:hover { color: #f4dc9f; border-color: #7d6a43; }
+.bar .sides { display: flex; border: 1px solid #2e2920; flex: none; } .bar .sides a { padding: 6px 12px; color: #a39a86; letter-spacing: .18em; }
+.bar .sides a.on { color: #120e08; background: #d6b26a; }
+main { max-width: 920px; margin: 0 auto; padding: 48px 22px 80px; }
+header h1 { font-weight: 500; font-style: italic; font-size: 50px; line-height: 1.1; color: #ece3cf; }
+header .ref { font-family: Mono, monospace; font-size: 13px; letter-spacing: .2em; color: #635d51; margin-top: 10px; }
+header .lede { margin-top: 22px; color: #ece3cf; max-width: 40em; }
+.toc { list-style: none; margin-top: 34px; columns: 2; column-gap: 34px; }
+.toc li { break-inside: avoid; margin-bottom: 8px; } .toc a { color: #ddd4c0; text-decoration: none; font-style: italic; } .toc a:hover { color: #f4dc9f; }
+.toc span { font-family: Mono, monospace; font-style: normal; font-size: 13px; color: #7d6a43; margin-right: 10px; }
+.toc .part { font-family: Cond, sans-serif; font-style: normal; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: #bd8a2a; margin: 14px 0 8px; column-span: all; }
+.part { margin-top: 84px; font-family: Cond, sans-serif; font-size: 13px; letter-spacing: .24em; text-transform: uppercase; color: #bd8a2a; }
+.part + section { margin-top: 18px; }
+section { margin-top: 72px; padding-top: 28px; border-top: 1px solid #26221b; }
+.num { font-family: Mono, monospace; font-size: 14px; color: #bd8a2a; }
+h2 { font-weight: 500; font-style: italic; font-size: 36px; line-height: 1.15; color: #ece3cf; margin: 4px 0 20px; }
+p { margin-top: 16px; } p:first-of-type { margin-top: 0; }
+p.lead { color: #ece3cf; }
+em.k { font-style: italic; color: #f4dc9f; }
+.film { position: relative; aspect-ratio: 16 / 9; background: #000; border: 1px solid #26221b; margin-top: 24px; }
+.film video { display: block; width: 100%; height: 100%; object-fit: cover; background: #000; }
+blockquote { margin-top: 22px; padding-left: 18px; border-left: 2px solid #4a3f2a; } blockquote p { color: #ece3cf; }
+cite { display: block; margin-top: 6px; font-style: normal; font-family: Mono, monospace; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: #8a8272; }
+figure { margin-top: 26px; } figure svg { display: block; width: 100%; height: auto; }
+figcaption { margin-top: 10px; font-family: Cond, sans-serif; font-size: 14px; line-height: 1.45; color: #8a8272; }
+svg text { font-family: Cond, sans-serif; fill: #a39a86; font-size: 15px; } svg .m { font-family: Mono, monospace; font-size: 13px; }
+svg .g { fill: #d6b26a; } svg .w { fill: #ece3cf; } svg .dim { fill: #635d51; } svg .big { font-size: 18px; }
+.note { margin-top: 22px; padding: 14px 18px; border: 1px solid #2e2920; background: #0e0c0a; font-size: 18px; color: #bdb4a0; }
+.go { display: inline-block; margin-top: 22px; padding: 9px 18px; border: 1px solid #7d6a43; color: #f4dc9f; text-decoration: none; font-family: Cond, sans-serif; letter-spacing: .16em; text-transform: uppercase; font-size: 13px; }
+.go:hover { background: #d6b26a; color: #120e08; }
+a.in { color: #d6b26a; }
+.seg { display: flex; border: 1px solid #2e2920; } .seg button { flex: 1; padding: 9px 8px; background: none; border: 0; color: #a39a86; font: inherit; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: #d6b26a; color: #120e08; }
+.flag { transition: transform .9s cubic-bezier(.5, 0, .2, 1); } @media (prefers-reduced-motion: reduce) { .flag { transition: none; } }
+.figctl { max-width: 380px; margin-bottom: 14px; }
+.sl { display: flex; gap: 14px; align-items: center; margin-top: 12px; font-family: Cond, sans-serif; }
+.sl button { width: 44px; height: 38px; background: none; border: 1px solid #7d6a43; color: #f4dc9f; font-size: 16px; cursor: pointer; flex: none; } .sl button:hover { background: #d6b26a; color: #120e08; }
+.sl input[type=range] { flex: 1; accent-color: #d6b26a; }
+.yr { font-family: Mono, monospace; font-size: 12px; color: #8a8272; letter-spacing: .06em; min-width: 230px; text-align: right; }
+@media (max-width: 760px) { .sl { flex-wrap: wrap; } .sl input[type=range] { flex: 1 1 60%; } .yr { min-width: 0; flex-basis: 100%; text-align: left; } }
+figcaption b { color: #f4dc9f; font-weight: 600; }
+/* day and night */
+.dn { margin-top: 26px; display: grid; gap: 12px; }
+.dn .r { display: grid; grid-template-columns: 150px 1fr 64px; gap: 14px; align-items: center; font-family: Cond, sans-serif; font-size: 14px; color: #a39a86; }
+.dn .bar18 { display: grid; grid-template-columns: repeat(18, 1fr); gap: 2px; height: 26px; } .dn .bar18 i { background: #d6b26a; } .dn .bar18 i.n { background: #26334a; }
+.dn .r b { font-family: Mono, monospace; font-weight: 400; color: #ece3cf; text-align: right; }
+/* cycles */
+.chain { margin-top: 26px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+.chain > div { border: 1px solid #2e2920; padding: 14px 14px 16px; position: relative; background: #0e0c0a; }
+.chain > div + div { margin-left: 26px; } .chain > div + div::before { content: attr(data-x); position: absolute; left: -26px; top: 50%; width: 26px; text-align: center; transform: translateY(-50%); font-family: Mono, monospace; font-size: 12px; color: #bd8a2a; }
+.crow { margin-top: 28px; } .crow h3 { font-family: Cond, sans-serif; font-weight: 400; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: #bd8a2a; margin-bottom: 8px; }
+.crow .chain { margin-top: 0; } .chain.c3 { grid-template-columns: repeat(3, 1fr); } .chain .end { border-color: #7d6a43; background: #15110a; } .crow .alt { font-family: Cond, sans-serif; font-size: 14px; color: #8a8272; margin-top: 8px; }
+.chain h4 { font-family: Cond, sans-serif; font-weight: 400; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: #bd8a2a; }
+.chain .v { font-size: 32px; font-style: italic; color: #ece3cf; line-height: 1.1; margin: 6px 0 6px; } .chain p { font-family: Cond, sans-serif; font-size: 14px; line-height: 1.4; color: #8a8272; margin: 0; }
+footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid #26221b; font-family: Cond, sans-serif; font-size: 13px; color: #635d51; } footer a { color: #a39a86; }
+@media (max-width: 760px) { 
+.sc { overflow-x: auto; } .sc svg { min-width: 680px; } .chain, .chain.c3 { grid-template-columns: 1fr; } .chain > div + div { margin: 26px 0 0; } .chain > div + div::before { left: 50%; top: -26px; transform: translateX(-50%); } .dn .r { grid-template-columns: 1fr 56px; } .dn .r > span { grid-column: 1 / -1; } }
+@media (max-width: 640px) { body { font-size: 19px; } header h1 { font-size: 36px; } h2 { font-size: 28px; } .toc { columns: 1; } main { padding-top: 30px; } svg text { font-size: 17px; } }
+</style></head><body>
+<div class="bar"><a href="/">← The clock</a><span class="sides"><a class="on" href="/tutorial/">Tutorial</a><a href="/primer/">Enoch</a><a href="/phoenix/">Evidence</a></span><nav><a href="#mystery" title="The 364-day mystery">1</a><a href="#forbidden" title="Adding or removing days is strictly forbidden">2</a><a href="#key" title="The 294 year, 294 week, 294 day key">3</a><a href="#shift" title="The shift: one day back, every 294 days">4</a><a href="#sunrise" title="Sunrise starts the day, spring starts the year">5</a><a href="#pendulum" title="The pendulum swing of the sun">6</a><a href="#portals" title="What are the portals?">7</a><a href="#parts" title="Day and night">8</a><a href="#cycles" title="Cycles inside of cycles">9</a><a href="#shifts" title="Where the 294 day shifts occur">10</a></nav></div>
+<main>
+<header><h1>How the Enoch clock works</h1><div class="ref">TUTORIAL</div>
+<p class="lede">This tutorial explains how the Enoch clock works: why it turns, and how to read it.</p>
+<ol class="toc">
+<li class="part">Section I · Why the clock turns</li>
+<li><a href="#mystery"><span>1</span>The 364-day mystery</a></li><li><a href="#forbidden"><span>2</span>Adding or removing days is strictly forbidden</a></li><li><a href="#key"><span>3</span>The 294 year, 294 week, 294 day key</a></li><li><a href="#shift"><span>4</span>The shift: one day back, every 294 days</a></li>
+<li class="part">Section II · Reading the clock</li>
+<li><a href="#sunrise"><span>5</span>Sunrise starts the day, spring starts the year</a></li><li><a href="#pendulum"><span>6</span>The pendulum swing of the sun</a></li><li><a href="#portals"><span>7</span>What are the portals?</a></li><li><a href="#parts"><span>8</span>Day and night</a></li><li><a href="#cycles"><span>9</span>Cycles inside of cycles</a></li><li><a href="#shifts"><span>10</span>Where the 294 day shifts occur</a></li></ol></header>
+
+<div class="part">Section I · Why the clock turns</div>
+
+<section id="mystery">
+  <div class="num">1</div>
+  <h2>The 364-day mystery</h2>
+  <p class="lead">A solar year lasts about 365.24 days, so a calendar that wants to stay with the seasons has to account for the extra quarter day. The Gregorian calendar, the one we all use, does it by adding: a leap day every four years, with further rules at the century marks, so that over long spans the calendar and the sun stay together.</p>
+  <p>The Enoch calendar adds nothing. Its year is <em class="k">364 days</em>, exactly 52 weeks, and it never changes. That is the mystery: how can a year that is fixed, and 1.24 days shorter than the sun’s, stay with the seasons?</p>
+  <figure>
+    <svg viewBox="0 0 900 200" role="img" aria-label="A number line of year lengths in days. The Enoch year is 364 days. Gregorian years are 365 days, or 366 in a leap year. The tropical year is 365.24219 days, so the 364-day year is 1.24219 days short.">
+      <line x1="60" x2="840" y1="120" y2="120" stroke="#3a3326" stroke-width="2"/>
+      <g class="m" text-anchor="middle"><text x="206" y="150">364</text><text x="450" y="150">365</text><text x="694" y="150">366</text></g>
+      <path d="M206 120V108M450 120V108M694 120V108" stroke="#635d51"/>
+      <path d="M206 82H509" stroke="#bd8a2a" fill="none"/><path d="M206 78V86M509 78V86" stroke="#bd8a2a"/>
+      <text x="357" y="68" class="g" text-anchor="middle">1.24219 days per year</text>
+      <circle cx="206" cy="108" r="9" fill="#d6b26a"/><text x="206" y="182" class="w big" text-anchor="middle">Enoch · 364</text>
+      <g fill="#8a8272"><circle cx="450" cy="108" r="6"/><circle cx="694" cy="108" r="6" fill="#ddd4c0"/></g>
+      <text x="450" y="182" text-anchor="middle">Gregorian · 365</text><text x="694" y="182" text-anchor="middle">Gregorian leap year · 366</text>
+      <g transform="translate(509 108)"><circle r="8" fill="#0b0a08" stroke="#f4dc9f" stroke-width="2"/><g stroke="#f4dc9f" stroke-width="2"><path d="M0-14V-20M0 14V20M-14 0H-20M14 0H20"/></g></g>
+      <text x="509" y="40" class="w" text-anchor="middle">tropical year · 365.24219</text>
+    </svg>
+    <figcaption>Year lengths in days. The Gregorian calendar alternates between 365 and 366 around the sun’s 365.24. The Enoch year is 364, every year.</figcaption>
+  </figure>
+</section>
+
+<section id="forbidden">
+  <div class="num">2</div>
+  <h2>Adding or removing days is strictly forbidden</h2>
+  <p class="lead">One principle of the Enoch clock is not negotiable: days are never added and never removed.</p>
+  <p>Scholars have long tried to reconcile that with the sun anyway, proposing intercalations, which are days or weeks inserted to pull a calendar back into line. The best of these is the 294-year cycle found among the Qumran scrolls (4Q319), which says <em class="k">“the year completes its cycle.”</em> The arithmetic is striking: 294 years of 364 days is 107,016 days, and that equals 293 solar years to within 55 minutes.</p>
+  <p>But look at what happens inside that cycle. The calendar moves away from the seasons by 1.24 days every year, until at year 147 it is half a year out and the clock says summer while the sky says winter. A calendar that is out of alignment with the seasons for 294 years is not much use to anyone.</p>
+  <figure>
+    <svg id="drift" viewBox="0 0 900 380" role="img" aria-label="How far a 364-day calendar falls from the equinox over 294 years: a straight line rising 1.24219 days a year to a full year. With the 294 day rotation it never strays more than a day."></svg>
+    <figcaption>How far Day 1 is from the March equinox, year by year: uncorrected (gold), and with the 294-day shift (green).</figcaption>
+  </figure>
+</section>
+
+<section id="key">
+  <div class="num">3</div>
+  <h2>The 294 year, 294 week, 294 day key</h2>
+  <p class="lead">The 294-year cycle brings the calendar back into step, but only once in 294 years. How often should the correction come? The answer is in the same number.</p>
+  <p>The sun gains a day on the calendar about every 294 days, and the number comes back at two larger scales. Over 294 years the sun gains a whole year: the cycle known from Qumran. Over <em class="k">294 weeks</em>, about 5.65 years, it gains a whole week, a scale no one had noticed. Both are far longer than a year, and the text asks the calendar to keep pace every year with perfect justice:</p>
+  <blockquote><p>And the sun and the stars bring in all the years exactly, so that they do not advance or delay their position by a single day unto eternity; but complete the years with perfect justice in 364 days.</p><cite>1 Enoch 74:12</cite></blockquote>
+  <p>Only the 294-day cycle, which is 42 weeks, is shorter than a year, and it fits inside the other two: 294 days × 7 is 294 weeks, and 294 weeks × 52 is 294 years.</p>
+  <figure>
+    <svg id="ladder" viewBox="0 0 900 310" role="img" aria-label="Three correction cycles on a log scale of years: 294 days is under a year, 294 weeks is 5.654 years, 294 years is 294 years. Only the 294-day cycle corrects at least once a year."></svg>
+    <figcaption>The three correction cycles, on a scale of years. Each fits inside the next: 294 days × 7 is 294 weeks, and 294 weeks × 52 is 294 years. Only the 294-day cycle is shorter than a year.</figcaption>
+  </figure>
+  <p>So the correction comes every <em class="k">294 days</em>, not every 294 years and not every 294 weeks. The next question is what that correction does to the calendar, which is forbidden to add or remove a day.</p>
+</section>
+
+<section id="shift">
+  <div class="num">4</div>
+  <h2>The shift: one day back, every 294 days</h2>
+  <p class="lead">Start the calendar on the equinox. The sun needs 365.24 days to come back to it and the Enoch year is 364, so Day 1 of the next year arrives 1.24 days early, and another 1.24 days earlier with every year that follows.</p>
+  <figure>
+    <div class="seg figctl" role="group" aria-label="Without or with the shift"><button id="a-off" aria-pressed="true">Without the shift</button><button id="a-on" aria-pressed="false">With the shift</button></div>
+    <div class="sc"><svg id="fa" viewBox="0 0 900 350" role="img" aria-label="The sun’s year and the calendar’s year as two bars, with a close-up of the end of the year. Without the shift, Day 1 of the next year arrives 1.24 days before the equinox. With the shift on the 294th day, it arrives 0.24 days before."></svg></div>
+    <figcaption id="fa-read" aria-live="polite"></figcaption>
+  </figure>
+  <p>It is not an intercalation rule. It is a shift. When the sun slips out of alignment, the clock is rotated back into line with it, and nothing is interrupted: the days, weeks, months and years carry on as before. Every other calendar answers drift by changing the count, adding or dropping days, and for centuries scholars tried the same road with the Enoch calendar and found nothing that worked. They called it “hopelessly primitive” and “astronomically unworkable” (Stern 2001). But Enoch forbids that road, and so it forces a different solution: leave the calendar alone and turn it against the sun. It looks simple in hindsight, and interestingly, of every known calendar that keeps pace with the seasons, not one does it this way: they add or remove days, or they align through observation.</p>
+
+  <p>The <a class="in" href="/phoenix/">Evidence</a> page measures how well this holds across 30,000 years.</p>
+</section>
+
+
+
+<div class="part">Section II · Reading the clock</div>
+
+<section id="sunrise">
+  <div class="num">5</div>
+  <h2>Sunrise starts the day, spring starts the year</h2>
+  <p class="lead">Now that you know why the clock turns, let’s learn to read it.</p>
+  <p>The Gregorian calendar starts its day in the middle of the night and its year in the middle of winter. The Enoch clock starts its day at sunrise and its year in spring, at the equinox.</p>
+  <figure>
+    <div class="sc"><svg id="beg" viewBox="0 0 900 270" role="img" aria-label="Where a day and a year begin. The Gregorian day begins in the middle of the night and the Enoch day at sunrise. The Gregorian year begins in the middle of winter and the Enoch year in spring."></svg></div>
+    <figcaption>A day and a year, as each calendar begins them (northern hemisphere).</figcaption>
+  </figure>
+  <blockquote><p>In this way he rises in the first month in the great portal, which is the fourth.</p><cite>1 Enoch 72:6</cite></blockquote>
+  <div class="film"><video data-clip="story/first-law" poster="/primer/story/first-law.jpg" preload="none" playsinline controls controlslist="nodownload"></video></div>
+  <p>Press <em class="k">1</em> for the Sky to watch that sunrise.</p>
+</section>
+
+<section id="pendulum">
+  <div class="num">6</div>
+  <h2>The pendulum swing of the sun</h2>
+  <p class="lead">Hold the time at the first part of the day, the sunrise, and step through the days. The sun never rises in the same place twice.</p>
+  <p>Its rising point swings along the horizon like a pendulum: north toward summer, back through due east at the equinox, south toward winter, and back again. Like a pendulum, it moves fastest through the middle and slows at each end, where it turns around. The turning points are the solstices.</p>
+  <figure>
+    <div class="sc"><svg id="swing" viewBox="0 0 900 330" role="img" aria-label="The sun’s rising point through the year, drawn as a curve and as a pendulum. Drag the day to move it."></svg></div>
+    <div class="sl"><button id="sw-play" aria-label="Play">▶</button><input id="sw-day" type="range" min="0" max="364" step="1" value="0" aria-label="Day of the year, from the March equinox"><span class="yr" id="sw-read"></span></div>
+    <figcaption>The sun’s rising point over one year, at 32° N. Drag the day, or press play.</figcaption>
+  </figure>
+  <p>You can make the same swing visible in the app. Choose Day in the playback bar, hold the time at the first part of the day, and press the right arrow or play.</p>
+</section>
+
+<section id="portals">
+  <div class="num">7</div>
+  <h2>What are the portals?</h2>
+  <p class="lead">The portals are the measure the sun makes, with the months as the dividers.</p>
+  <p>The sun’s rising point moves a little each morning, and the month borders cut its path into portals. The months divide the horizon, and they size the portals: some are larger and some smaller.</p>
+  <figure>
+    <div class="sc"><svg id="arch" viewBox="0 0 900 290" role="img" aria-label="The eastern horizon with six portal arches of different widths, numbered 6 to 1 from north to south. The central portals are wider and the outer ones narrower. Each portal is labelled with its months. The sun rises in the fourth portal in spring."></svg></div>
+    <figcaption>The eastern horizon, looking east, drawn to scale at 32° N. Each portal is the stretch of horizon between its month borders: portal 4 holds months 1 and 6, and so on. The Sky draws the real spans.</figcaption>
+  </figure>
+  <p>The pendulum explains the sizes. Where the sun moves fastest, through the middle, a month covers a wide stretch of horizon, so those portals are large. Where it slows toward the ends, a month covers a narrow stretch, so those portals are small.</p>
+  <p>That gives us a ruler for measuring the rising and setting of the planets and stars along the sun’s path, the ecliptic, as seen from the Earth. A planet that rises in the second portal and later in the third has moved a measurable distance against a ruler everyone shares, and that is what makes the calendar an observatory: detailed celestial measurements, recorded and compared.</p>
+  <p>The film follows the sun through the portals, month by month.</p>
+  <div class="film"><video data-clip="story/months" poster="/primer/story/months.jpg" preload="none" playsinline controls controlslist="nodownload"></video></div>
+  <p>Try it in the Sky: click a planet or a star, and the app shows where it rises and sets against the portals.</p>
+</section>
+
+<section id="parts">
+  <div class="num">8</div>
+  <h2>Day and night</h2>
+  <p class="lead">The portals also tell you how long the day is.</p>
+  <p>The day, from sunrise to sunrise, is divided into eighteen parts, and the portals carry a rule for how those parts are shared between light and dark. At the equinox, day and night are equal, nine parts each. As the sun moves north toward summer, the day grows until it is double the night, twelve parts to six. Toward winter it reverses: six parts of day to twelve of night.</p>
+  <div class="dn" role="img" aria-label="Day and night in parts out of eighteen: equinox 9 and 9, summer 12 and 6, winter 6 and 12.">
+    <div class="r"><span>Spring equinox</span><div class="bar18"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i></div><b>9 : 9</b></div>
+    <div class="r"><span>Summer</span><div class="bar18"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i></div><b>12 : 6</b></div>
+    <div class="r"><span>Autumn equinox</span><div class="bar18"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i></div><b>9 : 9</b></div>
+    <div class="r"><span>Winter</span><div class="bar18"><i></i><i></i><i></i><i></i><i></i><i></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i><i class="n"></i></div><b>6 : 12</b></div>
+  </div>
+  
+  <p>The rule is not exact, since where you stand on the Earth decides the true ratio, but it describes how day and night behave through the year. The <a class="in" href="/phoenix/#sky">Evidence</a> page shows where on Earth the text’s 2:1 is exact: between 47° and 50° N.</p>
+  <div class="film"><video data-clip="story/parts" poster="/primer/story/parts.jpg" preload="none" playsinline controls controlslist="nodownload"></video></div>
+  <p>On the Dial, the ring of the 18 parts turns as the day goes by, so you can read the share of light and dark at any moment.</p>
+</section>
+
+<section id="cycles">
+  <div class="num">9</div>
+  <h2>Cycles inside of cycles</h2>
+  <p class="lead">The clock is cycles inside of cycles, and each one fits the next exactly.</p>
+  <figure>
+    <div class="crow"><h3>The year</h3><div class="chain c3"><div><h4>A week</h4><div class="v">7 days</div><p>Sunday to the Sabbath.</p></div><div data-x="×13"><h4>A season</h4><div class="v">13 weeks</div><p>91 days.</p></div><div data-x="×4" class="end"><h4>The year</h4><div class="v">4 seasons</div><p>364 days.</p></div></div><p class="alt">Or straight from the week: 52 weeks × 7 days = 364 days.</p></div>
+    <div class="crow"><h3>The priests</h3><div class="chain "><div><h4>A week</h4><div class="v">7 days</div><p>Sunday to the Sabbath.</p></div><div data-x="×24"><h4>The 24 courses</h4><div class="v">24 weeks</div><p>One turn, each family serving a week.</p></div><div data-x="×13"><h4>The priestly beat</h4><div class="v">6 years</div><p>312 weeks: 13 turns of the courses.</p></div><div data-x="×49" class="end"><h4>The great cycle</h4><div class="v">294 years</div><p>49 six-year cycles, or six jubilees of 49 years.</p></div></div></div>
+    <div class="crow"><h3>The correction</h3><div class="chain c3"><div><h4>The shift</h4><div class="v">294 days</div><p>42 weeks.</p></div><div data-x="×7"><h4>Seven shifts</h4><div class="v">294 weeks</div><p>About 5.65 years.</p></div><div data-x="×52" class="end"><h4>The great cycle</h4><div class="v">294 years</div><p>The cycle known from Qumran.</p></div></div></div>
+    <figcaption>Each arrow multiplies the cycle before it.</figcaption>
+  </figure>
+  <p>Read each row from left to right. The weeks build the seasons and the year. The 24 priestly courses build six years, and 49 of those make 294 years. The correction climbs from 294 days to 294 weeks to 294 years. The priests and the correction arrive at the same 294.</p>
+  <div class="film"><video data-clip="story/courses" poster="/primer/story/courses.jpg" preload="none" playsinline controls controlslist="nodownload"></video></div>
+  <p>On the Dial, the ring of the 24 courses shows each one as a week, with its seven days as the inner cells.</p>
+</section>
+
+<section id="shifts">
+  <div class="num">10</div>
+  <h2>Where the 294 day shifts occur</h2>
+  <p class="lead">Now you have everything you need to read the clock itself, and the Dial is where it all comes together.</p>
+  <p>On the Dial, every ring is turned so that its current value sits on the Sun’s line, which stays fixed. That is the rotation from section 4, made visible: the rings turn, and the Sun’s line reads each exact value.</p>
+  <p>The Correction ring counts the 294 days. 294 is 7 × 42, and 42 is 7 × 6, so the ring is built from weeks. A silver triangle marks the day each cycle opens, the day of the shift. Press <em class="k">2</em> for the Dial, choose Day in the playback bar, and watch for the triangle: that is where a shift occurs.</p>
+  <p>Then press <em class="k">1</em> to go back to the Sky and look at the same morning from the ground: the sun rising in its portal, and the planets and stars rising and setting beside it. Finding a rise or a setting in one view, and then in the other, is how you learn the clock.</p>
+  <a class="go" href="/">Open the clock</a>
+</section>
+
+<footer>1 Enoch: R. H. Charles, The Book of Enoch (Oxford, 1912). 4Q319: the Qumran calendrical text “Otot”. “Hopelessly primitive” and “astronomically unworkable”: Stern (2001), as cited in D. A. Bell, Resonant Order in the Enochic Calendar (2025). Measurements: <a href="/phoenix/">Evidence</a>. The text of the courses: <a href="/primer/">Enoch</a>.</footer>
+</main>
+<script>
+// ---- clips: each is loaded when played; phones get the 720p copy ----
+const tier = matchMedia('(max-width: 700px)').matches ? '720' : '1080';
+const vids = [...document.querySelectorAll('video[data-clip]')];
+for (const v of vids) {
+  v.addEventListener('play', () => {
+    for (const o of vids) if (o !== v) o.pause();
+    if (!v.src) { v.src = '/film/' + v.dataset.clip + '-' + tier + '.mp4'; v.play(); }
+  });
+  v.addEventListener('ended', () => { v.currentTime = 0; });
+}
+// ---- the section in view, lit in the bar ----
+const links = [...document.querySelectorAll('.bar nav a')];
+const io = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) links.forEach((l) => l.classList.toggle('on', l.getAttribute('href') === '#' + e.target.id)); }, { rootMargin: '-40% 0px -55% 0px' });
+document.querySelectorAll('section').forEach((s) => io.observe(s));
+
+const NS = 'http://www.w3.org/2000/svg';
+const SOLAR = 365.24219, DRIFT = 1.24219, CYCLE = 294, YEAR = 364;
+const el = (n, a = {}, t) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (t != null) e.textContent = t; return e; };
+const fmt = (n) => n.toLocaleString('en-US');
+
+
+// ---- where a day and a year begin: the Gregorian calendar against the Enoch clock ----
+(() => {
+  const s = document.getElementById('beg'), g = (n, a, t) => s.appendChild(el(n, a, t));
+  const L = 110, W = 750, xd = (h) => L + (h / 24) * W, xy = (d) => L + (d / 365) * W;   // hours into the day; days after the winter solstice
+  g('circle', { cx: 24, cy: 22, r: 6, fill: '#0b0a08', stroke: '#a39a86', 'stroke-width': 2 }); g('text', { x: 38, y: 27, class: 'w' }, 'Gregorian');
+  g('circle', { cx: 150, cy: 22, r: 6, fill: '#d6b26a' }); g('text', { x: 164, y: 27, class: 'g' }, 'Enoch');
+  g('text', { x: 14, y: 100, class: 'w' }, 'A day'); g('text', { x: 14, y: 214, class: 'w' }, 'A year');
+  for (const [a, b, c, t] of [[0, 6, '#1c2538', 'night'], [6, 18, '#4a3d22', 'day'], [18, 24, '#1c2538', 'night']]) {
+    g('rect', { x: xd(a), y: 82, width: xd(b) - xd(a), height: 34, fill: c }); g('text', { x: (xd(a) + xd(b)) / 2, y: 104, 'text-anchor': 'middle', class: 'dim' }, t);
+  }
+  for (const [a, b, c, t] of [[0, 89, '#26334a', 'winter'], [89, 182, '#2f4a30', 'spring'], [182, 275, '#4a3d22', 'summer'], [275, 365, '#4a2f22', 'autumn']]) {
+    g('rect', { x: xy(a), y: 196, width: xy(b) - xy(a), height: 34, fill: c }); g('text', { x: (xy(a) + xy(b)) / 2, y: 218, 'text-anchor': 'middle', class: 'dim' }, t);
+  }
+  const grey = (x, y0, y1, label, ly) => { g('path', { d: `M${x} ${y0}V${y1}`, stroke: '#a39a86', 'stroke-width': 2.5 }); g('circle', { cx: x, cy: y0, r: 6, fill: '#0b0a08', stroke: '#a39a86', 'stroke-width': 2 }); g('text', { x: x + 12, y: ly, class: 'w' }, label); };
+  const gold = (x, y0, y1, label, ly) => { g('path', { d: `M${x} ${y0}V${y1}`, stroke: '#d6b26a', 'stroke-width': 2.5 }); g('circle', { cx: x, cy: y1, r: 6, fill: '#d6b26a' }); g('text', { x: x + 12, y: ly, class: 'g' }, label); };
+  grey(xd(0), 62, 116, 'the middle of the night', 66);
+  gold(xd(6), 82, 144, 'sunrise', 148);
+  grey(xy(11), 176, 230, 'the middle of winter', 180);
+  gold(xy(89), 196, 258, 'spring', 262);
+})();
+
+// ---- the shift, one year: Day 1 of the next year against the equinox ----
+(() => {
+  const s = document.getElementById('fa'), read = document.getElementById('fa-read'), bOff = document.getElementById('a-off'), bOn = document.getElementById('a-on');
+  const X = (d) => 40 + d * (820 / 366), XZ = (v) => 470 + v * 140, g = (n, a, t, par = s) => par.appendChild(el(n, a, t));
+  g('text', { x: 40, y: 34, class: 'w' }, 'the sun’s year · 365.24 days'); g('rect', { x: X(0), y: 42, width: X(365.24) - X(0), height: 20, fill: '#2a2518', stroke: '#7d6a43' });
+  g('text', { x: 40, y: 88, class: 'w' }, 'the calendar · 364 days');
+  const cal = g('g', {}); g('line', { x1: X(365.24), x2: X(365.24), y1: 38, y2: 118, stroke: '#f4dc9f', 'stroke-width': 2 }); g('text', { x: X(365.24) - 6, y: 34, 'text-anchor': 'end', class: 'g' }, 'equinox');
+  g('rect', { x: X(356), y: 36, width: X(368) - X(356), height: 86, fill: 'none', stroke: '#7d6a43', 'stroke-dasharray': '3 3' });
+  g('path', { d: `M${X(356)} 122L22 176M${X(368)} 122L778 176`, stroke: '#3a3326', 'stroke-dasharray': '3 4', fill: 'none' });
+  g('rect', { x: 22, y: 176, width: 756, height: 160, fill: '#0b0a08', stroke: '#26221b' });
+  g('text', { x: 34, y: 198, class: 'dim' }, 'close-up of the year’s end, in days from the equinox');
+  for (let v = -3; v <= 2; v++) { g('path', { d: `M${XZ(v)} 252V264`, stroke: '#635d51' }); g('text', { x: XZ(v), y: 286, 'text-anchor': 'middle', class: 'm' }, (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v)); }
+  g('line', { x1: 30, x2: 770, y1: 258, y2: 258, stroke: '#3a3326', 'stroke-width': 2 });
+  const sun = g('g', { transform: `translate(${XZ(0)} 238)` }); g('circle', { r: 10, fill: '#0b0a08', stroke: '#f4dc9f', 'stroke-width': 3 }, null, sun); g('circle', { r: 4, fill: '#f4dc9f' }, null, sun);
+  g('text', { x: XZ(0) + 20, y: 243, class: 'w' }, 'the equinox');
+  const ghost = g('g', { transform: `translate(${XZ(-1.242)} 0)`, opacity: 0 }); g('path', { d: 'M0 214V258', stroke: '#635d51', 'stroke-dasharray': '3 3' }, null, ghost); g('path', { d: 'M0 214l-20 8 20 8z', fill: 'none', stroke: '#635d51' }, null, ghost);
+  const fl = g('g', { class: 'flag' }); g('path', { d: 'M0 210V258', stroke: '#d6b26a', 'stroke-width': 2.5 }, null, fl); g('path', { d: 'M0 210l-26 10 26 10z', fill: '#d6b26a' }, null, fl); g('text', { x: 0, y: 318, 'text-anchor': 'middle', class: 'g' }, 'Day 1 of the next year', fl);
+  const br = g('path', { d: '', stroke: '#bd8a2a', fill: 'none' }), brt = g('text', { x: 0, y: 0, 'text-anchor': 'middle', class: 'g' }, '');
+  const arrow = g('g', { opacity: 0 }); g('path', { d: `M${XZ(-1.242) + 4} 250H${XZ(-0.242) - 4}`, stroke: '#6fbf8f', 'stroke-width': 2 }, null, arrow); g('path', { d: `M${XZ(-0.242) - 4} 250l-8-4v8z`, fill: '#6fbf8f' }, null, arrow);
+  g('text', { x: (XZ(-1.242) + XZ(-0.242)) / 2, y: 246, 'text-anchor': 'middle', style: 'fill:#6fbf8f;font-size:14px', id: 'a-lbl' }, 'one day');
+  arrow.appendChild(arrow.lastChild); const lbl = s.querySelector('#a-lbl'); lbl.setAttribute('opacity', 0);
+  function draw(on) {
+    cal.replaceChildren(); const end = on ? 365 : 364;
+    if (on) {
+      g('rect', { x: X(0), y: 94, width: X(294) - X(0), height: 20, fill: '#6b5a33', stroke: '#d6b26a' }, null, cal); g('rect', { x: X(295), y: 94, width: X(365) - X(295), height: 20, fill: '#6b5a33', stroke: '#d6b26a' }, null, cal);
+      g('path', { d: `M${X(294.5)} 90l7 11-7 11-7-11z`, fill: '#6fbf8f' }, null, cal); g('text', { x: X(294.5), y: 138, 'text-anchor': 'middle', style: 'fill:#6fbf8f' }, 'the shift · the 294th day', cal);
+    } else g('rect', { x: X(0), y: 94, width: X(364) - X(0), height: 20, fill: '#6b5a33', stroke: '#d6b26a' }, null, cal);
+    const gap = 365.24219 - end, x1 = XZ(-gap), x0 = XZ(0);
+    fl.style.transform = `translateX(${x1}px)`; ghost.setAttribute('opacity', on ? 1 : 0); arrow.setAttribute('opacity', on ? 1 : 0); lbl.setAttribute('opacity', on ? 1 : 0);
+    br.setAttribute('d', `M${x1} 196V190H${x0}V196`); brt.setAttribute('x', (x1 + x0) / 2); brt.setAttribute('y', 182); brt.textContent = on ? '0.24 days early' : '1.24 days early';
+    bOff.setAttribute('aria-pressed', !on); bOn.setAttribute('aria-pressed', on);
+    read.innerHTML = on ? 'On the 294th day the clock turns back one day, and Day 1 of the next year arrives <b>0.24 days</b> before the equinox, less than a quarter of a day. The remainder carries forward, and a year with two shifts absorbs it before it passes a day: about one year in four has two.' : 'Without the shift, Day 1 of the next year arrives <b>1.24 days</b> before the equinox, then 2.48, then 3.73: the gap grows every year.';
+  }
+  bOff.onclick = () => draw(false); bOn.onclick = () => draw(true); draw(false);
+  const fig = s.closest('.sc'); if (fig.scrollWidth > fig.clientWidth) fig.scrollLeft = (fig.scrollWidth - fig.clientWidth) * 0.55; // on a phone, open on the close-up
+})();
+
+// ---- the drift plot: how far the clock's New Year is from the sun's spring ----
+(() => {
+  const s = document.getElementById('drift'), L = 70, R = 870, T = 24, B = 324, X = (v) => L + (v / 300) * (R - L), Y = (v) => B - (v / 380) * (B - T);
+  const g = (n, a, t) => s.appendChild(el(n, a, t));
+  for (const [v, t] of [[91.3, '¼ year'], [182.6, '½ year'], [273.9, '¾ year'], [365.2, '1 year']]) {
+    g('line', { x1: L, x2: R, y1: Y(v), y2: Y(v), stroke: '#26221b' }); g('text', { x: L - 8, y: Y(v) + 5, 'text-anchor': 'end', class: 'm' }, Math.round(v));
+    g('text', { x: R, y: Y(v) - 7, 'text-anchor': 'end', class: v === 182.6 ? 'g' : '' }, t + (v === 182.6 ? ': the clock says summer, the seasons say winter' : ''));
+  }
+  g('line', { x1: L, x2: R, y1: B, y2: B, stroke: '#3a3326' });
+  for (let v = 0; v <= 300; v += 50) g('text', { x: X(v), y: B + 22, 'text-anchor': 'middle', class: 'm' }, v);
+  g('text', { x: (L + R) / 2, y: B + 46, 'text-anchor': 'middle' }, 'years');
+  g('text', { x: 14, y: T + 4, class: 'm' }, 'offset, days');
+  g('line', { x1: X(293), x2: X(293), y1: T, y2: B, stroke: '#7d6a43', 'stroke-dasharray': '4 4' });
+  g('text', { x: X(293) - 8, y: B - 44, 'text-anchor': 'end', class: 'w' }, 'Qumran: the 294-year cycle');
+  g('text', { x: X(293) - 8, y: B - 26, 'text-anchor': 'end' }, 'back in alignment only here');
+  g('path', { d: `M${X(0)} ${Y(0)}L${X(293)} ${Y(DRIFT * 293)}`, stroke: '#d6b26a', 'stroke-width': 3, fill: 'none' });
+  g('text', { x: X(150) - 12, y: Y(DRIFT * 150) - 12, 'text-anchor': 'end', class: 'g' }, 'uncorrected: 1.24 days further off every year');
+  g('path', { d: `M${X(0)} ${Y(0.5)}L${X(300)} ${Y(0.5)}`, stroke: '#6fbf8f', 'stroke-width': 4, fill: 'none' });
+  g('text', { x: X(150), y: Y(0) - 12, 'text-anchor': 'middle', fill: '#6fbf8f', style: 'fill:#6fbf8f' }, 'with the 294-day shift: never more than a day');
+})();
+
+// ---- the ladder: three correction cycles on a log scale of years ----
+(() => {
+  const s = document.getElementById('ladder'), L = 80, W = 740, X = (v) => L + ((Math.log10(v) + 1) / 4) * W, g = (n, a, t) => s.appendChild(el(n, a, t));
+  for (const [v, t] of [[0.1, '1/10 yr'], [1, '1 year'], [10, '10 yr'], [100, '100 yr'], [1000, '1,000 yr']]) {
+    g('line', { x1: X(v), x2: X(v), y1: 20, y2: 262, stroke: v === 1 ? '#d6b26a' : '#1d1a14', 'stroke-width': v === 1 ? 2 : 1 }); g('text', { x: X(v), y: 286, 'text-anchor': 'middle', class: 'm' }, t);
+  }
+  g('text', { x: X(1) + 8, y: 36, class: 'g' }, 'every year: perfect justice');
+  const rows = [
+    [294 / YEAR, '294 DAYS · 42 weeks', 'the sun gains ≈ 1 day', '✓ under a year', '#6fbf8f'],
+    [(294 * 7) / YEAR, '294 WEEKS · 5.654 years', 'the sun gains ≈ 7 days', '✗ 5.654 years', '#8a8272'],
+    [294, '294 YEARS', 'the sun gains ≈ 365 days', '✗ 294 years', '#8a8272'],
+  ];
+  rows.forEach(([v, a, b, c, col], i) => {
+    const y = 64 + i * 66;
+    g('text', { x: L, y: y - 8, class: 'w m' }, a); g('text', { x: L + 262, y: y - 8, class: 'dim' }, b);
+    g('rect', { x: L, y, width: X(v) - L, height: 30, fill: col, opacity: i ? 0.55 : 0.9 });
+    g('text', { x: 878, y: y + 22, 'text-anchor': 'end', style: 'fill:' + col + ';font-size:16px' }, c);
+  });
+})();
+
+// ---- the pendulum: where the sun rises through the year, at 32° N, drawn as a curve and as a pendulum ----
+(() => {
+  const s = document.getElementById('swing'), g = (n, a, t) => s.appendChild(el(n, a, t)), L = 70, R = 640, X = (d) => L + (d / YEAR) * (R - L), Y = (a) => 165 - a * 4.2;
+  const rad = Math.PI / 180, lat = 32 * rad, off = (d) => Math.asin(Math.sin(23.44 * rad * Math.sin((2 * Math.PI * d) / SOLAR)) / Math.cos(lat)) / rad;
+  g('line', { x1: L, x2: R, y1: Y(0), y2: Y(0), stroke: '#3a3326', 'stroke-dasharray': '4 4' }); g('text', { x: L - 8, y: Y(0) + 5, 'text-anchor': 'end', class: 'm' }, 'E');
+  g('text', { x: L - 8, y: Y(26), 'text-anchor': 'end', class: 'm' }, 'N'); g('text', { x: L - 8, y: Y(-24), 'text-anchor': 'end', class: 'm' }, 'S');
+  [[0, 'equinox'], [91, 'solstice'], [182, 'equinox'], [273, 'solstice']].forEach(([d, t], i) => {
+    g('line', { x1: X(d), x2: X(d), y1: 30, y2: 292, stroke: '#1d1a14' }); g('text', { x: X(d) + (i ? 0 : 4), y: 316, 'text-anchor': i ? 'middle' : 'start', class: 'm' }, t);
+  });
+  let p = ''; for (let d = 0; d <= YEAR; d += 2) p += `${d ? 'L' : 'M'}${X(d).toFixed(1)} ${Y(off(d)).toFixed(1)}`;
+  g('path', { d: p, stroke: '#d6b26a', 'stroke-width': 3, fill: 'none', opacity: 0.55 });
+  // the pendulum: north to the left, south to the right, as the portals are drawn facing east
+  const PX = 780, PY = 50, RL = 210, A = 28;
+  g('path', { d: `M${PX + RL * Math.sin(-A * rad)} ${PY + RL * Math.cos(A * rad)}A${RL} ${RL} 0 0 0 ${PX + RL * Math.sin(A * rad)} ${PY + RL * Math.cos(A * rad)}`, stroke: '#3a3326', 'stroke-dasharray': '4 4', fill: 'none' });
+  g('path', { d: `M${PX} ${PY}V${PY + RL}`, stroke: '#2a2519' }); g('text', { x: PX, y: PY + RL + 30, 'text-anchor': 'middle', class: 'm' }, 'due east');
+  g('text', { x: PX - RL * Math.sin(A * rad), y: PY + RL * Math.cos(A * rad) + 44, 'text-anchor': 'middle', class: 'm' }, 'N'); g('text', { x: PX + RL * Math.sin(A * rad), y: PY + RL * Math.cos(A * rad) + 44, 'text-anchor': 'middle', class: 'm' }, 'S');
+  const rod = g('line', { x1: PX, y1: PY, x2: PX, y2: PY + RL, stroke: '#a39a86', 'stroke-width': 2 }); g('circle', { cx: PX, cy: PY, r: 5, fill: '#635d51' });
+  const bob = g('g', {}); g('circle', { r: 15, fill: '#0b0a08', stroke: '#f4dc9f', 'stroke-width': 3 }, ''); bob.appendChild(s.lastChild); const bc = el('circle', { r: 5, fill: '#f4dc9f' }); bob.appendChild(bc);
+  const dot = g('circle', { cx: X(0), cy: Y(0), r: 8, fill: '#f4dc9f' });
+  const day = document.getElementById('sw-day'), read = document.getElementById('sw-read'), play = document.getElementById('sw-play');
+  let d = 0, raf = 0, last = 0;
+  function draw() {
+    const a = off(d), th = -a * rad;                                       // north (positive) swings left
+    dot.setAttribute('cx', X(d)); dot.setAttribute('cy', Y(a));
+    rod.setAttribute('x2', PX + RL * Math.sin(th)); rod.setAttribute('y2', PY + RL * Math.cos(th)); bob.setAttribute('transform', `translate(${PX + RL * Math.sin(th)} ${PY + RL * Math.cos(th)})`);
+    day.value = d; read.textContent = `DAY ${Math.round(d) + 1} · ${Math.abs(a) < 0.5 ? 'due east' : Math.abs(a).toFixed(0) + '° ' + (a > 0 ? 'north' : 'south') + ' of east'}`;
+  }
+  function stop() { cancelAnimationFrame(raf); raf = 0; play.textContent = '▶'; play.setAttribute('aria-label', 'Play'); }
+  function tick(ts) { const dt = Math.min(0.1, (ts - last) / 1000); last = ts; d = (d + dt * 40) % (YEAR + 1); draw(); raf = requestAnimationFrame(tick); }
+  play.onclick = () => { if (raf) return stop(); play.textContent = '❚❚'; play.setAttribute('aria-label', 'Pause'); last = performance.now(); raf = requestAnimationFrame(tick); };
+  day.oninput = () => { stop(); d = +day.value; draw(); };
+  draw();
+})();
+
+// ---- the portals: the eastern horizon to scale at 32° N, sized by the months (north on the left) ----
+(() => {
+  const s = document.getElementById('arch'), g = (n, a, t) => s.appendChild(el(n, a, t));
+  const rad = Math.PI / 180, lat = 32 * rad, off = (d) => Math.asin(Math.sin(23.44 * rad * Math.sin((2 * Math.PI * d) / SOLAR)) / Math.cos(lat)) / rad;
+  const START = [0, 30, 60, 91, 121, 151, 182, 212, 242, 273, 303, 333, 364], PORTAL = [4, 5, 6, 6, 5, 4, 3, 2, 1, 1, 2, 3];   // each month's first day, and the portal the sun rises in
+  const passes = {}, months = {}, span = {};
+  PORTAL.forEach((p, m) => { const a = off(START[m]), b = off(START[m + 1]); (passes[p] = passes[p] || []).push([Math.min(a, b), Math.max(a, b)]); (months[p] = months[p] || []).push(m + 1); });
+  for (const n in passes) { const P = passes[n]; span[n] = [Math.max(...P.map((q) => q[0])), Math.min(...P.map((q) => q[1]))]; }   // the common span of a portal's two passes, as the Sky draws it
+  span[6][1] = Math.max(...passes[6].map((q) => q[1])); span[1][0] = Math.min(...passes[1].map((q) => q[0]));                       // the outer portals reach the Sun's extremes
+  const ext = Math.max(Math.abs(span[1][0]), Math.abs(span[6][1])), K = 800 / (2 * ext), CX = 450, X = (a) => CX - a * K;   // north (positive) on the left
+  g('line', { x1: 20, x2: 880, y1: 210, y2: 210, stroke: '#3a3326', 'stroke-width': 2 });
+  for (let n = 6; n >= 1; n--) {
+    const [lo, hi] = span[n], x0 = X(hi), x1 = X(lo), w = x1 - x0, ry = Math.min(w / 2, 70), c = (x0 + x1) / 2, sp = n === 4;
+    g('path', { d: `M${x0} 210V${130 + 0}A${w / 2} ${ry} 0 0 1 ${x1} 130V210`, fill: sp ? '#1b160d' : 'none', stroke: sp ? '#d6b26a' : '#5c5240', 'stroke-width': sp ? 3 : 2 });
+    g('text', { x: c, y: 238, 'text-anchor': 'middle', class: sp ? 'g m' : 'm' }, `portal ${n}`);
+    g('text', { x: c, y: 258, 'text-anchor': 'middle', class: 'dim' }, `months ${months[n].join(', ')}`);
+  }
+  const sx = X(3), sy = 196;
+  g('circle', { cx: sx, cy: sy, r: 13, fill: '#0b0a08', stroke: '#f4dc9f', 'stroke-width': 3 }); g('circle', { cx: sx, cy: sy, r: 5, fill: '#f4dc9f' });
+  g('text', { x: sx, y: 46, 'text-anchor': 'middle', class: 'w' }, 'the spring sunrise'); g('path', { d: `M${sx} 54V100`, stroke: '#7d6a43' });
+  const px = (X(span[2][0]) + X(span[2][1])) / 2;
+  g('circle', { cx: px, cy: 176, r: 5, fill: '#9ab973' }); g('text', { x: px, y: 46, 'text-anchor': 'middle', class: 'w' }, 'a planet rising'); g('path', { d: `M${px} 54V160`, stroke: '#4a5a3d' });
+  g('text', { x: 22, y: 30, class: 'm' }, 'N'); g('text', { x: 868, y: 30, class: 'm' }, 'S');
+})();
+</script>
+</body></html>

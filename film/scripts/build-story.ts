@@ -52,7 +52,7 @@ cite { display: block; margin-top: 6px; font-style: normal; font-family: Mono, m
 footer { margin-top: 80px; padding-top: 20px; border-top: 1px solid #26221b; font-family: Cond, sans-serif; font-size: 13px; color: #635d51; }
 @media (max-width: 640px) { body { font-size: 19px; } header h1 { font-size: 36px; } h2 { font-size: 28px; } .toc { columns: 1; } main { padding-top: 30px; } }
 </style></head><body>
-<div class="bar"><a href="/">← The clock</a><span class="sides"><a class="on" href="/primer/">Enoch</a><a href="/phoenix/">Phoenix</a></span><nav>${CHAPTERS.map((c, k) => `<a href="#${c.id}" title="${esc(c.title)}">${k + 1}</a>`).join('')}</nav></div>
+<div class="bar"><a href="/">← The clock</a><span class="sides"><a href="/tutorial/">Tutorial</a><a class="on" href="/primer/">Enoch</a><a href="/phoenix/">Evidence</a></span><nav>${CHAPTERS.map((c, k) => `<a href="#${c.id}" title="${esc(c.title)}">${k + 1}</a>`).join('')}</nav></div>
 <main>
 <header><h1>The book of the courses of the luminaries of the heaven</h1><div class="ref">1 ENOCH 72:1</div>
 <ol class="toc">${CHAPTERS.map((c, k) => `<li><a href="#${c.id}"><span>${k + 1}</span>${esc(c.title)}</a></li>`).join('')}</ol></header>
