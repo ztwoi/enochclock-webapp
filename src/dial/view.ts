@@ -18,9 +18,10 @@ import './face.css';
 
 const FKEY = 'enoch.dial.framing.v1', SKEY = 'enoch.dial.sky.v1', IKEY = 'enoch.dial.info.v1';
 /** Sky layers, all off by default (the face as it was): the star limit, the constellation figures, the centre chart. */
-interface SkyPrefs { mag: number; figures: boolean; centre: Centre }
+export interface SkyPrefs { mag: number; figures: boolean; centre: Centre }
 const MAGS: [number, string][] = [[BRIGHT_MAG, 'bright stars, 214'], [4.5, '925 stars'], [6, 'naked eye, 5,070']];
-function loadSky(): SkyPrefs {
+/** The Dial's sky settings as kept on the device (The Day's dial draws with them too). */
+export function loadSky(): SkyPrefs {
   const d: SkyPrefs = { mag: BRIGHT_MAG, figures: false, centre: 'off' };
   try { const v = JSON.parse(localStorage.getItem(SKEY) ?? '{}');
     return { mag: MAGS.some(([m]) => m === v.mag) ? v.mag : d.mag, figures: v.figures === true, centre: ['above', 'up'].includes(v.centre) ? v.centre : 'off' }; } catch { return d; }

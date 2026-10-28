@@ -2,19 +2,16 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><meta name="theme-color" content="#090807"><link rel="icon" href="/icons/icon-192.png">
 <title>Enoch · Studio</title></head>
-<!-- The Studio: one Enoch day, sunrise to sunrise, as video frames (src/studio/main.ts; scripts/day-video.mjs records it). Not linked from the app. -->
+<!-- The Studio: The Day (the app's #day view) as 9:16 video frames (src/studio/main.ts; scripts/day-video.mjs records it). Not linked from the app. -->
 <body>
 <div class="st-holder" id="holder">
  <div class="st-frame" id="frame">
-  <div class="st-sky" id="sky"></div>
-  <div class="st-dial"><svg id="dial" viewBox="-500 -500 1000 1000" role="img" aria-label="The Dial, framed with the Sun at the top"></svg></div>
-  <svg class="st-thread" id="thread" aria-hidden="true"><line id="thread-glow"/><line id="thread-line"/></svg>
+  <div class="st-day" id="day"></div>
   <header class="st-head">
    <div class="st-mark"><b>ENOCH</b><span id="place"></span></div>
    <div class="st-row"><h1><span id="weekday"></span> <i>·</i> <span id="course"></span></h1><div class="st-clock" id="clock"></div></div>
    <div class="st-row st-sub"><span id="dates"></span><span id="daypart"></span></div>
   </header>
-  <footer class="st-foot"><div class="st-caps" id="caps"></div><svg class="st-bar" id="bar" aria-hidden="true"></svg></footer>
   <p class="st-status" id="status">Starting…</p>
  </div>
 </div>

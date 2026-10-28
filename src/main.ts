@@ -19,7 +19,7 @@ import { createDeep, type Deep } from './deep';
 import { deepPanel, skyPanel } from './inspector';
 import { cycleStrip } from './cycleui';
 import { annual, cursorRow, dayIndexAt, fmt, jdFromMs, partOfDay } from './model';
-import { setHeadClearance } from './stage';
+import { headClearance, setHeadClearance } from './stage';
 import type { DeepDoc, Site, YearDoc } from './types';
 import { loadCatalogue } from './sky/catalogue';
 import { jdOfPart } from './sky/instrument';
@@ -30,20 +30,23 @@ import { createSkyCompass } from './sky/compassmode';
 import { hub } from './compass/hub';
 import { createFocus } from './focus';
 import { enochTime } from './dial/state';
-import { createDialView, type DialView } from './dial/view';
+import { createDialView, loadSky as dialSky, type DialView } from './dial/view';
 import { createFilm } from './film';
+import { createDayView, dayPanel, geometryFor, type DayView } from './day/view';
+import { createSunFollow, type SunFollow } from './day/follow';
 
-type View = 'sky' | 'dial' | 'deep';
+type View = 'sky' | 'dial' | 'day' | 'deep';
 /** The tabs, in their order (the number keys follow it). */
-const ORDER: View[] = ['sky', 'dial', 'deep'];
+const ORDER: View[] = ['sky', 'dial', 'day', 'deep'];
 const VIEWS: Record<View, { name: string; title: string; quote: string; ref?: string; foot: [string, string] }> = {
   sky: { name: 'Sky', title: '', quote: '72:3 stars', ref: '72:3', foot: ['Click a star.', ''] },
   deep: { name: 'Deep Time', title: 'Thirty thousand years of Day 1', quote: '72:1',
     foot: ['Years: astronomical numbering. Click a year to open it.', 'Envelope = min–max per 100 years'] },
   dial: { name: 'The Dial', title: '', quote: '72:1', foot: ['', ''] },
+  day: { name: 'The Day', title: '', quote: '72:1', foot: ['', ''] },
 };
 /** The views with a time of day: played by degrees, drawn at the part of the day. */
-const timed = (v: View) => v === 'sky' || v === 'dial';
+const timed = (v: View) => v === 'sky' || v === 'dial' || v === 'day';
 const DEEP_HALF_WINDOW = 350;
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -52,6 +55,8 @@ const state = {
   deep: null as Deep | null, deepDoc: null as DeepDoc | null,
   sky: null as Sky | null, cat: null as Catalogue | null, part: 0,
   dial: null as DialView | null, next: null as YearDoc | null,
+  /** The Day: the Sky and the Dial together (src/day/view.ts), built when first shown, rebuilt per year and site. */
+  day: null as DayView | null,
   /** Following the present (Now, as on the Dial): the day and, in Sky, the part of the day keep up with the clock. */
   live: false,
 };
@@ -101,7 +106,9 @@ async function load(by: { date: string } | { enochYear: number } | { year: numbe
     state.nowIndex = dayIndexAt(doc, jdFromMs(Date.now()));
     state.cursor = cursor === 'end' ? days.length - 1 : cursor === 'today' && state.nowIndex >= 0 ? state.nowIndex : 0;
     if (state.sky) { state.sky.dispose(); state.sky = null; }
-    if (state.view === 'sky') await ensureSky();                  // other views build the Sky when it is opened (setView), not on every year load
+    if (state.day) { state.day.dispose(); state.day = null; }
+    if (state.view === 'sky') await ensureSky();                  // other views build the Sky (and The Day) when it is opened (setView), not on every year load
+    if (state.view === 'day') await ensureDay();
     if (state.deep || state.view === 'deep') await syncDeep();
     if (seq !== loadSeq) return;
     if (state.view === 'dial') ensureStars();
@@ -128,11 +135,28 @@ async function ensureSky() {
   if (!state.sky) {
     state.sky = createSky($('view-sky'), state.doc, state.cat, () => { selSerial++; shown.sel = -1; update(); });
     state.sky.onUser(() => { if (compassFollowing) { compassFollowing = false; compassChanged(); } });   // a hand on the panorama takes the view from the compass
+    skyFollow = createSunFollow(state.sky, skyFollow?.on ?? false, syncSide, skyFollow?.k);   // and from the Sun (a new year or site keeps following, at its zoom)
     state.sky.stage.onView(syncSide);
     if (startSide) { state.sky.recentre(startSide); startSide = null; }
     state.sky.setBearingHold(skyCompass.on && compassFollowing); syncSide();
-    state.sky.setMagLimit(Number($<HTMLSelectElement>('mag').value)); state.sky.setLayers(skyLayers());
+    state.sky.setMagLimit(Number($<HTMLSelectElement>('mag').value)); state.sky.setLayers(skyLayers()); state.sky.setPaths(on('paths'));
   }
+}
+
+/** The Day, on the catalogue Sky loads: its sky follows the star limit, its face the Dial tab's sky settings; its options are the buttons under the title. */
+async function ensureDay() {
+  if (!state.doc) return;
+  if (!state.cat) { $('status').className = 'status'; $('status').hidden = false; $('status').textContent = 'Loading the catalogue stars…'; state.cat = await loadCatalogue('/sky/', Number($<HTMLSelectElement>('mag').value)); }
+  if (!state.day) {
+    state.day = createDayView($('view-day'), state.doc, state.cat, {
+      geometry: (w, h) => geometryFor(w, h, headClearance()),
+      mag: Number($<HTMLSelectElement>('mag').value),
+      onScrub: (p) => { manual(); tp.pause(); state.part = p; update(); },   // a hand on the day bar
+      onFollow: (f) => setOn('day-follow', f),
+    });
+    state.day.setDaylight(on('day-daylight')); state.day.setCaptions(on('day-captions')); state.day.setFollow(on('day-follow'));
+  }
+  state.day.setDialSky(dialSky());                                 // the face as the Dial tab has it (its settings change only there)
 }
 
 /** The Dial's stars: the same catalogue as Sky's, loaded without holding up the face. */
@@ -188,9 +212,13 @@ function pickYear(year: number) { manual(); tp.pause(); load({ year }, 'start');
 function update() {
   const doc = state.doc; if (!doc) return;
   const days = annual(doc), { i } = cursorRow(days, state.cursor), r = days[i];
-  if (state.sky && state.view === 'sky') { state.sky.setInstant(jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part)); }
-  ({ deep: state.deep, sky: state.sky }[state.view as Exclude<View, 'dial'>])?.render();
+  if (state.sky && state.view === 'sky') {
+    state.sky.setInstant(jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part));
+    skyFollow?.aim();                                                // as The Day's sky: the horizon and the Sun in view, at the reader's zoom
+  }
+  if (state.view === 'sky' || state.view === 'deep') ({ deep: state.deep, sky: state.sky }[state.view])?.render();
   if (state.view === 'dial') renderDial();
+  if (state.view === 'day') state.day?.draw(jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part));
   $('when').innerHTML = `<div class="w1"><b>${enochText(r.enoch_date)}</b> <span class="course-chip">${doc.extended[i].course_name}</span>${accuracyFlag(doc.accuracy)}</div><div class="w2" id="when-t"></div>`;
   clock();
   $('now').classList.toggle('on', state.live); $('now').setAttribute('aria-pressed', String(state.live));
@@ -200,8 +228,9 @@ function update() {
 }
 
 function inspector(doc: YearDoc, i: number) {
-  const el = $('insp'), acc = accuracySection(doc.accuracy, { stars: state.view === 'sky' });           // every view: how far to trust this year
+  const el = $('insp'), acc = accuracySection(doc.accuracy, { stars: state.view === 'sky' || state.view === 'day' });           // every view: how far to trust this year
   if (state.view === 'deep') { el.innerHTML = (state.deepDoc ? deepPanel(state.deepDoc, firstYear(), doc, i) : '') + acc; return; }
+  if (state.view === 'day') { const d = state.day?.day(); el.innerHTML = (d && d.i === i ? dayPanel(doc, i, d.events, d.rising) : '') + acc; return; }
   el.innerHTML = (skyCompass.on ? skyCompass.html({ name: state.site.name, lat: doc.calculation.latitude, lon: doc.calculation.longitude_east, jd: state.sky?.info()?.jd ?? doc.rows[i].sunrise_jd_ut, date: annual(doc)[i].civil_date, year: doc.calculation.year_beginning_gregorian, tz: doc.calculation.timezone }) : '') + skyPanel(doc, i, state.part, state.sky?.info() ?? null) + acc;
 }
 
@@ -235,7 +264,7 @@ function tick() {
   let moved = k !== Math.round(state.cursor);
   if (moved) state.cursor = k;
   if (state.view === 'sky') { const p = partOfDay(doc, k, jd); if (moved || Math.floor(p * 1200) !== Math.floor(state.part * 1200)) { state.part = p; moved = true; } }
-  if (state.view === 'dial') { state.part = partOfDay(doc, k, jd); moved = true; }                   // the Dial's hands move every second
+  if (state.view === 'dial' || state.view === 'day') { state.part = partOfDay(doc, k, jd); moved = true; }   // the Dial's hands move every second
   if (moved) update(); else clock();
 }
 
@@ -255,13 +284,18 @@ function tickNow() {
 const skyCompass = createSkyCompass((h) => { if (state.view === 'sky' && compassFollowing) state.sky?.turn(h); skyCompass.tick($('insp')); }, compassChanged);
 /** The compass turns the panorama only while following: a drag, a swipe, East or West pauses it (the sensor keeps running); Compass resumes. */
 let compassFollowing = false, startSide: Side | null = 'east';   // the first Sky opens turned to the east
+/** Sky follows the Sun (the Sun button): it turns and opens out with it, as The Day's sky, and a zoom meanwhile is its multiplier
+ *  (src/day/follow.ts); a drag, East, West or Compass stops it. One per Sky (rebuilt with it). */
+let skyFollow: SunFollow | null = null;
+const sunFollowing = () => skyFollow?.on ?? false;
 /** The sensor is the device's, not Sky's: on in the Dial or after a reload, Sky follows it too (when it is shown), and off anywhere is off here. */
-function adoptCompass() { if (hub.active && !skyCompass.on && state.view === 'sky') { compassFollowing = true; skyCompass.adopt(); } }
+function adoptCompass() { if (hub.active && !skyCompass.on && state.view === 'sky') { compassFollowing = true; skyFollow?.set(false); skyCompass.adopt(); syncSide(); } }
 hub.onChange(() => { if (hub.active) adoptCompass(); else if (['locating', 'waiting', 'live'].includes(skyCompass.phase)) skyCompass.released(); });   // (a refusal or a start under way answers for itself)
 /** East and West light while their portals are the way the view faces. */
 function syncSide() {
-  const at = state.sky?.sideAt() ?? null;
+  const at = sunFollowing() ? null : state.sky?.sideAt() ?? null;            // following the Sun, the Sun's button is lit, not a side's
   for (const side of ['east', 'west']) { const b = document.querySelector(`[data-facing=${side}]`); if (b && b.classList.contains('on') !== (at === side)) { b.classList.toggle('on', at === side); b.setAttribute('aria-pressed', String(at === side)); } }
+  const sb = document.querySelector('[data-facing=sun]'); sb?.classList.toggle('on', sunFollowing()); sb?.setAttribute('aria-pressed', String(sunFollowing()));
 }
 let noteTimer = 0;
 const focus = createFocus($('app'), $<HTMLButtonElement>('focus'));
@@ -295,12 +329,17 @@ function compassChanged() {
 /** The views' option rows, wired once (setView runs on every change of view). */
 function bindOptions() {
   document.querySelectorAll<HTMLButtonElement>('[data-facing]').forEach((b) => b.addEventListener('click', () => {
-    const f = b.dataset.facing as Side | 'compass';
-    if (f === 'compass') {
+    const f = b.dataset.facing as Side | 'compass' | 'sun';
+    if (f === 'sun') {                                                                     // follow the Sun, or stop (the view stays where it is)
+      skyFollow?.set(!sunFollowing());                                                     // from the zoom on show
+      if (sunFollowing() && compassFollowing) { compassFollowing = false; compassChanged(); }   // the compass, if on, stands aside
+      syncSide();
+    } else if (f === 'compass') {
+      skyFollow?.set(false); syncSide();
       if (!skyCompass.on) { compassFollowing = true; skyCompass.start(); }                // still inside the tap: iOS asks for orientation here
       else if (compassFollowing) { compassFollowing = false; skyCompass.stop(); }          // following: off
       else { compassFollowing = true; compassChanged(); }                                  // paused by a hand: follow again from the next reading
-    } else { compassFollowing = false; state.sky?.recentre(f); syncSide(); compassChanged(); }   // the view goes to its side; the compass, if on, stands aside
+    } else { compassFollowing = false; skyFollow?.set(false); state.sky?.recentre(f); syncSide(); compassChanged(); }   // the view goes to its side; the compass or the Sun, if leading, stands aside
     shown.view = ''; update();
   }));
   // compass calibration, from the card over the sky or the details panel
@@ -325,7 +364,7 @@ function bindOptions() {
       catch { $('status').className = 'status error'; $('status').textContent = 'The fainter stars could not be loaded; try again.'; sel.value = sel.dataset.prev ?? '6.5'; sel.disabled = false; return; }
       sel.disabled = false;
     }
-    sel.dataset.prev = String(m); state.sky?.setMagLimit(m); shown.view = ''; update();
+    sel.dataset.prev = String(m); state.sky?.setMagLimit(m); state.day?.setMagLimit(m); shown.view = ''; update();
   };
   $('refraction').onclick = () => { state.sky?.setLayers({ refraction: toggle('refraction') }); shown.view = ''; update(); };
   $('figures').onclick = () => { state.sky?.setLayers({ figures: toggle('figures') }); };
@@ -333,20 +372,29 @@ function bindOptions() {
   $('planets').onclick = () => { state.sky?.setLayers({ planets: toggle('planets') }); shown.view = ''; update(); };
   $('bearing').onclick = () => { const on = toggle('bearing'); localStorage.setItem(BKEY, on ? '1' : '0'); state.sky?.setLayers({ bearing: on }); };
   if (localStorage.getItem(BKEY) === '1') toggle('bearing');                    // Bearing is remembered on the device (off by default)
+  $('paths').onclick = () => { const v = toggle('paths'); localStorage.setItem(PKEY, v ? '1' : '0'); state.sky?.setPaths(v); };
+  if (localStorage.getItem(PKEY) === '1') toggle('paths');                      // Paths is remembered on the device (off by default)
   $('below').onclick = () => { state.sky?.setLayers({ below: toggle('below') }); shown.view = ''; update(); };
+  $('day-follow').onclick = () => { state.day?.setFollow(toggle('day-follow')); };
+  $('day-daylight').onclick = () => { state.day?.setDaylight(toggle('day-daylight')); };
+  $('day-captions').onclick = () => { state.day?.setCaptions(toggle('day-captions')); };
   $('daylight').onclick = () => { const on = toggle('daylight'); localStorage.setItem(DKEY, on ? '1' : '0'); state.sky?.setLayers({ daylight: on }); };
   if (localStorage.getItem(DKEY) === '0') toggle('daylight');                   // Daylight is remembered on the device (on by default)
-  // on a phone, Refraction, Figures, Portal ★, Planets, Daylight, Bearing and Below horizon sit in the details sheet: one tap away, the row shorter
+  // on a phone, Refraction, Figures, Portal ★, Planets, Daylight, Bearing, Below horizon and Paths sit in the details sheet: one tap away, the row shorter
   const phone = matchMedia('(max-width: 700px)'), place = () => {
     const into = phone.matches ? $('sky-sheet-opts') : $('sky-controls');
-    into.append($('refraction'), $('figures'), $('portal-stars'), $('planets'), $('daylight'), $('bearing'), $('below'));   // the row's own order, after the facing and the star limit
+    into.append($('refraction'), $('figures'), $('portal-stars'), $('planets'), $('daylight'), $('bearing'), $('below'), $('paths'));   // the row's own order, after the facing and the star limit
     skySheetOpts();
   };
   phone.addEventListener('change', place); place();
 }
 
+/** A view has been set up (its title, options, focus and transport): until then, asking for the view already named is no repeat.
+ *  The first load draws the opening view (Sky) before start() sets it up, and that must not skip the setting up. */
+let viewSetUp = false;
 async function setView(v: View, push = true) {
-  if (v === state.view && shown.view) return;
+  if (v === state.view && shown.view && viewSetUp) return;
+  viewSetUp = true;
   state.view = v;
   $('stage').dataset.view = v;
   const meta = VIEWS[v];
@@ -355,14 +403,15 @@ async function setView(v: View, push = true) {
   if (v !== 'dial') { $('vh-title').textContent = meta.title; delete $('vh-title').dataset.h; }   // the Dial writes its own: the weekday and course
   $('vh-prim').hidden = v !== 'dial'; $('dial-controls').hidden = v !== 'dial';
   state.dial?.setActive(v === 'dial');
-  $('vh-quote').textContent = v === 'dial' || v === 'sky' ? '' : state.doc ? `“${state.doc.text.quotes[meta.quote]}” — ${meta.ref ?? meta.quote}` : '';
+  $('vh-quote').textContent = v === 'dial' || v === 'sky' || v === 'day' ? '' : state.doc ? `“${state.doc.text.quotes[meta.quote]}” — ${meta.ref ?? meta.quote}` : '';
   $('foot-a').textContent = meta.foot[0]; $('foot-b').textContent = (v === 'deep' && state.deep?.envelopeNote()) || meta.foot[1];
   if (push) history.replaceState(null, '', `${location.search}#${v}`);
-  ({ deep: state.deep, sky: state.sky }[v as Exclude<View, 'dial'>])?.stage.resize();   // its title block is now this view's
+  if (v === 'sky' || v === 'deep') ({ deep: state.deep, sky: state.sky }[v])?.stage.resize();   // its title block is now this view's
   $('sky-controls').hidden = v !== 'sky'; skySheetOpts();
+  $('day-controls').hidden = v !== 'day';
   adoptCompass();                                                   // the compass came on elsewhere: Sky follows it from here
-  focus.setAvailable(timed(v));                                     // the top bar folds away in Sky and the Dial
-  tp.setDegreeAvailable(timed(v));                                  // only Sky and the Dial have a time of day
+  focus.setAvailable(timed(v));                                     // the top bar folds away in Sky, the Dial and The Day
+  tp.setDegreeAvailable(timed(v));                                  // only Sky, the Dial and The Day have a time of day
   tp.setYearView(v === 'deep');                                     // Deep Time plays by year
   $('deep-controls').hidden = v !== 'deep';                          // shown in Deep Time's compact layout (style.css)
   if (v === 'sky' && state.doc) {
@@ -371,6 +420,11 @@ async function setView(v: View, push = true) {
     $('stage').setAttribute('aria-busy', 'false');
   }
   if (v === 'dial' && state.doc) ensureStars();
+  if (v === 'day' && state.doc) {
+    $('stage').setAttribute('aria-busy', 'true');
+    try { await ensureDay(); $('status').hidden = true; } catch (e) { $('status').className = 'status error'; $('status').hidden = false; $('status').textContent = `Star catalogue unavailable (${(e as Error).message}).`; }
+    $('stage').setAttribute('aria-busy', 'false');
+  }
   if (v === 'deep' && state.doc) {
     $('stage').setAttribute('aria-busy', 'true');
     try { await syncDeep(); } catch (e) { $('status').className = 'status error'; $('status').hidden = false; $('status').textContent = `Deep-time data unavailable (${(e as Error).message}).`; }
@@ -380,12 +434,14 @@ async function setView(v: View, push = true) {
   update();
 }
 
-const DKEY = 'enoch.sky.daylight.v1', BKEY = 'enoch.sky.bearing.v1';
+const DKEY = 'enoch.sky.daylight.v1', BKEY = 'enoch.sky.bearing.v1', PKEY = 'enoch.sky.paths.v1';
 /** The details sheet's Sky options (a phone's Refraction and Portal ★): shown on Sky only. */
 const skySheetOpts = () => { $('sky-sheet-opts').hidden = state.view !== 'sky' || !$('sky-sheet-opts').childElementCount; };
 /** Sky as its buttons stand: the view is rebuilt for each year and site, and keeps the reader's choices. */
 const skyLayers = () => ({ figures: on('figures'), portalStars: on('portal-stars'), planets: on('planets'), refraction: on('refraction'), daylight: on('daylight'), below: on('below'), bearing: on('bearing') });
 const on = (id: string) => $(id).classList.contains('on');
+/** Set a layer chip on or off (the app's own change, not a tap). */
+const setOn = (id: string, v: boolean) => { const b = $(id); b.classList.toggle('on', v); b.setAttribute('aria-pressed', String(v)); };
 /** A layer chip under the title: flip it and say which way it now stands. */
 function toggle(id: string) {
   const b = $(id), on = !b.classList.contains('on');
@@ -461,8 +517,9 @@ function bindTransport() {
     if (e.key === 's' || e.key === 'S') tp.cycleSpeed();
     if (e.key === 'n' || e.key === 'N') goNow();
     if (e.key === 'f' || e.key === 'F') focus.toggle();
-    const stage = state.view === 'dial' ? null : { sky: state.sky, deep: state.deep }[state.view]?.stage;
-    if (e.key === '+' || e.key === '=') stage?.zoomStep(1.25); if (e.key === '-') stage?.zoomStep(0.8); if (e.key === '0') stage?.setZoom(null);
+    const stage = state.view === 'sky' ? state.sky?.stage : state.view === 'day' ? state.day?.sky.stage : state.view === 'deep' ? state.deep?.stage : null;
+    if (e.key === '+' || e.key === '=') stage?.zoomStep(1.25); if (e.key === '-') stage?.zoomStep(0.8);
+    if (e.key === '0') { const sky = state.view === 'sky' ? state.sky : state.view === 'day' ? state.day?.sky : null; if (sky) sky.stage.home(); else stage?.setZoom(null); }   // following the Sun, home is its 1×
     const n = Number(e.key); if (n >= 1 && n <= ORDER.length && !e.metaKey && !e.ctrlKey && !e.altKey) setView(ORDER[n - 1]);
     if (e.key === 'Escape' && state.view === 'dial') { state.dial?.deselect(); update(); }
   });

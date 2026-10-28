@@ -1,17 +1,19 @@
-/* The Studio's frame: 540 × 960 CSS pixels (9:16), recorded at 2× for 1080 × 1920. Every size here is in frame pixels;
-   the preview scales the whole frame to the window (--s), the recording shows it 1:1. Nothing animates by itself: every
-   change comes from seek(), so each frame is exactly the instant asked for. */
+/* The Studio's frame: 540 × 960 CSS pixels (9:16), recorded at 2× for 1080 × 1920. The drawing is The Day's (src/day/day.css);
+   here, the frame, its title and the preview's controls. The preview scales the whole frame to the window (--s); the recording
+   shows it 1:1. Nothing animates by itself: every change comes from seek(), so each frame is exactly the instant asked for. */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { background: #040403; color: var(--ivory); }
-body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px 0; }
+body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 12px 0; }
 body.capture { display: block; min-height: 0; padding: 0; background: var(--bg); }
 body.capture .st-controls { display: none; }
 
-.st-holder { width: calc(540px * var(--s, 1)); height: calc(960px * var(--s, 1)); }
+.st-holder { width: calc(540px * var(--s, 1)); height: calc(960px * var(--s, 1)); flex: none; overflow: hidden; }   /* the frame keeps its 540 px box when scaled: clipped here, it cannot widen the page */
+body:not(.capture) .st-holder { max-width: calc(100vw - 24px); }   /* nor before the preview has measured the window (a phone would zoom out to fit it) */
 .st-frame { position: relative; width: 540px; height: 960px; overflow: hidden; background: var(--bg); transform: scale(var(--s, 1)); transform-origin: 0 0; }
+.st-day { position: absolute; inset: 0; }
 
 /* the title: the place, the weekday and course, the clock; the Enoch and civil dates, the part of the day */
-.st-head { position: absolute; left: 0; right: 0; top: 0; padding: 18px 22px 0; z-index: 3; pointer-events: none;
+.st-head { position: absolute; left: 0; right: 0; top: 0; padding: 18px 22px 0; z-index: 4; pointer-events: none;
   background: linear-gradient(to bottom, var(--bg) 70%, rgba(9, 8, 7, 0)); height: 124px; }
 .st-mark { display: flex; justify-content: space-between; font-family: var(--cond); font-size: 10px; letter-spacing: .28em; color: var(--ivory3); text-transform: uppercase; }
 .st-mark b { color: var(--gold); font-weight: 500; letter-spacing: .44em; }
@@ -24,38 +26,12 @@ body.capture .st-controls { display: none; }
 .st-sub b { color: var(--ivory); font-weight: 400; }
 #daypart { color: var(--gold); }
 
-/* the Sky, facing the Sun; its edges fade into the frame */
-.st-sky { position: absolute; left: 0; right: 0; top: 104px; height: 400px;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%, #000 91%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 9%, #000 91%, transparent 100%); }
-.st-sky canvas.gl, .st-sky svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-
-/* the Dial, Sun-up: wider than the frame, its lower part below the frame's edge */
-.st-dial { position: absolute; left: -30px; top: 500px; width: 600px; height: 600px; }
-.st-dial svg { width: 100%; height: 100%; display: block; overflow: visible; }
-
-/* the thread: the Sun in the sky to the Sun on the face */
-.st-thread { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
-#thread-line { stroke: var(--gold-hi); stroke-width: 1; opacity: .6; }
-#thread-glow { stroke: var(--gold); stroke-width: 6; opacity: .08; stroke-linecap: round; }
-
-/* the captions and the day bar */
-.st-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 132px; padding: 0 22px 14px; z-index: 3; pointer-events: none;
-  display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(to bottom, rgba(9, 8, 7, 0), rgba(9, 8, 7, .9) 34%, var(--bg)); }
-.st-caps { display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; min-height: 66px; }
-.cap { display: flex; gap: 10px; align-items: baseline; font-family: var(--mono); font-size: 12.5px; color: var(--ivory2); white-space: nowrap; text-shadow: 0 0 6px #050504; }
-.cap b { color: var(--c, var(--ivory)); font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
-.cap time { color: var(--ivory); font-variant-numeric: tabular-nums; }
-.cap.sum { white-space: normal; }
-.cap.title b { color: var(--gold); letter-spacing: .24em; font-family: var(--cond); font-size: 11px; }
-.st-bar { width: 100%; height: 40px; margin-top: 8px; display: block; overflow: visible; }
-.st-bar text { font-family: var(--mono); font-size: 8.5px; fill: var(--ivory3); letter-spacing: .06em; }
-
-.st-status { position: absolute; left: 0; right: 0; top: 46%; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--ivory2); z-index: 4; }
+.st-status { position: absolute; left: 0; right: 0; top: 46%; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--ivory2); z-index: 5; }
 .st-status.error { color: #d9614f; padding: 0 30px; }
 .st-status[hidden] { display: none; }
 
-/* the preview's controls (not in the recording) */
-.st-controls { display: flex; align-items: center; gap: 12px; font-family: var(--mono); font-size: 12px; color: var(--ivory2); }
-.st-controls button { font: inherit; width: 34px; height: 30px; background: #0b0a08; color: var(--gold-hi); border: 1px solid var(--rule2); cursor: pointer; }
-.st-controls input { width: 360px; accent-color: #d6b26a; }
-#readout { min-width: 190px; font-variant-numeric: tabular-nums; }
+/* the preview's controls (not in the recording): as wide as the frame on screen, never wider than the window */
+.st-controls { display: flex; align-items: center; gap: 10px; width: calc(540px * var(--s, 1)); max-width: calc(100vw - 24px); font-family: var(--mono); font-size: 12px; color: var(--ivory2); }
+.st-controls button { flex: none; font: inherit; width: 40px; height: 34px; background: #0b0a08; color: var(--gold-hi); border: 1px solid var(--rule2); cursor: pointer; }
+.st-controls input { flex: 1; min-width: 0; accent-color: #d6b26a; }
+#readout { flex: none; font-variant-numeric: tabular-nums; }

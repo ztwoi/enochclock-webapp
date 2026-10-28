@@ -48,8 +48,10 @@ button.chip:hover, .btn:hover { border-color: var(--gold-dim); color: var(--gold
 .opts[hidden] { display: none; } .opts::-webkit-scrollbar { display: none; }
 .opts .btn { flex: none; min-height: 32px; padding: 0 11px; font-size: 11px; background: rgba(9,8,7,.7); }
 .opts .btn:not(.on) { color: var(--ivory3); } .opts .btn.on { background: rgba(214,178,106,.12); }   /* on: gold, lit; off: dim */
-/* Sky has no title: its options open the head, clear of the full-screen button */
-.stage[data-view=sky] .view-head { right: 72px; } .stage[data-view=sky] #sky-controls { margin-top: 0; max-width: 100%; }
+/* Sky and The Day have no title: their options open the head, clear of the full-screen button */
+.stage:is([data-view=sky], [data-view=day]) .view-head { right: 72px; } .stage[data-view=sky] #sky-controls, .stage[data-view=day] #day-controls { margin-top: 0; max-width: 100%; }
+/* wide screens: Sky's row wraps rather than scroll its last options out of sight (tablets scroll it; phones keep the layers in the sheet) */
+@media (min-width: 1101px) and (min-aspect-ratio: 1/1) { .stage[data-view=sky] #sky-controls { flex-wrap: wrap; overflow: visible; } }
 .sheet-opts { flex-wrap: wrap; overflow: visible; max-width: none; }
 .opts .seg { display: flex; flex: none; } .opts .seg .btn + .btn { margin-left: -1px; } .opts .seg .btn.on { position: relative; }  /* shared edges; the chosen one's on top */
 .opts .opt-sel { flex: none; display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 4px 0 10px; border: 1px solid var(--rule2); background: rgba(9,8,7,.7); font-family: var(--mono); font-size: 11px; color: var(--ivory2); white-space: nowrap; }
@@ -160,7 +162,7 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6p
   .when-wrap { grid-area: when; } .when-wrap svg#cycle-track { display: none; } #tp { grid-area: tp; justify-content: center; } #more { grid-area: more; }
   .when-wrap { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 10px; } .when .course-chip { margin-right: 8px; }
   .when-wrap #now { min-height: 36px; padding: 0 12px; }
-    .stage[data-view=sky] .view-head { right: 56px; }
+    .stage:is([data-view=sky], [data-view=day]) .view-head { right: 56px; }
   .view-head { left: 16px; top: 12px; } .view-head h1 { font-size: 24px; } .view-head .quote { display: none; }
   .foot { display: none; }
   .sheet-ctl .ctl { width: 100%; justify-content: flex-start; }
@@ -173,7 +175,7 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6p
   .mark span, #time-chip { display: none; } .mark b { font-size: 18px; } .top { padding: 6px 12px; gap: 6px 10px; }
   #site-chip { flex: 1 1 0; min-width: 0; max-width: none; text-align: right; } #site-chip .coords { display: none; }   /* the place sits in the bar's first row, beside Watch and Primer; its coordinates are in the chip's title and the site dialog */
 }
-/* focus: the top bar folds away (Sky, the Dial); the button stays at the stage's top right */
+/* focus: the top bar folds away (Sky, the Dial, The Day); the button stays at the stage's top right */
 .app.focus { grid-template-rows: 0 minmax(0, 1fr) auto; padding-top: env(safe-area-inset-top); }
 .focus > .top { visibility: hidden; overflow: hidden; padding-top: 0; padding-bottom: 0; border: 0; }
 .focus-btn { position: absolute; z-index: 4; right: 24px; top: 24px; width: 36px; height: 36px; padding: 0; display: grid; place-items: center; background: rgba(9,8,7,.7); color: var(--ivory3); }

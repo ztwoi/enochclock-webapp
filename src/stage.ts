@@ -70,6 +70,8 @@ export interface StageOptions {
    *  allows, wholly in view (a tall screen keeps it whole by showing more of the scene under `rest`). Replaces `frame`. */
   gaze?: { bounds: [number, number, number, number]; rest: number; inset?: () => number; focus?: () => [number, number] };
 }
+/** A view's own handling of zooms (src/day/follow.ts): see createStage's zoomHook. */
+export interface ZoomHook { active(): boolean; zoom(factor: number | null): boolean }
 /** A design that repeats sideways every `period` units from `x0` (a panorama all around): the view turns without end. */
 export interface Wrap { x0: number; period: number }
 /** THREE layer of objects drawn once, not once per turn (spans of several turns: no seam where copies would meet). */
@@ -180,6 +182,11 @@ export function createStage(host: HTMLElement, label: string, opts: StageOptions
     return { cx, cy: clamp(z.cy, vh, DH), k };
   };
   const users: (() => void)[] = [];                               // told when the user (not the app) moves the view
+  /** A view that takes zooms for itself while `active` (following the Sun, a zoom is its multiplier, not a hand on the view):
+   *  `zoom` is given a pinch's, the wheel's or zoomStep's factor, or null for the home view (a double tap, home()), and says
+   *  whether it took it. While active, a finger must also move further before it counts as a hand taking the view. */
+  let zoomHook: ZoomHook | null = null;
+  const takes = (f: number | null) => !!zoomHook?.active() && zoomHook.zoom(f);
   const byUser = () => { for (const f of users) f(); };
   const viewers: ((v: { x: number; y: number; w: number; h: number }) => void)[] = [];
   function resize() {
@@ -236,30 +243,40 @@ export function createStage(host: HTMLElement, label: string, opts: StageOptions
   // Gestures, as on the Dial: wheel or pinch to zoom, drag to pan, double-tap/double-click for the
   // home view. A tap stays a click (the views' selections); a drag or pinch swallows its click.
   const pts = new Map<number, { x: number; y: number }>();
-  let pinch: { d: number } | null = null, down: { x: number; y: number; t: number; moved: boolean } | null = null, swallow = false, lastTap = -Infinity;
+  // `multi`: the gesture has had two fingers; until every finger is lifted it is a pinch, never a drag (one finger always lifts
+  // first, and drifts as it does)
+  let pinch: { d: number } | null = null, down: { x: number; y: number; t: number; moved: boolean; multi: boolean } | null = null, swallow = false, lastTap = -Infinity;
   const on = <K extends keyof HTMLElementEventMap>(t: K, f: (e: HTMLElementEventMap[K]) => void, o?: AddEventListenerOptions) => { host.addEventListener(t, f as EventListener, o); offs.push(() => host.removeEventListener(t, f as EventListener, o)); };
   const offs: (() => void)[] = [];
   if (opts.gestures !== false) {
     on('wheel', (e) => {
       e.preventDefault();
+      if (opts.gaze && !e.ctrlKey && Math.abs(e.deltaX) > Math.abs(e.deltaY)) { byUser(); panBy(-e.deltaX, 0); return; }   // a sideways trackpad swipe turns the gaze
+      const f = Math.exp(-e.deltaY * 0.0015);
+      if (takes(f)) return;
       byUser();
-      if (opts.gaze && !e.ctrlKey && Math.abs(e.deltaX) > Math.abs(e.deltaY)) { panBy(-e.deltaX, 0); return; }   // a sideways trackpad swipe turns the gaze
-      zoomBy(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
+      zoomBy(f, e.clientX, e.clientY);
     }, { passive: false });
     on('pointerdown', (e) => {
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (pts.size === 1) { down = { x: e.clientX, y: e.clientY, t: e.timeStamp, moved: false }; swallow = false; }
-      if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) }; if (down) down.moved = true; }
+      if (pts.size === 1) { down = { x: e.clientX, y: e.clientY, t: e.timeStamp, moved: false, multi: false }; swallow = false; }
+      if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) }; if (down) { down.moved = true; down.multi = true; } }
     });
     on('pointermove', (e) => {
       const p = pts.get(e.pointerId); if (!p) return;
       const px = p.x, py = p.y; p.x = e.clientX; p.y = e.clientY;
-      if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) down.moved = true;
-      if ((pts.size === 2 && pinch) || (pts.size === 1 && down?.moved)) byUser();
+      const slop = zoomHook?.active() ? 18 : 6;                     // following, a finger settling before the second lands is not a drag
+      if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > slop) down.moved = true;
+      if (pts.size === 2 && pinch && zoomHook?.active()) {          // a pinch the view takes as a zoom of its own: no pan, no hand
+        const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (zoomHook.zoom(d / pinch.d)) { pinch.d = d; return; }
+      }
+      const drag = pts.size === 1 && !!down?.moved && !down.multi;
+      if ((pts.size === 2 && pinch) || drag) byUser();
       if (pts.size === 2 && pinch) {
         const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
         zoomBy(d / pinch.d, (a.x + b.x) / 2, (a.y + b.y) / 2); panBy((e.clientX - px) / 2, (e.clientY - py) / 2); pinch.d = d;
-      } else if (pts.size === 1 && down?.moved) panBy(e.clientX - px, e.clientY - py);
+      } else if (drag) panBy(e.clientX - px, e.clientY - py);
     });
     const end = (e: PointerEvent) => {
       if (!pts.delete(e.pointerId)) return;
@@ -267,14 +284,14 @@ export function createStage(host: HTMLElement, label: string, opts: StageOptions
       if (pts.size === 0 && down) {
         swallow = down.moved;
         if (!down.moved && e.timeStamp - down.t < 700 && e.pointerType !== 'mouse') {
-          if (e.timeStamp - lastTap < 320) { byUser(); setZoom(null); lastTap = -Infinity; } else lastTap = e.timeStamp;
+          if (e.timeStamp - lastTap < 320) { if (!takes(null)) { byUser(); setZoom(null); } lastTap = -Infinity; } else lastTap = e.timeStamp;
         }
         down = null;
       }
     };
     on('pointerup', end); on('pointercancel', end); on('pointerleave', (e) => { if (e.pointerType === 'mouse') end(e); });
     on('click', (e) => { if (swallow) { e.stopPropagation(); e.preventDefault(); swallow = false; } }, { capture: true });
-    on('dblclick', (e) => { e.preventDefault(); byUser(); setZoom(null); });
+    on('dblclick', (e) => { e.preventDefault(); if (takes(null)) return; byUser(); setZoom(null); });
     for (const t of ['gesturestart', 'gesturechange'] as const) on(t as keyof HTMLElementEventMap, (e) => e.preventDefault());
   }
 
@@ -298,7 +315,11 @@ export function createStage(host: HTMLElement, label: string, opts: StageOptions
     /** Centre the view on a design point at a magnification (1 = the whole design); null = the home view. */
     setZoom(z: Zoom | null) { setZoom(z); },
     /** Magnify by f about the middle of the stage (keys, buttons). */
-    zoomStep(f: number) { const r = host.getBoundingClientRect(); zoomBy(f, r.left + r.width / 2, r.top + r.height / 2); },
+    zoomStep(f: number) { if (takes(f)) return; const r = host.getBoundingClientRect(); zoomBy(f, r.left + r.width / 2, r.top + r.height / 2); },
+    /** The home view (the 0 key), unless the hook takes it. */
+    home() { if (!takes(null)) setZoom(null); },
+    /** Let the view take zooms and the home view for itself while the hook is active (null: no hook). */
+    setZoomHook(h: ZoomHook | null) { zoomHook = h; },
     get zoom() { const [w, h] = size(); return w && h ? current(w, h) : null; },
     /** Design-space point → client pixels (via the overlay's CTM, shared with the camera mapping). */
     toScreen(x: number, y: number) { const m = overlay.getScreenCTM(); if (!m) return null; const q = new DOMPoint(x, y).matrixTransform(m); return { x: q.x, y: q.y }; },

@@ -1,6 +1,6 @@
 // Focus: the top bar (mark, site, tabs) folds away so the drawing has the screen; the button (or F)
 // brings it back. A web page cannot go full screen on an iPhone, so the app's own chrome folds
-// instead. The choice is remembered on the device, shared by the views that offer it (Sky, the Dial).
+// instead. The choice is remembered on the device, shared by the views that offer it (Sky, the Dial, The Day).
 const KEY = 'enoch.focus.v1';
 const ICON = {
   open: '<path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/>',     // corners outward: give the drawing the screen

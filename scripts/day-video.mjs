@@ -10,7 +10,7 @@
 // jerusalem, sydney, london) or --lat --lon [--elev] --tz [--name] · --seconds 40 (sunrise to sunrise) · --fps 30 · --intro 1 ·
 // --hold 3 · --out out/day-<date>-<site>.mp4 · --jobs 4 (pages drawing at once) · --crf 18 · --audio <file> (laid under the
 // video, cut to its length, faded out) · --url <a running dev server> (default: start one).
-// Needs ffmpeg on PATH, the calculator staged (npm run stage), and Chrome (or `npx playwright install chromium`).
+// Needs ffmpeg on PATH and Chrome (or `npx playwright install chromium`); without --url, the calculator staged (npm run stage).
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
@@ -21,7 +21,6 @@ const root = path.resolve(import.meta.dirname, '..');
 const { values: o } = parseArgs({ options: Object.fromEntries(['date', 'site', 'lat', 'lon', 'elev', 'tz', 'name', 'seconds', 'fps', 'intro', 'hold', 'out', 'jobs', 'crf', 'audio', 'url']
   .map((k) => [k, { type: 'string' }])) });
 const fail = (msg) => { console.error(`day-video: ${msg}`); process.exit(1); };
-if (!existsSync(path.join(root, 'public/calculator/manifest.json'))) fail('the calculator is not staged: run `npm run stage` first');
 if (o.audio && !existsSync(o.audio)) fail(`no audio file at ${o.audio}`);
 
 const slug = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -34,6 +33,7 @@ mkdirSync(path.dirname(out), { recursive: true });
 // the page: a running server, or our own (Vite's dev server, on the next free port from 4178)
 let server = null, base = o.url;
 if (!base) {
+  if (!existsSync(path.join(root, 'public/calculator/manifest.json'))) fail('the calculator is not staged: run `npm run stage` first (or record from a running site with --url)');
   const { createServer } = await import('vite');
   server = await createServer({ root, logLevel: 'warn', server: { host: '127.0.0.1', port: 4178, strictPort: false } });
   await server.listen();

@@ -1,4 +1,4 @@
-// What happens in one Enoch day, sunrise to sunrise, for the Studio's captions and day bar: the Sun's rising and setting (the
+// What happens in one Enoch day, sunrise to sunrise, for The Day's captions, day bar and details: the Sun's rising and setting (the
 // calculator's), its highest and lowest (solar noon and midnight), and every rising and setting of the planets and the Moon
 // (Astronomy Engine, the same positions the Sky draws). Pure: no page, so the tests run it.
 import { AstroTime, Body, Observer, SearchHourAngle, SearchRiseSet } from 'astronomy-engine';

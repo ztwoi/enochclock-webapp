@@ -1,0 +1,25 @@
+/* The Day (src/day/view.ts): the boxes are placed in pixels by its geometry; here, how each looks. Shared by the app's view and
+   the Studio's frame. */
+.dv-root { position: absolute; inset: 0; overflow: hidden; }
+.dv-sky { position: absolute; -webkit-mask-image: linear-gradient(to bottom, #000 90%, transparent); mask-image: linear-gradient(to bottom, #000 90%, transparent); }
+.dv-root.side .dv-sky { -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }
+.dv-sky canvas.gl, .dv-sky svg.overlay { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.dv-dial { position: absolute; display: block; overflow: visible; pointer-events: none; }
+
+/* the thread: the Sun in the sky to the Sun on the face */
+.dv-thread { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; overflow: visible; }
+.dv-line { fill: none; stroke: var(--gold-hi); stroke-width: 1; opacity: .6; }
+.dv-glow { fill: none; stroke: var(--gold); stroke-width: 6; opacity: .08; stroke-linecap: round; }
+
+/* the captions and the day bar, over the foot of the drawing */
+.dv-foot { position: absolute; z-index: 3; pointer-events: none; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 22px 14px;
+  background: linear-gradient(to bottom, rgba(9, 8, 7, 0), rgba(9, 8, 7, .88) 36%, rgba(9, 8, 7, .96)); }
+.dv-caps { display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; min-height: 66px; }
+.dv-caps .cap { display: flex; flex-wrap: wrap; column-gap: 10px; align-items: baseline; font-family: var(--mono); font-size: 12.5px; color: var(--ivory2); text-shadow: 0 0 6px #050504; }
+.dv-caps .cap b { color: var(--c, var(--ivory)); font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
+.dv-caps .cap time { color: var(--ivory); font-variant-numeric: tabular-nums; }
+.dv-bar { width: 100%; height: 40px; margin-top: 8px; display: block; overflow: visible; flex: none; }
+.dv-bar.scrub { pointer-events: auto; cursor: ew-resize; touch-action: none; }
+.dv-bar text { font-family: var(--mono); font-size: 8.5px; fill: var(--ivory3); letter-spacing: .06em; }
+.dv-events dt { letter-spacing: .08em; }
+.dv-events dd small { color: var(--ivory3); font-size: 10px; }

@@ -1,8 +1,8 @@
-// The Studio's day of events (SF 2026 fixture): the Sun's from the calculator, the planets' and the Moon's from Astronomy Engine.
+// The Day's events (SF 2026 fixture): the Sun's from the calculator, the planets' and the Moon's from Astronomy Engine.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { dayEvents, risingWithSun } from '../src/studio/events.ts';
+import { dayEvents, risingWithSun } from '../src/day/events.ts';
 import type { YearDoc } from '../src/types.ts';
 
 const doc = JSON.parse(readFileSync(new URL('./fixtures/sf-2026.json', import.meta.url), 'utf8')) as YearDoc;

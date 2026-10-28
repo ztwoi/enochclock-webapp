@@ -7,7 +7,9 @@ import { skyFrame, starVector } from '../sky/astronomy';
 import type { Star } from '../sky/catalogue';
 import type { YearDoc } from '../types';
 
-export type Framing = 'sun' | 'north' | 'compass';
+/** Which way the face is turned: north at the top, the Sun's line at the top, the device's heading at the top, or the Sun's line at
+ *  the left ('sun-left': The Day's wide layout, the face beside the sky to its left). */
+export type Framing = 'sun' | 'north' | 'compass' | 'sun-left';
 export const PLANETS: [Body, string][] = [[Body.Mercury, 'Mercury'], [Body.Venus, 'Venus'], [Body.Mars, 'Mars'], [Body.Jupiter, 'Jupiter'],
   [Body.Saturn, 'Saturn'], [Body.Uranus, 'Uranus'], [Body.Neptune, 'Neptune']];
 /** Each planet's colour, on the Dial and in Sky. */
@@ -87,7 +89,7 @@ export function dialState(doc: YearDoc, jd: number, stars: Star[] = [], framing:
   const step = 30 / 86400, aheadSun = skyFrame(jd + step, lat, lon, elev).sun, behind = skyFrame(jd - step, lat, lon, elev).sun;
   const sunRate = dAz(behind.az, aheadSun.az);           // degrees per minute (a 60 s span)
   // Framing: the screen angle of a true bearing is bearing + F (clockwise from the top).
-  const F = framing === 'sun' ? -sun.az : framing === 'compass' ? -heading : 0, needle = wrap(sun.az + F);
+  const F = framing === 'sun' ? -sun.az : framing === 'sun-left' ? -sun.az - 90 : framing === 'compass' ? -heading : 0, needle = wrap(sun.az + F);
   return {
     jd, i, row: r, ext: e, part, phases, time: enochTime(part), sun: { ...sun, rate: sunRate }, moon: { ...moon, fraction: Illumination(Body.Moon, f.time).phase_fraction },
     planets, bright, trace: d.trace, reversals: d.reversals, path: d.path, day: d, F, needle, framing, heading, dayParts: e.day_parts, textParts: e.text_day_parts,

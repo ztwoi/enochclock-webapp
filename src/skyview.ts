@@ -178,7 +178,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   /** x of `az` beside the design point x0 (the shorter way, so a chord or a run may cross the seam). */
   const beside = (x0: number, az0: number, az: number) => x0 + wrap180(az - az0) * K;
 
-  // ---- the day's paths (off by default; the Studio's): the Sun from this sunrise to the next, solid where it has been and dotted
+  // ---- the day's paths (off by default: Sky's Paths, The Day): the Sun from this sunrise to the next, solid where it has been and dotted
   // ahead, a dot at every part; each planet's track a faint line in its colour. Computed once per day, as drawn (aberrated, refracted).
   const PATH_STEPS = 12;                                          // samples per part
   const pathPast = line([[0, 0], [1, 0]], C.goldHi, 1.6, 0.85, undefined, 2.8), pathAhead = line([[0, 0], [1, 0]], C.gold, 1, 0.55, [3, 5], 2.8);
@@ -431,6 +431,8 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
       const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return;
       st.setZoom({ cx: skyX(az), cy: skyY(alt), k: h / (Math.min(w / W, h / H) * span * K) });
     },
+    /** Degrees of altitude from the view's top to its bottom. */
+    viewSpan: () => (st.camera.bottom - st.camera.top) / K,
     /** Client pixels of a direction, on the copy of the panorama in view (null when the stage has no layout). */
     toScreen(az: number, alt: number) {
       const x = skyX(az), cx = st.zoom?.cx;

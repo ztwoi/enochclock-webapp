@@ -12,13 +12,17 @@ It is a static site. Every calculation runs in your browser; nothing is sent to 
 
 ## The instrument
 
-Three views share one time cursor:
+Four views share one time cursor:
 
 - **Sky.** The real sky over the six eastern portals (1 Enoch 72) at any of the 18 parts of the selected day: stars,
-  constellation figures, Sun, Moon and planets. Turn to the east or west, or follow the device's compass. Click a star or
-  planet to see where it rises and sets against the portals.
+  constellation figures, Sun, Moon and planets. Turn to the east or west, follow the device's compass, or follow the Sun.
+  **Paths** draws the day's course of the Sun (solid behind it, dotted ahead) and of each planet. Click a star or planet to
+  see where it rises and sets against the portals.
 - **The Dial.** Every layer of the calendar on one face, each ring turned onto the Sun's line, with the planets, Moon and
   bright stars. Frame it north-up, Sun-up or by compass.
+- **The Day.** The Sky and the Dial together, sunrise to sunrise: the sky turns with the Sun and the Dial is turned to face
+  it, joined by a gold thread through the Sun (sky over dial on a phone, side by side on a wide screen). Captions name each
+  rising and setting as the day reaches it, and the day bar under it moves through the day.
 - **Deep Time.** About 30,000 annual Day 1s against the independently solved March equinox, with the 294-year cycle
   boundaries. Click a year to open it.
 
@@ -36,8 +40,12 @@ present.
 | ← → | step a day (Shift: a degree; in Deep Time, a year) |
 | D · S | switch Day / Degree · change speed |
 | N · F | follow now · fold away the top bar |
-| 1 2 3 | Sky · The Dial · Deep Time |
-| + − 0 | zoom Sky or Deep Time in, out, home |
+| 1 2 3 4 | Sky · The Dial · The Day · Deep Time |
+| + − 0 | zoom Sky, The Day or Deep Time in, out, home |
+
+Following the Sun, the view opens out at midday and midnight so the horizon and the Sun are both in view. Zoom in first
+and it follows that close; a pinch or the wheel zooms while it follows, and a double tap (or 0) brings back the whole view.
+A drag takes the sky back.
 
 Each year carries an **Accuracy** section. It stays closed while Day 1 is within 1.5 days of the March equinox and the
 uncertainty in Earth's rotation (ΔT) is under an hour; beyond that it opens and gives the reasons.
@@ -68,6 +76,7 @@ Other commands:
 | `npm run preview` | serves `dist/` on http://127.0.0.1:4176 |
 | `npm test` | runs the unit tests |
 | `npm run fetch-ephe` | downloads the ephemeris files without building |
+| `npm run video` | records a day as an mp4 (see [Day videos](#day-videos)) |
 
 ## Deploy
 
@@ -89,6 +98,23 @@ secure page: HTTPS, or `localhost`.
 The **Watch** button and the **Primer** page play a short film, "The courses of the luminaries". Its videos are not in the
 repository; [`film/`](film/README.md) holds the Remotion project that renders them.
 
+## Day videos
+
+`npm run video` records The Day, sunrise to sunrise, as a 1080 × 1920 mp4 for social media: a hidden page,
+`studio.html`, draws each frame at its exact instant in headless Chrome (Playwright) and ffmpeg encodes them. It needs
+ffmpeg and Chrome.
+
+```sh
+npm run video -- --date 2026-10-28 --site jerusalem
+npm run video -- --date 2026-12-21 --lat 21.31 --lon -157.86 --tz Pacific/Honolulu --name Honolulu --seconds 30
+npm run video -- --url https://enochclock.com --site london          # today, recorded from the live site
+```
+
+Presets for `--site`: `san-francisco`, `jerusalem`, `sydney`, `london`. Other options: `--seconds` (sunrise to sunrise,
+default 40), `--fps`, `--intro` and `--hold` (seconds held at sunrise and on the closing summary), `--audio <file>`,
+`--crf`, `--jobs`, `--out` (default `out/day-<date>-<site>.mp4`). Open `studio.html?date=…&site=…` in a browser to preview
+and scrub a day.
+
 ## Layout
 
 | Path | Contents |
@@ -96,8 +122,9 @@ repository; [`film/`](film/README.md) holds the Remotion project that renders th
 | `src/` | the app (TypeScript, Three.js, Vite) |
 | `src/calculator/` | the browser calculator: a worker that runs the Swiss Ephemeris (WebAssembly) and `engine/`, the calendar, sunrise and cycle arithmetic |
 | `src/dial/`, `src/sky/`, `src/compass/`, `src/pwa/` | the Dial, the sky, the compass and magnetic declination, and offline install |
+| `src/day/`, `src/studio/` | The Day (the Sky and the Dial together, its events and its following of the Sun) and its video frame |
 | `public/` | fonts, icons, the star catalogue (`sky/`), Deep Time's data (`deep/`) and the Tutorial, Primer (Enoch) and Evidence (Phoenix) pages |
-| `scripts/` | the ephemeris download and the build's staging steps |
+| `scripts/` | the ephemeris download, the build's staging steps and the day-video recorder |
 | `tests/` | unit tests and their fixtures |
 | `sw/`, `nginx/`, `nginx.conf` | the service worker and the web server configuration |
 | `film/` | the film's source |
