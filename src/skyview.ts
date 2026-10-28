@@ -15,7 +15,7 @@ import { aberrated, aberration, declinationOfDate, ecliptic, horizonAzimuth, lit
 import { PCOL, PLANETS } from './dial/state';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { easeHeading, mod360, wrap180 } from './sky/heading';
-import { dayIndexAt, GEEZ, PORTAL_ALT, pillars } from './model';
+import { dayIndexAt, GEEZ, H, PORTAL_ALT, pillars, W } from './model';
 import { C, createStage, hatchMaterial, headClearance, sprite, svgEl, UNTILED, type Pt } from './stage';
 import type { Portal, YearDoc } from './types';
 
@@ -58,7 +58,7 @@ const fields = new WeakMap<object, StarField>();
 const starFieldOf = (cat: Catalogue) => { let f = fields.get(cat.stars); if (!f) fields.set(cat.stars, f = new StarField(cat.stars)); return f; };
 
 export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSelect: (s: Selection) => void) {
-  let homeSide: Side = 'east', magLimit = 6.5, figuresOn = true, portalStarsOn = true, planetsOn = true, refractionOn = true, daylightOn = true, belowOn = true, bearingOn = false, selection: Selection = null, jd = doc.rows[0].sunrise_jd_ut;
+  let homeSide: Side = 'east', magLimit = 6.5, figuresOn = true, portalStarsOn = true, planetsOn = true, refractionOn = true, daylightOn = true, belowOn = true, bearingOn = false, pathsOn = false, selection: Selection = null, jd = doc.rows[0].sunrise_jd_ut;
   /** The lowest altitude in frame: the nadir (Below horizon, on by default), or 18° under the horizon; the gaze's bounds and the ground follow it. */
   let lowest = -90;
   const inFrame = (_az: number, alt: number) => inFrameTo(alt, lowest);
@@ -178,6 +178,39 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   /** x of `az` beside the design point x0 (the shorter way, so a chord or a run may cross the seam). */
   const beside = (x0: number, az0: number, az: number) => x0 + wrap180(az - az0) * K;
 
+  // ---- the day's paths (off by default; the Studio's): the Sun from this sunrise to the next, solid where it has been and dotted
+  // ahead, a dot at every part; each planet's track a faint line in its colour. Computed once per day, as drawn (aberrated, refracted).
+  const PATH_STEPS = 12;                                          // samples per part
+  const pathPast = line([[0, 0], [1, 0]], C.goldHi, 1.6, 0.85, undefined, 2.8), pathAhead = line([[0, 0], [1, 0]], C.gold, 1, 0.55, [3, 5], 2.8);
+  const planetTracks = PLANETS.map(([, name]) => line([[0, 0], [1, 0]], PCOL[name], 0.7, 0.3, undefined, 2.6));
+  const pathDots = svgEl('g', { style: 'pointer-events:none' }, layer);
+  let pathKey = '', sunTrack: Pt[] = [], sunDirs: { az: number; alt: number }[] = [];
+  /** Points along a run of directions, each beside the one before (a track through north stays one line). */
+  const trackOf = (dirs: { az: number; alt: number }[]) => { const pts: Pt[] = []; dirs.forEach((d, k) => pts.push([k ? beside(pts[k - 1][0], dirs[k - 1].az, d.az) : skyX(d.az), skyY(d.alt)])); return pts; };
+  const setLine = (l: ReturnType<typeof line>, pts: Pt[], z: number) => { l.visible = pts.length > 1; if (l.visible) { l.geometry.setPositions(pts.flatMap(([x, y]) => [x, y, z])); l.computeLineDistances(); } };
+  function drawPaths(sun: { az: number; alt: number }) {
+    const k = dayIndexAt(doc, jd), on = pathsOn && k >= 0 && k + 1 < doc.rows.length;
+    pathPast.visible = pathAhead.visible = on; for (const l of planetTracks) l.visible = on && planetsOn;
+    if (!on) { pathDots.replaceChildren(); pathKey = ''; return; }
+    const a = doc.rows[k].sunrise_jd_ut, b = doc.rows[k + 1].sunrise_jd_ut, n = 18 * PATH_STEPS, key = `${k}|${refractionOn}`;
+    if (key !== pathKey) {
+      pathKey = key; sunDirs = []; const tracks: { az: number; alt: number }[][] = PLANETS.map(() => []);
+      for (let s = 0; s <= n; s++) {
+        const t = skyFrame(a + ((b - a) * s) / n, lat, lon, elev), fr = refractionOn ? refracted(aberrated(t), hpa, celsius) : aberrated(t);
+        sunDirs.push(fr.sun); PLANETS.forEach(([body], q) => tracks[q].push(planet(fr, body)));
+      }
+      sunTrack = trackOf(sunDirs);
+      planetTracks.forEach((l, q) => setLine(l, trackOf(tracks[q]), 2.6));
+      pathDots.replaceChildren();
+      for (let p = 0; p <= 18; p++) { const [x, y] = sunTrack[p * PATH_STEPS]; svgEl('circle', { cx: x, cy: y, r: p % 6 ? 1.8 : 2.6, fill: C.gold, opacity: 0.8, 'data-part': p }, pathDots); }
+    }
+    const at = Math.max(0, Math.min(n, Math.floor(((jd - a) / (b - a)) * n))), past = sunTrack.slice(0, at + 1), last = past[past.length - 1];
+    const now: Pt = [beside(last[0], sunDirs[at].az, sun.az), skyY(sun.alt)];
+    // both always the whole day's count, the unused end held at the Sun: a line drawn once does not draw more segments than it had
+    const held = (k: number) => Array.from({ length: k }, () => now);
+    setLine(pathPast, [...past, now, ...held(n - at)], 2.8); setLine(pathAhead, [...held(at + 1), now, ...sunTrack.slice(at + 1)], 2.8);
+  }
+
   // The stars drawn: the field holds each star's fixed numbers; the drawn ones go into buffers that live as long as the view (a new
   // attribute every frame made the GPU allocate and drop four buffers per redraw), and `shown*` index the ones in frame for picking.
   const field = starFieldOf(cat);
@@ -270,6 +303,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     sunHalo.visible = sunCore.visible = sunIn;
     if (sunIn) { const x = skyX(sun.az), y = skyY(sun.alt); sunHalo.position.set(x, y, 3); sunCore.position.set(x, y, 3.1); (sunCore.material as THREE.MeshBasicMaterial).opacity = sun.alt < 0 ? 0.45 : 1; }
     (daylight.material as THREE.MeshBasicMaterial).opacity = !daylightOn ? 0 : day ? 0.32 : 0.32 * Math.max(0, (truth.sun.alt + 6) / 6.833);
+    drawPaths(sun);
     dyn.replaceChildren();
     const taken: [number, number, number, number][] = [];     // boxes the constellation names keep clear of: the Sun's, planets' and stars' labels, the bodies
     if (sunIn) taken.push([skyX(sun.az) - 20, skyY(sun.alt) - 28, skyX(sun.az) + 190, skyY(sun.alt) + 14]);
@@ -390,6 +424,18 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     /** The user took the view (a drag, a swipe, a pinch, a wheel, a double tap): a heading that was turning it should stand aside. */
     onUser: (f: () => void) => st.onUser(f),
     setInstant(j: number) { jd = j; update(); },
+    /** The day's paths: the Sun's from this sunrise to the next, and the planets' (off by default). */
+    setPaths(on: boolean) { pathsOn = on; update(); },
+    /** Face bearing `az` with altitude `alt` at the middle of the view, `span`° of altitude from its top to its bottom. */
+    look(az: number, alt: number, span: number) {
+      const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return;
+      st.setZoom({ cx: skyX(az), cy: skyY(alt), k: h / (Math.min(w / W, h / H) * span * K) });
+    },
+    /** Client pixels of a direction, on the copy of the panorama in view (null when the stage has no layout). */
+    toScreen(az: number, alt: number) {
+      const x = skyX(az), cx = st.zoom?.cx;
+      return st.toScreen(cx !== undefined ? x + Math.round((cx - x) / TURN) * TURN : x, skyY(alt));
+    },
     /** Bring a side's six portals back: centred, level, at the home magnification (the Sun's rising or setting side). */
     recentre(side: Side) {
       cancelAnimationFrame(raf); raf = 0; target = null; last = 0;

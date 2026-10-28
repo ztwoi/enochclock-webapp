@@ -14,3 +14,6 @@ public/film/story/
 
 _hold/
 deploy/
+
+# Recorded by scripts/day-video.mjs
+out/

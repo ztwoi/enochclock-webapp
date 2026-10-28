@@ -1,15 +1,6 @@
 .calculation-failed .view { visibility:hidden; }
 /* Enoch instrument — classical engraved instrument on black (agreed style frames).
    Layer colours are semantic: ivory computed · gold calendar · bronze textual · silver derived. */
-@font-face { font-family: "Cormorant"; src: url("/fonts/CormorantGaramond.ttf"); font-weight: 300 700; font-display: block; }
-@font-face { font-family: "Cormorant"; src: url("/fonts/CormorantGaramond-Italic.ttf"); font-style: italic; font-weight: 300 700; font-display: block; }
-@font-face { font-family: "Plex Mono"; src: url("/fonts/IBMPlexMono-Light.ttf"); font-weight: 300; font-display: block; }
-@font-face { font-family: "Plex Mono"; src: url("/fonts/IBMPlexMono-Regular.ttf"); font-weight: 400; font-display: block; }
-@font-face { font-family: "Plex Mono"; src: url("/fonts/IBMPlexMono-Medium.ttf"); font-weight: 500; font-display: block; }
-@font-face { font-family: "Plex Cond"; src: url("/fonts/IBMPlexSansCondensed-Regular.ttf"); font-weight: 400; font-display: block; }
-@font-face { font-family: "Plex Cond"; src: url("/fonts/IBMPlexSansCondensed-Medium.ttf"); font-weight: 500; font-display: block; }
-@font-face { font-family: "Ethiopic"; src: url("/fonts/NotoSerifEthiopic.ttf"); font-weight: 100 900; font-display: block; }
-
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; background: var(--bg); color: var(--ivory); }

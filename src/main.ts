@@ -1,6 +1,7 @@
 // Application shell: one time cursor (an elapsed sunrise of the loaded Enoch year)
 // shared by every view, the inspector, the transport and the observer.
 import './theme.css';
+import './fonts.css';
 import {disposeCalculator,onCalculatorProgress} from './calculator/provider';
 import {mountOffline,setCalcBusy} from './pwa/ui';
 import {watchHomeScreen} from './pwa/homescreen';
