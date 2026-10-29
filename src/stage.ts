@@ -101,6 +101,32 @@ export function setHeadClearance(f: () => number) { headClear = layoutRead(f, '.
 /** Pixels at the top of the stage held by the view's title block. */
 export const headClearance = () => headClear();
 
+/**
+ * New points for a line made by `line()`, for a line that moves every frame. With the same number of segments the points are written into the
+ * buffers the line already has. Never make the geometry's buffers anew each frame (`setPositions` and `computeLineDistances` each do): the renderer
+ * does not free the ones they replace, so a view that redraws every frame fed the graphics memory by tens of megabytes a minute until the browser
+ * gave up the tab. With a different number, the old buffers are freed (`dispose`) and new ones made.
+ */
+export function setLinePoints(l: Line2, pts: Pt[], z: number) {
+  const g = l.geometry, n = pts.length - 1, dashed = (l.material as LineMaterial).dashed;
+  const start = g.getAttribute('instanceStart') as THREE.InterleavedBufferAttribute | undefined, dist = g.getAttribute('instanceDistanceStart') as THREE.InterleavedBufferAttribute | undefined;
+  if (n > 0 && start && start.data.array.length === n * 6 && (!dashed || (dist && dist.data.array.length === n * 2))) {
+    const a = start.data.array as Float32Array;
+    for (let i = 0; i < n; i++) { const o = i * 6; a[o] = pts[i][0]; a[o + 1] = pts[i][1]; a[o + 2] = z; a[o + 3] = pts[i + 1][0]; a[o + 4] = pts[i + 1][1]; a[o + 5] = z; }
+    start.data.needsUpdate = true;
+    if (dashed) {                                                     // the distance along the line at each end of each segment, as Line2's own computeLineDistances
+      const d = dist!.data.array as Float32Array; let run = 0;
+      for (let i = 0; i < n; i++) { const o = i * 6; d[2 * i] = run; run += Math.hypot(a[o + 3] - a[o], a[o + 4] - a[o + 1], a[o + 5] - a[o + 2]); d[2 * i + 1] = run; }
+      dist!.data.needsUpdate = true;
+    }
+    g.computeBoundingBox(); g.computeBoundingSphere();
+    return;
+  }
+  g.dispose();
+  g.setPositions(pts.flatMap(([x, y]) => [x, y, z]));
+  if (dashed) l.computeLineDistances();
+}
+
 export function createStage(host: HTMLElement, label: string, opts: StageOptions = {}) {
   const scene = new THREE.Scene();
   /** The design's size: the shared W × H, or the host's own pixels (opts.pixels). */
@@ -354,6 +380,8 @@ export function createStage(host: HTMLElement, label: string, opts: StageOptions
     toScreen(x: number, y: number) { const m = overlay.getScreenCTM(); if (!m) return null; const q = new DOMPoint(x, y).matrixTransform(m); return { x: q.x, y: q.y }; },
     /** Client pixels → design space. */
     fromScreen(x: number, y: number) { const m = overlay.getScreenCTM(); if (!m) return null; const q = new DOMPoint(x, y).matrixTransform(m.inverse()); return { x: q.x, y: q.y }; },
-    dispose() { for (const f of offs) f(); ro.disconnect(); layoutSubs.delete(redraw); renderer.dispose(); renderer.domElement.remove(); overlay.remove(); },
+    /** `renderer.dispose()` leaves the context and what the view put in it (buffers, textures, programs) for the browser to collect whenever it
+     *  does: a view rebuilt for each year or site then left a whole context behind each time. Losing the context frees it at once. */
+    dispose() { for (const f of offs) f(); ro.disconnect(); layoutSubs.delete(redraw); renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove(); overlay.remove(); },
   };
 }

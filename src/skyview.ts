@@ -18,7 +18,7 @@ import { PCOL, PLANETS } from './dial/state';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { easeHeading, mod360, wrap180 } from './sky/heading';
 import { dayIndexAt, GEEZ, H, PORTAL_ALT, pillars, W } from './model';
-import { C, createStage, hatchMaterial, headClearance, layoutRead, sprite, svgEl, UNTILED, type Pt } from './stage';
+import { C, createStage, hatchMaterial, headClearance, layoutRead, setLinePoints, sprite, svgEl, UNTILED, type Pt } from './stage';
 import type { Portal, YearDoc } from './types';
 
 /** The side whose six portals the home view centres: where the Sun rises (east) or sets (west). */
@@ -220,7 +220,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   let bodyTracks = new Map<string, { pts: Pt[]; dirs: Dir[] }>();
   /** Points along a run of directions, each beside the one before (a track through north stays one line). */
   const trackOf = (dirs: { az: number; alt: number }[]) => { const pts: Pt[] = []; dirs.forEach((d, k) => pts.push([k ? beside(pts[k - 1][0], dirs[k - 1].az, d.az) : skyX(d.az), skyY(d.alt)])); return pts; };
-  const setLine = (l: ReturnType<typeof line>, pts: Pt[], z: number) => { l.visible = pts.length > 1; if (l.visible) { l.geometry.setPositions(pts.flatMap(([x, y]) => [x, y, z])); l.computeLineDistances(); } };
+  const setLine = (l: ReturnType<typeof line>, pts: Pt[], z: number) => { l.visible = pts.length > 1; if (l.visible) setLinePoints(l, pts, z); };
   /** Draw a track as two lines, solid up to the body (`now`, its place at this instant) and dotted on from it. Both always the whole day's count,
    *  the unused end held at the body: a line drawn once does not draw more segments than it had. */
   function splitAt(pts: Pt[], dirs: Dir[], at: number, b: Dir, past: ReturnType<typeof line>, ahead: ReturnType<typeof line>) {
@@ -354,7 +354,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     }
     const longest = runs.sort((a, b) => b.length - a.length)[0];
     eclLine.visible = !!longest && longest.length > 1;
-    if (eclLine.visible) { eclLine.geometry.setPositions(longest.flatMap(([x, y]) => [x, y, 0.1])); eclLine.computeLineDistances(); }
+    if (eclLine.visible) setLinePoints(eclLine, longest, 0.1);
     // Sun and Moon
     const sunIn = inFrame(sun.az, sun.alt);
     sunHalo.visible = sunCore.visible = sunIn;
