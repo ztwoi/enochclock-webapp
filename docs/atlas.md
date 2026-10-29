@@ -68,6 +68,19 @@ Mock-up: [`mockups/atlas/`](../mockups/atlas/README.md), a working sketch at des
 - **The coast adds 170 KB gzipped** to the offline pack (Natural Earth 1:50m, TopoJSON decoded in the browser); the zone
   lookup about 25 KB more.
 
+## Built, against the mock-up
+
+The details follow the mock-up's Where · When · Moments (stacked on a wide screen, tabs where the details are a sheet),
+with these differences:
+
+- **The globe's readout** (overhead points, tropics, polar limit) stands after When, so the date controls come first.
+- **When's readings** give the Enoch date from the calculator (not the mock-up's ≈ estimate) and its Enoch time; the
+  Accuracy flag is the app's own section under the details, not a row.
+- **The bar's marks** are not taps of their own: the event buttons under the bar are the jumps, and a hand on the bar
+  sets the time.
+- **The editor** says what a moment keeps (the place, the instant, or both) and shows its link live; Delete takes two taps.
+- **A refused site** (from a link) shows the globe at the present with Where and Moments, instead of the error panel.
+
 ## Items
 
 | # | Item | Size | Status |
