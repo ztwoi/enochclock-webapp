@@ -35,12 +35,12 @@ export function siteName(s: { lat: number; lon: number; name: string }) {
   return { name: nb ? `${Math.round(nb.km)} km ${bearingWord(nb.place, s)} of ${nb.place.name}` : 'Custom site', sub: '' };
 }
 
-export function atlasPanel(doc: YearDoc, i: number, info: AtlasInfo | null, name = 'Custom site'): string {
+/** The site the year is calculated at (Where). */
+export function atlasPanel(doc: YearDoc, i: number, name = 'Custom site'): string {
   const c = doc.calculation, nm = siteName({ lat: c.latitude, lon: c.longitude_east, name });
   const az = doc.rows.slice(0, -1).map((r) => r.azimuth_deg), north = Math.min(...az), south = Math.max(...az);
   const hours = doc.extended.map((e) => e.day_hours), b = BAND[band(c.latitude, doc.rows[i].sunrise_jd_ut)];
   const dd = (k: string, v: string, cls = '') => `<dt>${k}</dt><dd${cls ? ` class="${cls}"` : ''}>${v}</dd>`;
-  const over = (p: { lat: number; lon: number }) => `${lat(p.lat)} · ${lon(p.lon)}`;
   return `<div class="section atlas-site">
     <div class="eyebrow">Atlas · the site</div>
     <div class="at-name"><span class="n">${nm.name}</span>${nm.sub ? `<span class="s">${nm.sub}</span>` : ''}</div>
@@ -50,8 +50,13 @@ export function atlasPanel(doc: YearDoc, i: number, info: AtlasInfo | null, name
     <dl class="read">${dd('Portals', `${north.toFixed(1)}° – ${south.toFixed(1)}° · ${(south - north).toFixed(1)}° wide`, 'cal')}${dd('Longest day', hm(Math.max(...hours)))}${dd('Shortest day', hm(Math.min(...hours)))}${dd('This day', `${fmt.time(doc.rows[i].sunrise_local).slice(0, 5)} – ${fmt.time(doc.extended[i].sunset_local).slice(0, 5)}`)}</dl>
     <p class="note">Drag the globe to move the site under the crosshair; the year is calculated where you let go.</p>
     <p style="margin-top:12px"><button class="btn" data-atlas-coords>Coordinates, elevation, my location…</button></p>
-  </div>
-  ${info ? `<div class="section">
+  </div>`;
+}
+
+/** The globe at the instant: the overhead points, the tropics and the polar limit. */
+export function globePanel(info: AtlasInfo | null): string {
+  const dd = (k: string, v: string) => `<dt>${k}</dt><dd>${v}</dd>`, over = (p: { lat: number; lon: number }) => `${lat(p.lat)} · ${lon(p.lon)}`;
+  return `${info ? `<div class="section">
     <div class="eyebrow">The globe at this instant</div>
     <dl class="read">${dd('Sun overhead', over(info.sun))}${dd('Moon overhead', over(info.moon))}${dd('Tropics', `${info.obliquity.toFixed(3)}°`)}${dd('Polar limit', `${info.polarLimit.toFixed(1)}°`)}</dl>
     <p class="note">The tropics move with the tilt of the Earth's axis, and the polar limit with them: beyond it some day of

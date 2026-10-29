@@ -115,7 +115,7 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
   let circlesAt = { eps: NaN, lim: NaN };
   function setCircles(eps: number, lim: number) {
     if (Math.abs(eps - circlesAt.eps) < 1e-3 && Math.abs(lim - circlesAt.lim) < 1e-3) return;
-    for (const c of [...circles.children]) { (c as THREE.Line).geometry.dispose(); circles.remove(c); }
+    circles.traverse((o) => (o as THREE.Line).geometry?.dispose()); circles.clear();   // the tropics' and polar limit's groups, and their lines
     const t = new THREE.Group(); t.name = 'tropics'; t.add(lineOf(parallel(eps), tropicMat), lineOf(parallel(-eps), tropicMat));
     const p = new THREE.Group(); p.name = 'polar'; p.add(lineOf(parallel(lim), polarMat), lineOf(parallel(-lim), polarMat));
     circles.add(t, p); circlesAt = { eps, lim }; applyLayers();

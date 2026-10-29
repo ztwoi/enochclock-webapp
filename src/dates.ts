@@ -36,14 +36,19 @@ const zoneFormat = (tz: string) => {
   return f;
 };
 export function localDateTime(jd: number, tz: string, offset: string): { date: string; time: string } {
+  const l = localParts(jd, tz, offset);
+  return { date: civil(isoDate(l.y, l.m, l.d)), time: l.time };
+}
+/** The same, as numbers: the local year (astronomical), month, day, and the clock "hh:mm:ss". */
+export function localParts(jd: number, tz: string, offset: string): { y: number; m: number; d: number; time: string } {
   const ms = (jd - 2440587.5) * 86400000, p2 = (n: number) => String(n).padStart(2, '0'), y = yearOf(isoFromJd(jd));
   if (y >= 2 && y <= 9998) {
     const parts = Object.fromEntries(zoneFormat(tz).formatToParts(new Date(ms)).map((q) => [q.type, q.value]));
-    return { date: civil(isoDate(Number(parts.year), Number(parts.month), Number(parts.day))), time: `${parts.hour}:${parts.minute}:${parts.second}` };
+    return { y: Number(parts.year), m: Number(parts.month), d: Number(parts.day), time: `${parts.hour}:${parts.minute}:${parts.second}` };
   }
   const m = /^([+-])(\d{2}):(\d{2})(?::(\d{2}))?/.exec(offset), off = m ? (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 3600 + Number(m[3]) * 60 + Number(m[4] ?? 0)) : 0;
   const t = new Date(ms + off * 1000);
-  return { date: civil(isoDate(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate())), time: `${p2(t.getUTCHours())}:${p2(t.getUTCMinutes())}:${p2(t.getUTCSeconds())}` };
+  return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate(), time: `${p2(t.getUTCHours())}:${p2(t.getUTCMinutes())}:${p2(t.getUTCSeconds())}` };
 }
 
 /** A year for people: 2026, 12000, or "501 BCE" for −500 (and 0 = 1 BCE). */

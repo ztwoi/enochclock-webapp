@@ -14,7 +14,7 @@ import './style.css';
 import { browserZone, deviceSite, FALLBACK, fetchInstant, fetchDeep, fetchDeepSeries, fetchEnochYear, fetchGregorianYear, fetchYearContaining, PRESETS, saveSite, savedSite } from './api';
 import { accuracyFlag, accuracySection } from './accuracy';
 import { failMessage, onPermissionChange, permissionState, type FailKind, type PermState } from './geo/location';
-import { enochText, isoFromJd, localDateTime, readDate, YEAR_MAX, YEAR_MIN, yearOf } from './dates';
+import { enochText, isoDate, isoFromJd, localDateTime, localParts, readDate, YEAR_MAX, YEAR_MIN, yearLabel, yearOf } from './dates';
 import { createDeep, type Deep } from './deep';
 import { deepPanel, skyPanel, skyReading } from './inspector';
 import { cycleStrip } from './cycleui';
@@ -36,7 +36,9 @@ import { createFilm } from './film';
 import { createDayView, dayPanel, geometryFor, type DayView } from './day/view';
 import { createFollow, type Follow } from './day/follow';
 import { createAtlas, LAYERS as ATLAS_LAYERS, type Atlas, type Camera as AtlasCamera, type Layers as AtlasLayers } from './atlas/view';
-import { atlasPanel, siteAt } from './atlas/panel';
+import { siteAt } from './atlas/panel';
+import { createAtlasDetails } from './atlas/details';
+import { clockToJd, enochIndex, nextSeason } from './atlas/when';
 
 type View = 'sky' | 'dial' | 'day' | 'atlas' | 'deep';
 /** The tabs, in their order (the number keys follow it). */
@@ -179,6 +181,49 @@ function ensureAtlas() {
   }
   if (!state.cat) loadCatalogue('/sky/', Number($<HTMLSelectElement>('mag').value)).then((c) => { state.cat ??= c; update(); }).catch(() => undefined);   // the globe works without stars
 }
+/** Atlas's details: Where and When, built once (src/atlas/details.ts); the accuracy section under them. */
+const atlasAcc = document.createElement('div');
+const atlasDetails = createAtlasDetails({
+  onPart: (p) => { manual(); tp.pause(); state.part = p; update(); },
+  onLocal: (y, m, d, hhmm) => { manual(); tp.pause(); goLocal(y, m, d, hhmm); },
+  onEnoch: (y, m, d) => { manual(); tp.pause(); goEnoch(y, m, d); },
+  onJump: (k) => {
+    if (k === 'now') return void goNow();
+    manual(); tp.pause();
+    const doc = state.doc; if (!doc) return;
+    if (k === 'day1') { state.cursor = 0; state.part = 0; update(); return; }
+    const i = cursorRow(annual(doc), state.cursor).i, jd = nextSeason(doc, jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part), k);
+    if (jd != null) showJd(jd);
+  },
+});
+/** A local date and clock time at the site (When's Gregorian fields and Exact): the Enoch day it falls in, at that time. A time
+ *  before that morning's sunrise belongs to the Enoch day before (and, before Day 1's sunrise, to the year before). */
+async function goLocal(y: number, m: number, d: number, hhmm: string) {
+  if (y < YEAR_MIN || y > YEAR_MAX) { yearRange(); return; }
+  const iso = isoDate(y, m, d);
+  await load({ date: iso }, 'start');
+  const doc = state.doc, k = doc ? annual(doc).findIndex((r) => r.civil_date === iso) : -1;
+  if (!doc || k < 0) return;
+  let jd = clockToJd(doc, k, hhmm);
+  const g = localParts(jd, doc.calculation.timezone, fmt.offset(doc.rows[k].sunrise_local));
+  if (g.d !== d) jd -= 1;
+  await showJd(jd);
+}
+/** An Enoch date (When's Enoch fields and year steps), at the part of the day on show. */
+async function goEnoch(y: number, m: number, d: number) {
+  if (!state.doc || state.doc.calculation.enoch_year !== y) await load({ enochYear: y }, 'start');
+  const doc = state.doc; if (!doc || doc.calculation.enoch_year !== y) return;
+  const k = enochIndex(doc, m, d); if (k >= 0) state.cursor = k;
+  update();
+}
+/** Show an instant: in the year loaded, or the year that holds it. */
+async function showJd(jd: number) {
+  if (!state.doc || dayIndexAt(state.doc, jd) < 0) await goJd(jd);
+  const doc = state.doc, k = doc ? dayIndexAt(doc, jd) : -1;
+  if (doc && k >= 0) { state.cursor = k; state.part = partOfDay(doc, k, jd); }
+  update();
+}
+const yearRange = () => { const s = $('status'); s.hidden = false; s.className = 'status error'; s.textContent = `The calculator's years run from ${yearLabel(YEAR_MIN)} to ${YEAR_MAX}.`; setTimeout(() => { s.hidden = true; }, 6000); };
 /** A site chosen on the globe: the year is calculated there, keeping the instant on show. If the calculator refuses it after all
  *  (the polar limit is an estimate near its edge), the site on show before stays, and Atlas says why. */
 async function pickSite(lat: number, lon: number) {
@@ -260,7 +305,12 @@ const PANEL_MS = 120; let panelAt = 0, panelTimer = 0;
 function inspector(doc: YearDoc, i: number) {
   const el = $('insp'), acc = accuracySection(doc.accuracy, { stars: state.view === 'sky' || state.view === 'day' });           // every view: how far to trust this year
   if (state.view === 'deep') { el.innerHTML = (state.deepDoc ? deepPanel(state.deepDoc, firstYear(), doc, i) : '') + acc; return; }
-  if (state.view === 'atlas') { el.innerHTML = atlasPanel(doc, i, state.atlas?.info() ?? null, state.site.name) + acc; return; }
+  if (state.view === 'atlas') {                                    // kept, not rebuilt: its fields and the day bar take a hand (src/atlas/details.ts)
+    atlasDetails.render(doc, i, state.part, jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part), state.atlas?.info() ?? null, state.site.name);
+    if (atlasDetails.el.parentElement !== el) el.replaceChildren(atlasDetails.el, atlasAcc);
+    if (atlasAcc.dataset.h !== acc) { atlasAcc.innerHTML = acc; atlasAcc.dataset.h = acc; }
+    return;
+  }
   if (state.view === 'day') { const d = state.day?.day(); el.innerHTML = (d && d.i === i ? dayPanel(doc, i, d.events, d.rising) : '') + acc; return; }
   el.innerHTML = (skyCompass.on ? skyCompass.html({ name: state.site.name, lat: doc.calculation.latitude, lon: doc.calculation.longitude_east, jd: state.sky?.info()?.jd ?? doc.rows[i].sunrise_jd_ut, date: annual(doc)[i].civil_date, year: doc.calculation.year_beginning_gregorian, tz: doc.calculation.timezone }) : '') + skyPanel(doc, i, state.part, state.sky?.info() ?? null) + acc;
 }
