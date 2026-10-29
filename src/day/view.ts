@@ -13,7 +13,8 @@ import { dayIndexAt } from '../model';
 import { skyFrame } from '../sky/astronomy';
 import { createSky, type Catalogue } from '../skyview';
 import type { YearDoc } from '../types';
-import { dayEvents, risingWithSun, SUN_COLOR, type DayEvent } from './events';
+import { createDayBar } from './bar';
+import { dayEvents, risingWithSun, type DayEvent } from './events';
 import { createFollow } from './follow';
 import type { Box, Geometry } from './geometry';
 
@@ -100,32 +101,10 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
     for (const el of threadSvg.children) el.setAttribute('d', d);
   }
 
-  // ---- the day bar: sunrise to sunrise, daylight gold, a tick per part, risings above the line and settings below, a playhead
-  let barX = (p: number) => p, head: Element | null = null;
-  function buildBar() {
-    const w = barSvg.clientWidth || g.foot.w - 44, X = (barX = (p: number) => 4 + (p / 18) * (w - 8)), Y = 16, e = doc.extended[dayI], dp = e.day_parts;
-    const marks = events.filter((v) => v.body !== 'Sun').map((v) => v.kind === 'rise'
-      ? `<circle cx="${X(v.part)}" cy="${Y - 7}" r="2.3" fill="${v.color}"/>`
-      : `<circle cx="${X(v.part)}" cy="${Y + 7}" r="2" fill="none" stroke="${v.color}" stroke-width="1"/>`).join('');
-    const ticks = Array.from({ length: 19 }, (_, p) => `<line x1="${X(p)}" x2="${X(p)}" y1="${Y - (p % 6 ? 2 : 4)}" y2="${Y + (p % 6 ? 2 : 4)}" stroke="#635d51" stroke-width="0.8"/>`).join('');
-    barSvg.innerHTML = `<rect x="0" y="0" width="${w}" height="40" fill="transparent"/>
-      <line x1="${X(0)}" x2="${X(18)}" y1="${Y}" y2="${Y}" stroke="#4b6268" stroke-width="1.5"/>
-      <line x1="${X(0)}" x2="${X(dp)}" y1="${Y}" y2="${Y}" stroke="#d6b26a" stroke-width="2.5"/>
-      ${ticks}${marks}
-      <text x="${X(0)}" y="${Y + 20}">SUNRISE ${hm(doc.rows[dayI].sunrise_jd_ut)}</text>
-      <text x="${X(dp)}" y="${Y + 20}" text-anchor="middle">SUNSET ${hm(e.sunset_jd_ut)}</text>
-      <text x="${X(18)}" y="${Y + 20}" text-anchor="end">SUNRISE ${hm(doc.rows[dayI + 1].sunrise_jd_ut)}</text>
-      <g class="dv-head"><line y1="${Y - 9}" y2="${Y + 9}" stroke="${SUN_COLOR}" stroke-width="1.6"/><path d="M-4 ${Y - 13}h8l-4 4z" fill="${SUN_COLOR}"/></g>`;
-    head = barSvg.querySelector('.dv-head');
-    placeHead();
-  }
-  const placeHead = () => head?.setAttribute('transform', `translate(${barX(Math.min(18, lastPart)).toFixed(2)} 0)`);
-  if (opts.onScrub) {
-    barSvg.classList.add('scrub');
-    const partAt = (x: number) => { const r = barSvg.getBoundingClientRect(), w = r.width, px = ((x - r.left) / w) * (barSvg.clientWidth || w); return Math.max(0, Math.min(18 - 1e-6, ((px - 4) / ((barSvg.clientWidth || w) - 8)) * 18)); };
-    barSvg.addEventListener('pointerdown', (e) => { e.stopPropagation(); barSvg.setPointerCapture(e.pointerId); opts.onScrub!(partAt(e.clientX)); });
-    barSvg.addEventListener('pointermove', (e) => { if (barSvg.hasPointerCapture(e.pointerId)) opts.onScrub!(partAt(e.clientX)); });
-  }
+  // ---- the day bar (src/day/bar.ts)
+  const bar = createDayBar(barSvg, { width: () => g.foot.w - 44, onScrub: opts.onScrub });
+  const buildBar = () => bar.build(doc, dayI, events, hm);
+  const placeHead = () => bar.place(lastPart);
 
   // ---- captions: each event for a while after the day reaches it; or, at the close of a recording, the day's summary
   const mins = (m: number) => { const n = Math.round(Math.abs(m)); return n >= 60 ? `${Math.floor(n / 60)} h ${n % 60} min` : `${n} min`; };
