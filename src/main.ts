@@ -16,7 +16,7 @@ import { accuracyFlag, accuracySection } from './accuracy';
 import { failMessage, onPermissionChange, permissionState, type FailKind, type PermState } from './geo/location';
 import { enochText, isoFromJd, localDateTime, readDate, YEAR_MAX, YEAR_MIN, yearOf } from './dates';
 import { createDeep, type Deep } from './deep';
-import { deepPanel, skyPanel } from './inspector';
+import { deepPanel, skyPanel, skyReading } from './inspector';
 import { cycleStrip } from './cycleui';
 import { annual, cursorRow, dayIndexAt, fmt, jdFromMs, partOfDay } from './model';
 import { headClearance, setHeadClearance } from './stage';
@@ -25,7 +25,7 @@ import { loadCatalogue } from './sky/catalogue';
 import { jdOfPart } from './sky/instrument';
 import { createTransport } from './transport';
 import { createSheet } from './sheet';
-import { bodyName, createSky, followable, sameBody, type Catalogue, type Followed, type Side, type Sky } from './skyview';
+import { createSky, followable, sameBody, type Catalogue, type Followed, type Side, type Sky } from './skyview';
 import { createSkyCompass } from './sky/compassmode';
 import { hub } from './compass/hub';
 import { createFocus } from './focus';
@@ -133,7 +133,7 @@ async function ensureSky() {
   if (!state.doc) return;
   if (!state.cat) { $('status').className = 'status'; $('status').hidden = false; $('status').textContent = 'Loading the catalogue stars…'; state.cat = await loadCatalogue('/sky/', Number($<HTMLSelectElement>('mag').value)); }
   if (!state.sky) {
-    state.sky = createSky($('view-sky'), state.doc, state.cat, () => { selSerial++; shown.sel = -1; syncFollow(); update(); });
+    state.sky = createSky($('view-sky'), state.doc, state.cat, () => { selSerial++; shown.sel = -1; update(); });
     state.sky.onUser(() => { if (compassFollowing) { compassFollowing = false; compassChanged(); } });   // a hand on the panorama takes the view from the compass
     skyFollow = createFollow(state.sky, skyFollow?.target ?? null, syncSide, skyFollow?.k);   // and from the body it follows (a new year or site keeps following it, at its zoom)
     state.sky.stage.onView(syncSide);
@@ -216,6 +216,7 @@ function update() {
     state.sky.setInstant(jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part));
     skyFollow?.aim();                                                // as The Day's sky: the horizon and the body followed in view, at the reader's zoom
   }
+  syncReading();                                                   // Sky's reading keeps up with the instant (and leaves with the view)
   if (state.view === 'sky' || state.view === 'deep') ({ deep: state.deep, sky: state.sky }[state.view])?.render();
   if (state.view === 'dial') renderDial();
   if (state.view === 'day') state.day?.draw(jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part));
@@ -294,12 +295,10 @@ function followBody(b: Followed | null) {
   if (b && compassFollowing) { compassFollowing = false; compassChanged(); }
   syncSide();
 }
-/** The Follow button over the sky: while the view follows a body, which one, and a way to stop; for a body selected and not followed, Follow it. */
-function syncFollow() {
-  const el = $('sky-follow'), t = skyFollow?.target ?? null, s = followable(state.sky?.info()?.selection ?? null), offer = s && !sameBody(s, t) ? s : null;
-  const html = (t ? `<button class="btn on" data-follow="stop" aria-pressed="true" aria-label="Following ${bodyName(t)}: tap to stop" title="The sky turns with ${bodyName(t)}. Dragging the sky, East, West or Compass also stops it.">Following ${bodyName(t)}<span class="x" aria-hidden="true">✕</span></button>` : '')
-    + (offer ? `<button class="btn" data-follow="go" title="The sky turns with ${bodyName(offer)}, opening out as it climbs or sinks, so the horizon and ${bodyName(offer)} are both in view. Zoom in first and it follows that close.">Follow ${bodyName(offer)}</button>` : '');
-  if (el.innerHTML !== html) el.innerHTML = html;
+/** Sky's reading under its options (src/inspector.ts skyReading): the selection, or the body followed, with its Follow toggle. */
+function syncReading() {
+  const el = $('sky-read'), html = state.view === 'sky' && state.doc ? skyReading(state.doc, state.sky?.info() ?? null, skyFollow?.target ?? null) : '';
+  if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
   el.hidden = !html;
 }
 /** The sensor is the device's, not Sky's: on in the Dial or after a reload, Sky follows it too (when it is shown), and off anywhere is off here. */
@@ -310,7 +309,7 @@ function syncSide() {
   const at = skyFollow?.on ? null : state.sky?.sideAt() ?? null;            // following a body, no side's button is lit (the Sun's, when it is the Sun)
   for (const side of ['east', 'west']) { const b = document.querySelector(`[data-facing=${side}]`); if (b && b.classList.contains('on') !== (at === side)) { b.classList.toggle('on', at === side); b.setAttribute('aria-pressed', String(at === side)); } }
   const sb = document.querySelector('[data-facing=sun]'); sb?.classList.toggle('on', sunFollowing()); sb?.setAttribute('aria-pressed', String(sunFollowing()));
-  syncFollow();
+  syncReading();
 }
 let noteTimer = 0;
 const focus = createFocus($('app'), $<HTMLButtonElement>('focus'));
@@ -387,12 +386,11 @@ function bindOptions() {
     if (!v && skyFollow?.target?.kind === 'planet') skyFollow.set(null);           // a planet no longer drawn is no longer followed
     syncSide(); shown.view = ''; update();
   };
-  // the Follow button over the sky (src/day/follow.ts): its taps are its own, not a hand on the sky
-  const fol = $('sky-follow');
-  for (const t of ['pointerdown', 'pointermove', 'pointerup', 'wheel', 'dblclick'] as const) fol.addEventListener(t, (e) => e.stopPropagation());
-  fol.addEventListener('click', (e) => {
-    const b = (e.target as Element).closest<HTMLElement>('[data-follow]'); if (!b) return;
-    followBody(b.dataset.follow === 'stop' ? null : followable(state.sky?.info()?.selection ?? null));
+  // the reading's Follow (src/day/follow.ts): follow what it reads (the selection, or the body followed), or stop
+  $('sky-read').addEventListener('click', (e) => {
+    if (!(e.target as Element).closest('[data-follow]')) return;
+    const b = followable(state.sky?.info()?.selection ?? null) ?? skyFollow?.target ?? null;
+    followBody(sameBody(b, skyFollow?.target ?? null) ? null : b);
     shown.view = ''; update();
   });
   $('bearing').onclick = () => { const on = toggle('bearing'); localStorage.setItem(BKEY, on ? '1' : '0'); state.sky?.setLayers({ bearing: on }); };

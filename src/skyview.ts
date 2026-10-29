@@ -38,22 +38,29 @@ const inFrameTo = (alt: number, low: number) => alt >= low && alt <= altMax;
 const TURN_TAU = 0.1;
 
 export type Selection = { kind: 'star'; star: Star } | { kind: 'sun' } | { kind: 'moon' } | { kind: 'planet'; name: string } | { kind: 'portal'; portal: number; side: Side } | null;
-/** A body the view can follow (src/day/follow.ts): the Sun, the Moon or a planet. */
-export type Followed = Extract<Selection, { kind: 'sun' } | { kind: 'moon' } | { kind: 'planet' }>;
-export const sameBody = (a: Followed | null, b: Followed | null) => !!a && !!b && a.kind === b.kind && (a.kind !== 'planet' || a.name === (b as typeof a).name);
-/** A selection the view can follow, as a body (null for a star, a portal or nothing). */
-export const followable = (s: Selection): Followed | null => (s?.kind === 'sun' || s?.kind === 'moon' || s?.kind === 'planet' ? s : null);
-/** A body's name as a reader says it: the Sun, the Moon, Mars. */
-export const bodyName = (b: Followed) => (b.kind === 'sun' ? 'the Sun' : b.kind === 'moon' ? 'the Moon' : b.name);
-/** Where a body is drawn at the sky's instant. */
+/** What the view can follow (src/day/follow.ts): the Sun, the Moon, a planet or a star. */
+export type Followed = Extract<Selection, { kind: 'sun' } | { kind: 'moon' } | { kind: 'planet' } | { kind: 'star' }>;
+export function sameBody(a: Followed | null, b: Followed | null) {
+  if (!a || !b || a.kind !== b.kind) return false;
+  return a.kind === 'planet' ? a.name === (b as typeof a).name : a.kind === 'star' ? a.star.id === (b as typeof a).star.id : true;
+}
+/** A selection the view can follow (null for a portal or nothing). */
+export const followable = (s: Selection): Followed | null => (s && s.kind !== 'portal' ? s : null);
+/** Where a body is drawn at the sky's instant: the one followed, or the one selected (a star elsewhere is not looked up). */
 export function positionOf(info: SkyInfo, b: Followed): { az: number; alt: number } | null {
-  return b.kind === 'sun' ? info.sun : b.kind === 'moon' ? info.moon : info.planets.find((p) => p.name === b.name) ?? null;
+  if (b.kind === 'sun') return info.sun;
+  if (b.kind === 'moon') return info.moon;
+  if (b.kind === 'planet') return info.planets.find((p) => p.name === b.name) ?? null;
+  if (info.followedAt && sameBody(info.followedAt.body, b)) return info.followedAt;
+  return sameBody(followable(info.selection), b) ? info.selected ?? null : null;
 }
 interface SkyPlanet { name: string; az: number; alt: number; mag: number; dec: number }
 export interface SkyInfo {
   jd: number; refraction: boolean; sun: { az: number; alt: number }; moon: { az: number; alt: number; fraction: number }; planets: SkyPlanet[];
   /** The Moon's day (from the conjunction) and where it last rose, with the portal that bearing falls in. */
   moonDay: MoonDay | null; moonrise: (Moonrise & { portal: ReturnType<typeof portalAt> }) | null;
+  /** The body followed and where it is drawn (null: not following). */
+  followedAt: { body: Followed; az: number; alt: number } | null;
   shown: number; selection: Selection; selected?: { az: number; alt: number; dec: number; rise: number | null; set: number | null; portal: ReturnType<typeof portalAt> | null; portalWest: ReturnType<typeof portalAt> | null };
 }
 
@@ -72,7 +79,7 @@ const fields = new WeakMap<object, StarField>();
 const starFieldOf = (cat: Catalogue) => { let f = fields.get(cat.stars); if (!f) fields.set(cat.stars, f = new StarField(cat.stars)); return f; };
 
 export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSelect: (s: Selection) => void) {
-  /** The body the view follows (null: none): its path is drawn as the Sun's, solid behind it and dotted ahead. */
+  /** The body the view follows (null: none): ringed twice, and its path drawn as the Sun's, solid behind it and dotted ahead. */
   let followed: Followed | null = null;
   let homeSide: Side = 'east', magLimit = 6.5, figuresOn = true, portalStarsOn = true, planetsOn = true, refractionOn = true, daylightOn = true, belowOn = true, bearingOn = false, pathsOn = false, selection: Selection = null, jd = doc.rows[0].sunrise_jd_ut;
   /** The lowest altitude in frame: the nadir (Below horizon, on by default), or 18° under the horizon; the gaze's bounds and the ground follow it. */
@@ -220,33 +227,37 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     const held = (k: number) => Array.from({ length: k }, () => now);
     setLine(past, [...done, now, ...held(n - at)], 2.8); setLine(ahead, [...held(at + 1), now, ...pts.slice(at + 1)], 2.8);
   }
-  function drawPaths(sun: Dir, mo: Dir, planets: SkyPlanet[]) {
+  function drawPaths(sun: Dir, mo: Dir, planets: SkyPlanet[], at0: Dir | null) {
     const k = dayIndexAt(doc, jd), on = pathsOn && k >= 0 && k + 1 < doc.rows.length;
-    const fb = followed && followed.kind !== 'sun' && (followed.kind === 'moon' || planetsOn) ? (followed.kind === 'moon' ? 'Moon' : followed.name) : null;
+    const star = followed?.kind === 'star' ? followed.star : null;
+    const fb = !followed || followed.kind === 'sun' || (followed.kind === 'planet' && !planetsOn) ? null
+      : followed.kind === 'moon' ? 'Moon' : followed.kind === 'planet' ? followed.name : `star:${followed.star.id}`;
     pathPast.visible = pathAhead.visible = on; moonTrack.visible = on && fb !== 'Moon';
     planetTracks.forEach((l, q) => { l.visible = on && planetsOn && fb !== PLANETS[q][1]; });
     followPast.visible = followAhead.visible = on && !!fb;
     if (!on) { pathDots.replaceChildren(); pathKey = ''; return; }
-    const a = doc.rows[k].sunrise_jd_ut, b = doc.rows[k + 1].sunrise_jd_ut, n = 18 * PATH_STEPS, key = `${k}|${refractionOn}`;
+    const a = doc.rows[k].sunrise_jd_ut, b = doc.rows[k + 1].sunrise_jd_ut, n = 18 * PATH_STEPS, key = `${k}|${refractionOn}|${star?.id ?? ''}`;
     if (key !== pathKey) {
-      pathKey = key; sunDirs = []; const tracks: Dir[][] = PLANETS.map(() => []), moonDirs: Dir[] = [];
+      pathKey = key; sunDirs = []; const tracks: Dir[][] = PLANETS.map(() => []), moonDirs: Dir[] = [], starDirs: Dir[] = [];
       for (let s = 0; s <= n; s++) {
         const t = skyFrame(a + ((b - a) * s) / n, lat, lon, elev), fr = refractionOn ? refracted(aberrated(t), hpa, celsius) : aberrated(t);
         sunDirs.push(fr.sun); moonDirs.push(moon(fr)); PLANETS.forEach(([body], q) => tracks[q].push(planet(fr, body)));
+        if (star) starDirs.push(fr.direction(starVector(star, fr.time)));
       }
       sunTrack = trackOf(sunDirs); bodyTracks = new Map();
       planetTracks.forEach((l, q) => { const pts = trackOf(tracks[q]); bodyTracks.set(PLANETS[q][1], { pts, dirs: tracks[q] }); setLine(l, pts, 2.6); });
       const moonPts = trackOf(moonDirs); bodyTracks.set('Moon', { pts: moonPts, dirs: moonDirs }); setLine(moonTrack, moonPts, 2.6);
+      if (star) bodyTracks.set(`star:${star.id}`, { pts: trackOf(starDirs), dirs: starDirs });
       pathDots.replaceChildren();
       for (let p = 0; p <= 18; p++) { const [x, y] = sunTrack[p * PATH_STEPS]; svgEl('circle', { cx: x, cy: y, r: p % 6 ? 1.8 : 2.6, fill: C.gold, opacity: 0.8, 'data-part': p }, pathDots); }
     }
     const at = Math.max(0, Math.min(n, Math.floor(((jd - a) / (b - a)) * n)));
     splitAt(sunTrack, sunDirs, at, sun, pathPast, pathAhead);
     const ft = fb ? bodyTracks.get(fb) : undefined;
-    if (fb && ft) {
-      const c = fb === 'Moon' ? MOON_COLOR : PCOL[fb];
+    if (fb && ft && at0) {
+      const c = fb === 'Moon' ? MOON_COLOR : star ? C.ivory : PCOL[fb];
       for (const l of [followPast, followAhead]) l.material.color.set(c);
-      splitAt(ft.pts, ft.dirs, at, fb === 'Moon' ? mo : planets.find((p) => p.name === fb)!, followPast, followAhead);
+      splitAt(ft.pts, ft.dirs, at, at0, followPast, followAhead);
     }
   }
 
@@ -346,7 +357,11 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     if (moonIn) { moonHalo.position.set(skyX(mo.az), skyY(mo.alt), 2.9); (moonHalo.material as THREE.SpriteMaterial).opacity = (0.22 + 0.6 * mo.fraction) * (mo.alt < 0 ? 0.5 : 1); }
     (daylight.material as THREE.MeshBasicMaterial).opacity = !daylightOn ? 0 : day ? 0.32 : 0.32 * Math.max(0, (truth.sun.alt + 6) / 6.833);
     const planets: SkyPlanet[] = PLANETS.map(([body, name]) => ({ name, ...planet(f, body) }));
-    drawPaths(sun, mo, planets);
+    const fs = followed?.kind === 'star' ? followed.star : null, fi = fs ? field.indexOf(fs.id) : -1;
+    const fp = followed?.kind === 'planet' ? followed.name : '';
+    const fAt: Dir | null = !followed ? null : followed.kind === 'sun' ? sun : followed.kind === 'moon' ? mo : followed.kind === 'planet' ? planets.find((p) => p.name === fp) ?? null
+      : fi >= 0 ? dirAt(fi) : f.direction(starVector(fs!, f.time));   // a star: as drawn (or as the selection finds one)
+    drawPaths(sun, mo, planets, fAt);
     dyn.replaceChildren();
     const taken: [number, number, number, number][] = [];     // boxes the constellation names keep clear of: the Sun's, planets' and stars' labels, the bodies
     if (sunIn) taken.push([skyX(sun.az) - 20, skyY(sun.alt) - 28, skyX(sun.az) + 190, skyY(sun.alt) + 14]);
@@ -378,24 +393,31 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     }
     // selection
     let selected: SkyInfo['selected'];
+    const ringed = !(followed && followed.kind !== 'sun' && sameBody(followable(selection), followed));   // a pick that is followed wears the two rings alone
     if (selection?.kind === 'star') {
       const s = selection.star, h = dirOf(s.id) ?? f.direction(starVector(s, f.time)), dec = declinationOfDate(s, f.time, ab);
       const rise = horizonAzimuth(dec, lat, true), set = horizonAzimuth(dec, lat, false);
       selected = { ...h, dec, rise, set, portal: rise === null ? null : portalAt(rise, doc.portals), portalWest: set === null ? null : portalAt(set, doc.portals_west) };
-      if (inFrame(h.az, h.alt)) { svgEl('circle', { cx: skyX(h.az), cy: skyY(h.alt), r: 9, fill: 'none', stroke: C.goldHi, 'stroke-width': 1 }, dyn); text(skyX(h.az) + 13, skyY(h.alt) + 16, s.name ?? s.designation ?? s.id, 'lbl-mono gold-hi halo', { 'font-size': 10.5 }, dyn); }
+      if (inFrame(h.az, h.alt)) { if (ringed) svgEl('circle', { cx: skyX(h.az), cy: skyY(h.alt), r: 9, fill: 'none', stroke: C.goldHi, 'stroke-width': 1 }, dyn); text(skyX(h.az) + 13, skyY(h.alt) + 16, s.name ?? s.designation ?? s.id, 'lbl-mono gold-hi halo', { 'font-size': 10.5 }, dyn); }
       for (const ra of [rise, set]) if (ra !== null) svgEl('path', { d: `M${skyX(ra)} ${SL.horizon - 2} l-5 -9 h10z`, fill: C.goldHi }, dyn);
     } else if (selection?.kind === 'planet') {
       const name = selection.name, q = planets.find((p) => p.name === name)!;
       const rise = horizonAzimuth(q.dec, lat, true), set = horizonAzimuth(q.dec, lat, false);
       selected = { az: q.az, alt: q.alt, dec: q.dec, rise, set, portal: rise === null ? null : portalAt(rise, doc.portals), portalWest: set === null ? null : portalAt(set, doc.portals_west) };
-      if (inFrame(q.az, q.alt)) svgEl('circle', { cx: skyX(q.az), cy: skyY(q.alt), r: 10, fill: 'none', stroke: C.goldHi, 'stroke-width': 1 }, dyn);
+      if (ringed && inFrame(q.az, q.alt)) svgEl('circle', { cx: skyX(q.az), cy: skyY(q.alt), r: 10, fill: 'none', stroke: C.goldHi, 'stroke-width': 1 }, dyn);
       for (const ra of [rise, set]) if (ra !== null) svgEl('path', { d: `M${skyX(ra)} ${SL.horizon - 2} l-5 -9 h10z`, fill: C.goldHi }, dyn);
     }
     else if (selection?.kind === 'sun' || selection?.kind === 'moon') {                     // the same gold ring: the pick is seen
       const b = selection.kind === 'sun' ? sun : mo;
-      if (inFrame(b.az, b.alt)) svgEl('circle', { cx: skyX(b.az), cy: skyY(b.alt), r: 13, fill: 'none', stroke: C.goldHi, 'stroke-width': 1.2, 'data-k': `sel-${selection.kind}` }, dyn);
+      if (ringed && inFrame(b.az, b.alt)) svgEl('circle', { cx: skyX(b.az), cy: skyY(b.alt), r: 13, fill: 'none', stroke: C.goldHi, 'stroke-width': 1.2, 'data-k': `sel-${selection.kind}` }, dyn);
     }
-    info = { jd, refraction: refractionOn, sun, moon: mo, planets, moonDay: moonClock.day(jd), moonrise, shown: nShown, selection, selected };
+    // the body followed: two rings (the Sun's own button shows it is followed, and The Day always follows it)
+    if (followed && fAt && followed.kind !== 'sun' && inFrame(fAt.az, fAt.alt)) {
+      const x = skyX(fAt.az), y = skyY(fAt.alt), r = followed.kind === 'moon' ? 17 : 14;
+      svgEl('circle', { cx: x, cy: y, r, fill: 'none', stroke: C.goldHi, 'stroke-width': 1.1, opacity: 0.9, 'data-k': 'followed' }, dyn);
+      svgEl('circle', { cx: x, cy: y, r: r + 3.5, fill: 'none', stroke: C.goldHi, 'stroke-width': 0.8, opacity: 0.5 }, dyn);
+    }
+    info = { jd, refraction: refractionOn, sun, moon: mo, planets, moonDay: moonClock.day(jd), moonrise, followedAt: followed && fAt ? { body: followed, ...fAt } : null, shown: nShown, selection, selected };
     st.render();
   }
   /** The Moon as it is lit (its bright limb toward the Sun), ringed in its colour, and labelled as the Sun is: where it is, and its light in fourteenths. */

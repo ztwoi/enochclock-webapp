@@ -3,9 +3,13 @@
 import { correctionSection, courseSection } from './cycleui';
 import { civil } from './dates';
 import { annual, fmt, GEEZ, ROMAN } from './model';
-import { lastPassage, litPortals, passageRun } from './sky/instrument';
+import { declinationOfDate, horizonAzimuth, lastPassage, litPortals, passageRun, portalAt } from './sky/instrument';
+import { skyFrame } from './sky/astronomy';
+import { CONSTELLATION_NAMES } from './sky/constellationNames';
+import { PCOL } from './dial/state';
+import { MOON_COLOR } from './day/events';
 import { C } from './stage';
-import type { SkyInfo } from './skyview';
+import { followable, positionOf, sameBody, type Followed, type SkyInfo } from './skyview';
 import type { DeepDoc, YearDoc } from './types';
 
 function legend() {
@@ -62,6 +66,44 @@ function portalSection(doc: YearDoc, S: { portal: number; side: 'east' | 'west' 
    <dl class="read"><dt>Common span</dt><dd>${P.common[0].toFixed(3)}° – ${P.common[1].toFixed(3)}°</dd>${last}</dl>
    <div class="eyebrow" style="margin-top:14px">The calendar's passes through it</div><dl class="read">${passes}</dl>
    <p class="note">A morning counts when its ${noun} bearing falls within the portal's common span; a ${noun} in a seam between two portals counts for neither. Each tick on the horizon is one morning of the last pass, at the bearing where the Sun crossed the horizon; the brightest is the latest. The Sun keeps moving after it rises, about 0.15° of bearing a minute, so a few minutes later it has drifted past its own tick.</p></div>`;
+}
+
+/** The Sky's reading, under its options (as the Dial's under its title): the body or star selected, or else the one followed, in a line, with
+ *  its Follow toggle; a portal selected, where the Sun last crossed in it. The `w` parts are a wide screen's: a phone keeps the line short. */
+export function skyReading(doc: YearDoc, sky: SkyInfo | null, followed: Followed | null) {
+  const S = sky?.selection ?? null, b = followable(S) ?? followed;
+  if (!sky || (!b && S?.kind !== 'portal')) return '';
+  const c = doc.calculation, part = (html: string, wide = false) => `<span${wide ? ' class="w"' : ''}>${html}</span>`;
+  const name = (n: string, color: string) => `<b style="color:${color}">${n.toUpperCase()}</b>`;
+  const crossing = (dec: number) => {
+    const rise = horizonAzimuth(dec, c.latitude, true);
+    if (rise === null) return dec * c.latitude > 0 ? 'never sets here' : 'never rises here';
+    const p = portalAt(rise, doc.portals);
+    return p.where === 'within' ? `rises in portal ${ROMAN[p.portal!]}` : p.where === 'seam' ? 'rises in a seam' : 'rises outside the portals';
+  };
+  if (S?.kind === 'portal') {
+    const pas = lastPassage(doc, S.side, S.portal, sky.jd), verb = S.side === 'east' ? 'rose' : 'set';
+    return part(name(`portal ${ROMAN[S.portal]}`, C.gold)) + part(S.side === 'east' ? 'where the Sun rises' : 'where the Sun sets', true)
+      + part(!pas ? `the Sun has not ${verb} here this year` : pas.daysAgo === 0 ? `the Sun ${verb} here today` : `the Sun last ${verb} here ${pas.daysAgo} d ago`);
+  }
+  const at = positionOf(sky, b!), alt = at ? part(`${sgn(at.alt, 1)}°`) : '', az = at ? part(`az ${at.az.toFixed(1)}°`, true) : '';
+  let html = '';
+  if (b!.kind === 'sun') {
+    const lit = litPortals(doc, sky.jd).east;
+    html = part(name('Sun', C.goldHi)) + az + alt + part(lit ? `rose in portal ${ROMAN[lit]} today` : 'rose outside a portal today', true);
+  } else if (b!.kind === 'moon') {
+    const d = sky.moonDay, r = sky.moonrise, p = r?.portal;
+    html = part(name('Moon', MOON_COLOR)) + (d ? part(`day ${d.day}`) : '') + part(`${(sky.moon.fraction * 14).toFixed(2)}/14`) + az + alt
+      + (p ? part(p.where === 'within' ? `rose in portal ${ROMAN[p.portal!]}` : p.where === 'seam' ? 'rose in a seam' : 'rose outside the portals', true) : '');
+  } else if (b!.kind === 'planet') {
+    const q = sky.planets.find((x) => x.name === (b as { name: string }).name);
+    html = part(name(b!.name, PCOL[b!.name])) + az + alt + (q ? part(`mag ${q.mag.toFixed(1)}`, true) + part(crossing(q.dec), true) : '');
+  } else {
+    const st = b!.star, dec = declinationOfDate(st, skyFrame(sky.jd, c.latitude, c.longitude_east, c.elevation_m).time);
+    html = part(name(st.name ?? st.designation ?? st.id, C.ivory)) + (st.constellation ? part(CONSTELLATION_NAMES[st.constellation] ?? st.constellation, true) : '') + part(`mag ${st.mag_v.toFixed(1)}`, true) + az + alt + part(crossing(dec), true);
+  }
+  const on = sameBody(b, followed);
+  return html + `<button class="follow${on ? ' on' : ''}" data-follow aria-pressed="${on}" title="${on ? 'Stop following' : 'The sky turns with it, opening out as it climbs or sinks so the horizon stays in view. Zoom in first and it follows that close. Dragging the sky, East, West or Compass stops it.'}">${on ? 'Following' : 'Follow'}</button>`;
 }
 
 /** Local date and time at the site, to the minute. */

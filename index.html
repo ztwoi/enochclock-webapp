@@ -40,6 +40,7 @@
     <button class="btn on" id="below" aria-pressed="true" title="Look under the horizon, down to the nadir (−90°)">Below horizon</button>
     <button class="btn" id="paths" aria-pressed="false" title="The day's paths, sunrise to sunrise: the Sun's (solid where it has been, dotted where it goes, a dot each part), the Moon's and each planet's, faint in its colour; the body the sky follows, drawn as the Sun's">Paths</button>
    </div>
+   <div class="sky-read" id="sky-read" hidden></div>
    <div class="opts" id="day-controls" hidden>
     <button class="btn on" id="day-follow" aria-pressed="true" title="The sky turns with the Sun. Zoom in first and it follows that close; pinch or scroll to zoom while it follows (double-tap: the whole view again). Dragging the sky stops it; tap to follow again">Follow Sun</button>
     <button class="btn" id="day-daylight" aria-pressed="false" title="The sky lit by day and twilight. Off: a night sky at every hour, so the stars and planets by day show">Daylight</button>
@@ -50,7 +51,7 @@
     <button class="btn" data-deep-z="out" aria-label="Zoom out" title="Zoom out (−)">−</button><button class="btn" data-deep-z="in" aria-label="Zoom in" title="Zoom in (+)">+</button><button class="btn" data-deep-z="home" aria-label="Back to the starting view" title="Back to the starting view (0)">⟲</button>
    </div></div>
   <div class="view" id="view-deep"></div>
-  <div class="view" id="view-sky"><p class="sky-note" id="sky-note" role="status" hidden></p><div class="sky-follow" id="sky-follow" role="group" aria-label="Follow a body" hidden></div><div class="sky-cal" id="sky-cal" role="dialog" aria-label="Calibrate the compass" hidden></div></div>
+  <div class="view" id="view-sky"><p class="sky-note" id="sky-note" role="status" hidden></p><div class="sky-cal" id="sky-cal" role="dialog" aria-label="Calibrate the compass" hidden></div></div>
   <div class="view" id="view-dial"></div>
   <div class="view" id="view-day"></div>
   <button class="btn focus-btn" id="focus" hidden></button>
