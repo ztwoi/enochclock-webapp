@@ -1,9 +1,11 @@
 // Atlas's details: the site the year is calculated at, read from the calculator's year (sunrise azimuths, day lengths,
 // times) and from the globe (the era's band, the overhead points), with the nearest preset place for a name.
+import tzLookup from '@photostructure/tz-lookup';
 import { fmt } from '../model';
-import type { YearDoc } from '../types';
+import type { Site, YearDoc } from '../types';
 import { band, bearingWord, nearest } from './geo';
-import { places, type AtlasInfo } from './view';
+import { places } from './places';
+import type { AtlasInfo } from './view';
 
 const lat = (x: number) => `${Math.abs(x).toFixed(4)}° ${x >= 0 ? 'N' : 'S'}`, lon = (x: number) => `${Math.abs(x).toFixed(4)}° ${x >= 0 ? 'E' : 'W'}`;
 const hm = (h: number) => `${Math.floor(h)} h ${String(Math.round((h % 1) * 60)).padStart(2, '0')} min`;
@@ -14,12 +16,23 @@ const BAND = {
   polar: ['Polar', 'the calculator refuses this latitude in this era'],
 } as const;
 
-/** The name a site goes by: a preset within 25 km, else how far and which way from the nearest one. */
+/** The site a hand chose on the globe: a preset place within 25 km lends its zone and elevation (curated); otherwise the zone
+ *  is estimated from the coordinates (tz-lookup: right in populated places, approximate near borders and at sea), and the
+ *  elevation is sea level until set under Coordinates. */
+export function siteAt(lat: number, lon: number): Site {
+  const nb = nearest({ lat, lon }, places), near = nb && nb.km < 25 ? nb.place : null;
+  let tz = near?.tz ?? 'UTC';
+  if (!near) try { tz = tzLookup(lat, lon); } catch { /* UTC */ }
+  return { name: siteName({ lat, lon, name: '' }).name, lat, lon, elev: near?.elev ?? 0, tz, source: 'manual' };
+}
+
+/** The name a site goes by: a preset place within 2 km (with its region); else its own name, if it has one ("Here"); else
+ *  how far and which way from the nearest preset place ("12 km E of Jerusalem"). */
 export function siteName(s: { lat: number; lon: number; name: string }) {
   const nb = nearest(s, places);
-  if (!nb) return { name: s.name, sub: '' };
-  if (nb.km < 25) return { name: nb.place.name, sub: nb.place.region };
-  return { name: s.name, sub: `${Math.round(nb.km)} km ${bearingWord(nb.place, s)} of ${nb.place.name}` };
+  if (nb && nb.km < 2) return { name: nb.place.name, sub: nb.place.region };
+  if (s.name && s.name !== 'Custom site') return { name: s.name, sub: '' };
+  return { name: nb ? `${Math.round(nb.km)} km ${bearingWord(nb.place, s)} of ${nb.place.name}` : 'Custom site', sub: '' };
 }
 
 export function atlasPanel(doc: YearDoc, i: number, info: AtlasInfo | null, name = 'Custom site'): string {
@@ -35,6 +48,8 @@ export function atlasPanel(doc: YearDoc, i: number, info: AtlasInfo | null, name
     <dl class="read">${dd('Time zone', `${c.timezone} · UTC${fmt.offset(doc.rows[i].sunrise_local)}`)}${dd('Elevation', `${Math.round(c.elevation_m)} m`)}${dd('Band', b[0], 'cal')}</dl>
     ${b[1] ? `<p class="note">${b[1][0].toUpperCase()}${b[1].slice(1)}.</p>` : ''}
     <dl class="read">${dd('Portals', `${north.toFixed(1)}° – ${south.toFixed(1)}° · ${(south - north).toFixed(1)}° wide`, 'cal')}${dd('Longest day', hm(Math.max(...hours)))}${dd('Shortest day', hm(Math.min(...hours)))}${dd('This day', `${fmt.time(doc.rows[i].sunrise_local).slice(0, 5)} – ${fmt.time(doc.extended[i].sunset_local).slice(0, 5)}`)}</dl>
+    <p class="note">Drag the globe to move the site under the crosshair; the year is calculated where you let go.</p>
+    <p style="margin-top:12px"><button class="btn" data-atlas-coords>Coordinates, elevation, my location…</button></p>
   </div>
   ${info ? `<div class="section">
     <div class="eyebrow">The globe at this instant</div>

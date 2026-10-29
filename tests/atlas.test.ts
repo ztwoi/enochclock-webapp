@@ -92,3 +92,25 @@ test('100 preset places: unique, well formed, every one computable in 2026', () 
     assert.ok(p.tags.length && p.note && p.region && Number.isFinite(p.elev), p.name);
   }
 });
+
+test('the preview of a year before it is calculated is close to the calculator: Jerusalem 2026 (sunrise 61.5°–117.3°, 14 h 14 min – 10 h 04 min)', async () => {
+  const { preview } = await import('../src/atlas/geo.ts');
+  const p = preview(31.7784, jdOfYear(2026));
+  assert.ok(Math.abs(p.north - 61.5) < 0.6 && Math.abs(p.south - 117.3) < 0.6, `${p.north} ${p.south}`);
+  assert.ok(Math.abs(p.longest - (14 + 14 / 60)) < 0.05 && Math.abs(p.shortest - (10 + 4 / 60)) < 0.05, `${p.longest} ${p.shortest}`);
+  assert.equal(p.band, 'temperate');
+  const q = preview(70, jdOfYear(2026));
+  assert.ok(Number.isNaN(q.north) && q.longest === 24 && q.shortest === 0 && q.band === 'polar');
+});
+
+test('a site chosen on the globe: a preset within 2 km lends its name, within 25 km its zone and elevation; else the zone from the coordinates', async () => {
+  const { siteAt, siteName } = await import('../src/atlas/panel.ts');
+  const jer = siteAt(31.7784, 35.2354);
+  assert.deepEqual([jer.name, jer.tz, jer.elev], ['Jerusalem', 'Asia/Jerusalem', 800]);
+  const near = siteAt(19.05, 72.72);                                      // off Mumbai, about 17 km west
+  assert.match(near.name, /^1\d km W of Mumbai$/); assert.equal(near.tz, 'Asia/Kolkata'); assert.equal(near.elev, 14);
+  const far = siteAt(-20, -140);                                          // the open Pacific
+  assert.match(far.tz, /^(Etc\/GMT\+9|Pacific\/)/); assert.equal(far.elev, 0); assert.match(far.name, / km [NESW]{1,2} of /);
+  assert.equal(siteName({ lat: 51.5, lon: -0.12, name: 'Here' }).name, 'London');   // a preset within 2 km wins over a name
+  assert.equal(siteName({ lat: 51.9, lon: -0.12, name: 'Here' }).name, 'Here');
+});

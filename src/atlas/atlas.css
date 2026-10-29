@@ -1,5 +1,4 @@
 /* Atlas (src/atlas/view.ts): the overlay's marks and words over the globe, and the site's tag. */
-#view-atlas { cursor: default; }
 #view-atlas svg.overlay { pointer-events: none; }
 .atlas-overlay text { font-family: var(--mono); font-size: 9.5px; letter-spacing: .04em; }
 .atlas-overlay .at-star { font-family: var(--serif); font-style: italic; font-size: 13px; fill: rgba(163,154,134,.75); letter-spacing: 0; }
@@ -27,3 +26,12 @@
   color: var(--gold); background: none; border: 0; }
 .nav-more-l { left: 0; background: linear-gradient(to right, var(--bg) 60%, transparent) !important; text-align: left; }
 .nav-more-r { right: 0; margin-left: auto; background: linear-gradient(to left, var(--bg) 60%, transparent) !important; text-align: right; }
+/* choosing: the globe turns under the hand; the tag reads what a year here would show */
+#view-atlas { cursor: grab; touch-action: none; }
+#view-atlas.dragging { cursor: grabbing; }
+.atlas-tag span { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--ivory2); }
+.atlas-tag span.state { color: var(--gold); }
+.atlas-tag span.warn { color: #d46a5a; white-space: normal; max-width: 260px; }
+.atlas-note { position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%); z-index: 3; max-width: min(560px, calc(100% - 32px));
+  font-family: var(--mono); font-size: 11.5px; color: #e3a07a; background: rgba(9,8,7,.86); border: 1px solid rgba(212,106,90,.5); padding: 8px 12px; text-align: center; }
+.atlas-note[hidden] { display: none; }

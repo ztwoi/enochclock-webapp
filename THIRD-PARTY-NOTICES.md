@@ -11,12 +11,13 @@ The ephemeris files are downloaded at build time from <https://github.com/aloist
 
 `sweph-wasm` — Prashant Tripathi, AGPL-3.0-or-later. <https://github.com/ptprashanttripathi/sweph-wasm>
 
-## Code — MIT
+## Code — MIT, CC0
 
 | Package | Version | Licence |
 |---|---|---|
 | three (Three.js) | 0.180.0 | MIT — `/legal/THREE-LICENSE.txt` |
 | astronomy-engine | 2.1.19 | MIT — `/legal/ASTRONOMY-ENGINE-LICENSE.txt` |
+| @photostructure/tz-lookup | 11.7.0 | CC0-1.0 (code); zone boundaries from Evan Siroky's timezone-boundary-builder, ODbL-1.0 |
 
 ## Data
 

@@ -7,20 +7,22 @@ import * as THREE from 'three';
 import { AstroTime, Body, GeoVector, Rotation_EQJ_EQD, SiderealTime } from 'astronomy-engine';
 import type { Catalogue } from '../skyview';
 import { PCOL } from '../dial/state';
-import { band, dot, eqjToEarth, frameAt, latLon, nearest, norm180, obliquity, polarLimit, vec, type V3 } from './geo';
+import { band, bearingWord, dot, eqjToEarth, frameAt, latLon, nearest, norm180, obliquity, polarLimit, preview, vec, type V3 } from './geo';
 import { coastSegments, landMask, loadLand } from './land';
-import PLACES from './places.json';
+import { places } from './places';
 import './atlas.css';
 
 export type Camera = 'site' | 'stars';
 export interface Layers { daynight: boolean; tropics: boolean; polar: boolean; bodies: boolean; stars: boolean; grid: boolean }
 export const LAYERS: Layers = { daynight: true, tropics: true, polar: true, bodies: true, stars: true, grid: true };
-export interface Place { name: string; region: string; lat: number; lon: number; elev: number; tz: string; tags: string[]; note: string }
-export const places = (PLACES as { places: Place[] }).places;
 export interface AtlasSite { lat: number; lon: number; name: string }
 export interface AtlasOptions {
   /** Pixels at the top of the host held by the view's title and options (the globe is centred below them). */
   headClearance: () => number;
+  /** A hand let go of the globe: the site under the crosshair is chosen (the app calculates the year there). */
+  onPick: (lat: number, lon: number) => void;
+  /** The view changed its own camera (a drag over the stars turns it back over the site). */
+  onCamera?: (c: Camera) => void;
 }
 export interface Atlas {
   /** Draw the instant (Julian day, UT) over the site. */
@@ -30,6 +32,8 @@ export interface Atlas {
   setLayers(l: Partial<Layers>): void;
   zoomStep(f: number): void;
   home(): void;
+  /** The site chosen cannot be calculated: the globe goes back to the site on show, and says why. */
+  refuse(why: string): void;
   /** What the view shows, for the details and the tests. */
   info(): AtlasInfo | null;
   dispose(): void;
@@ -90,6 +94,7 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
   overlay.setAttribute('class', 'overlay atlas-overlay'); overlay.setAttribute('aria-hidden', 'true');
   host.append(overlay);
   const tag = document.createElement('div'); tag.className = 'atlas-tag'; host.append(tag);
+  const note = document.createElement('p'); note.className = 'atlas-note'; note.setAttribute('role', 'status'); note.hidden = true; host.append(note);
 
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(20, 1, 0.01, STAR_R * 2);
   const maskTex = new THREE.Texture(); maskTex.minFilter = THREE.LinearFilter; maskTex.generateMipmaps = false;   // no mipmaps: the longitude wraps per fragment
@@ -148,7 +153,9 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
   }
 
   let layers: Layers = { ...LAYERS }, cam: Camera = 'site', zoom = 1, starLon = 0, w = 0, h = 0, disposed = false;
-  let last: { jd: number; site: AtlasSite } | null = null, shownInfo: AtlasInfo | null = null;
+  let last: { jd: number; site: AtlasSite } | null = null, shownInfo: AtlasInfo | null = null, rpxNow = 1;
+  /** The site under the crosshair while a hand turns the globe, and after it lets go until the app's year is there. */
+  let drag: { lat: number; lon: number } | null = null, pending: { lat: number; lon: number } | null = null;
   function applyLayers() {
     globeMat.uniforms.lit.value = layers.daynight ? 1 : 0; globeMat.uniforms.polarOn.value = layers.polar ? 1 : 0;
     grid.visible = layers.grid; stars.visible = layers.stars;
@@ -176,7 +183,7 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
   function aim(lat: number, lon: number) {
     const head = Math.min(opts.headClearance(), h * 0.4), avail = h - head, f = frameAt(lat, lon);
     camera.position.set(f.c[0] * DIST, f.c[1] * DIST, f.c[2] * DIST); camera.up.set(f.n[0], f.n[1], f.n[2]); camera.lookAt(0, 0, 0);
-    const rpx = (FILL * Math.min(w, avail) / 2) * zoom, tanA = 1 / Math.sqrt(DIST * DIST - 1);
+    const rpx = (FILL * Math.min(w, avail) / 2) * zoom, tanA = 1 / Math.sqrt(DIST * DIST - 1); rpxNow = rpx;
     camera.fov = 2 * Math.atan(((h / 2) / rpx) * tanA) / D; camera.aspect = w / h;
     camera.setViewOffset(w, h, 0, -head / 2, w, h);                 // the globe's centre in the middle of the space under the title
     camera.updateProjectionMatrix(); camera.updateMatrixWorld();
@@ -187,8 +194,10 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
   /** A direction far away is hidden behind the globe (the line of sight from the camera meets the sphere). */
   const behind = (d: THREE.Vector3) => { const c = camera.position, b = c.dot(d); return b < 0 && b * b - (c.lengthSq() - 1) > 0; };
 
-  function draw(jd: number, site: AtlasSite) {
-    last = { jd, site };
+  function draw(jd: number, calc: AtlasSite) {
+    last = { jd, site: calc };
+    if (pending && Math.abs(pending.lat - calc.lat) < 1e-6 && Math.abs(norm180(pending.lon - calc.lon)) < 1e-6) pending = null;   // the year is there
+    const choosing = drag ?? pending, site: AtlasSite = choosing ? { ...choosing, name: '' } : calc;
     if (!w) resize(); if (!w || !h) return;
     const time = new AstroTime(jd - J2000), gast = SiderealTime(time) * 15, rot = Rotation_EQJ_EQD(time).rot;
     const toE = earthMatrix(rot, gast), eps = obliquity(jd), lim = polarLimit(jd);
@@ -246,13 +255,19 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
     overlay.innerHTML = `<defs><radialGradient id="at-glow"><stop offset="0" stop-color="${SUN}" stop-opacity=".95"/><stop offset=".2" stop-color="${SUN}" stop-opacity=".35"/><stop offset="1" stop-color="${SUN}" stop-opacity="0"/></radialGradient></defs>${s.join('')}`;
     tag.hidden = !sp;
     if (sp) {
-      const nb = nearest(site, places), here = nb && nb.km < 25 ? nb.place.name : site.name;
-      const html = `<b>${here}</b><em>${Math.abs(site.lat).toFixed(4)}° ${site.lat >= 0 ? 'N' : 'S'} · ${Math.abs(site.lon).toFixed(4)}° ${site.lon >= 0 ? 'E' : 'W'}</em>`;
+      const nb = nearest(site, places), here = nb && nb.km < 2 ? nb.place.name : choosing && nb ? `${Math.round(nb.km)} km ${bearingWord(nb.place, site)} of ${nb.place.name}` : site.name;
+      let html = `<b>${here}</b><em>${Math.abs(site.lat).toFixed(4)}° ${site.lat >= 0 ? 'N' : 'S'} · ${Math.abs(site.lon).toFixed(4)}° ${site.lon >= 0 ? 'E' : 'W'}</em>`;
+      if (choosing) {                                                          // what a year here would show, before it is calculated
+        const pv = preview(site.lat, jd), hm = (x: number) => `${Math.floor(x)} h ${String(Math.round((x % 1) * 60)).padStart(2, '0')}`;
+        html += pv.band === 'polar' ? `<span class="warn">Beyond the polar limit of this era: the calculator refuses a year here</span>`
+          : `<span>${pv.band === 'tropic' ? 'Tropic' : pv.band === 'edge' ? 'Near the polar limit' : 'Temperate'} · portals ${pv.north.toFixed(0)}°–${pv.south.toFixed(0)}° · days ${hm(pv.shortest)} to ${hm(pv.longest)}</span>`
+          + `<span class="state">${drag ? 'Let go to calculate here' : 'Calculating the year here…'}</span>`;
+      }
       if (tag.dataset.h !== html) { tag.innerHTML = html; tag.dataset.h = html; }
       tag.style.left = `${Math.min(sp.x + 30, w - (tag.offsetWidth || 180) - 8)}px`; tag.style.top = `${sp.y + 30}px`;
     }
     shownInfo = { jd, gast, obliquity: eps, polarLimit: lim, zoom, camera: cam, centre, sun: latLon([sun.x, sun.y, sun.z]), moon: latLon([dirs[1].v.x, dirs[1].v.y, dirs[1].v.z]), sitePx: sp };
-    host.dataset.band = band(site.lat, jd);
+    host.dataset.band = band(site.lat, jd); host.classList.toggle('choosing', !!choosing);
   }
 
   // zoom: the wheel, a pinch, + and − (keys, in main.ts); a double tap goes home
@@ -267,7 +282,32 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
     if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 2 && pinch0) { const [a, b] = [...pts.values()]; setZoom(zoom0 * Math.hypot(a.x - b.x, a.y - b.y) / pinch0); }
   });
-  const up = (e: PointerEvent) => { pts.delete(e.pointerId); if (pts.size < 2) pinch0 = 0; };
+  // a hand turns the globe under the crosshair: up and down the latitude, sideways the longitude; letting go chooses the site
+  let down: { x: number; y: number } | null = null, queued = false;
+  const frame = () => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; redraw(); }); };
+  host.addEventListener('pointerdown', (e) => { if (e.button === 0 && pts.size === 1) { down = { x: e.clientX, y: e.clientY }; host.setPointerCapture(e.pointerId); } });
+  host.addEventListener('pointermove', (e) => {
+    if (!down || pts.size !== 1 || !last) return;
+    if (!drag) {
+      if (Math.hypot(e.clientX - down.x, e.clientY - down.y) < 4) return;   // a tap or a double click is not a drag
+      const from = pending ?? last.site;
+      if (cam === 'stars') { cam = 'site'; opts.onCamera?.('site'); }        // turning the globe is done over the site
+      drag = { lat: from.lat, lon: from.lon }; pending = null; note.hidden = true; host.classList.add('dragging');
+    }
+    const dx = e.clientX - down.x, dy = e.clientY - down.y; down = { x: e.clientX, y: e.clientY };
+    drag = { lat: Math.max(-85, Math.min(85, drag.lat + dy / rpxNow / D)), lon: norm180(drag.lon - dx / (rpxNow * Math.max(0.2, Math.cos(drag.lat * D))) / D) };
+    frame();
+  });
+  const release = () => {
+    down = null; host.classList.remove('dragging');
+    if (!drag || !last) return;
+    const at = { lat: +drag.lat.toFixed(4), lon: +drag.lon.toFixed(4) }; drag = null;
+    if (Math.abs(at.lat) > polarLimit(last.jd) - 0.05) { say(`No year at ${Math.abs(at.lat).toFixed(1)}° ${at.lat >= 0 ? 'N' : 'S'} in this era: beyond the polar limit (${polarLimit(last.jd).toFixed(1)}°) some day has no sunrise.`); redraw(); return; }
+    pending = at; redraw(); opts.onPick(at.lat, at.lon);
+  };
+  let noteTimer = 0;
+  const say = (why: string) => { note.textContent = why; note.hidden = false; clearTimeout(noteTimer); noteTimer = window.setTimeout(() => { note.hidden = true; }, 7000); };
+  const up = (e: PointerEvent) => { pts.delete(e.pointerId); if (pts.size < 2) pinch0 = 0; if (pts.size === 0) release(); else down = null; };
   host.addEventListener('pointerup', up); host.addEventListener('pointercancel', up);
   host.addEventListener('dblclick', () => setZoom(1));
 
@@ -275,13 +315,14 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
     draw,
     setCamera(c) {
       if (c === cam) return;
-      if (c === 'stars' && last) starLon = last.site.lon + SiderealTime(new AstroTime(last.jd - J2000)) * 15;   // the sky holds where it stands now
+      if (c === 'stars' && last) starLon = (pending ?? last.site).lon + SiderealTime(new AstroTime(last.jd - J2000)) * 15;   // the sky holds where it stands now
       cam = c; redraw();
     },
     get camera() { return cam; },
     setLayers(l) { layers = { ...layers, ...l }; applyLayers(); redraw(); },
     zoomStep(f) { setZoom(zoom * f); },
     home() { setZoom(1); },
+    refuse(why) { pending = null; say(why); redraw(); },
     info: () => shownInfo,
     dispose() {
       disposed = true; ro.disconnect();

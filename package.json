@@ -17,6 +17,7 @@
     "video": "node scripts/day-video.mjs"
   },
   "dependencies": {
+    "@photostructure/tz-lookup": "11.7.0",
     "astronomy-engine": "2.1.19",
     "sweph-wasm": "2.6.9",
     "three": "0.180.0"

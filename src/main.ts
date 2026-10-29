@@ -36,7 +36,7 @@ import { createFilm } from './film';
 import { createDayView, dayPanel, geometryFor, type DayView } from './day/view';
 import { createFollow, type Follow } from './day/follow';
 import { createAtlas, LAYERS as ATLAS_LAYERS, type Atlas, type Camera as AtlasCamera, type Layers as AtlasLayers } from './atlas/view';
-import { atlasPanel } from './atlas/panel';
+import { atlasPanel, siteAt } from './atlas/panel';
 
 type View = 'sky' | 'dial' | 'day' | 'atlas' | 'deep';
 /** The tabs, in their order (the number keys follow it). */
@@ -128,7 +128,7 @@ async function load(by: { date: string } | { enochYear: number } | { year: numbe
     $('when').textContent = 'No valid year loaded';
     status.hidden = false; status.className = 'status error';
     $('insp').innerHTML = `<div class="section"><div class="eyebrow">No year loaded</div><p class="note">The calculator needs a sunrise every day of the year at this site.</p><p style="margin-top:14px"><button class="btn on" id="pick-site">Choose another site</button></p></div>`;
-    $('pick-site').onclick = () => $('site-chip').click();
+    $('pick-site').onclick = () => openSiteDialog();
     tp.pause(); crossing = false;
     status.textContent = `The calculator refused this year: ${(e as Error).message}`;
   } finally { setCalcBusy(false); }
@@ -174,10 +174,17 @@ function ensureStars() {
 /** Atlas, built when first shown. Its stars are the catalogue's (loaded for it if no other view has). */
 function ensureAtlas() {
   if (!state.atlas) {
-    state.atlas = createAtlas($('view-atlas'), () => state.cat, { headClearance });
+    state.atlas = createAtlas($('view-atlas'), () => state.cat, { headClearance, onPick: pickSite, onCamera: (c) => { atlasCamera = c; syncAtlasCam(); saveAtlas(); } });
     state.atlas.setLayers(atlasLayers()); state.atlas.setCamera(atlasCamera);
   }
   if (!state.cat) loadCatalogue('/sky/', Number($<HTMLSelectElement>('mag').value)).then((c) => { state.cat ??= c; update(); }).catch(() => undefined);   // the globe works without stars
+}
+/** A site chosen on the globe: the year is calculated there, keeping the instant on show. If the calculator refuses it after all
+ *  (the polar limit is an estimate near its edge), the site on show before stays, and Atlas says why. */
+async function pickSite(lat: number, lon: number) {
+  const before = state.site;
+  await changeSite(siteAt(lat, lon));
+  if (!state.doc) { state.atlas?.refuse('The calculator refused a year at this site: some day of it has no sunrise. Back to the site before.'); await changeSite(before); }
 }
 const sameSite = (d: YearDoc) => d.calculation.latitude === state.site.lat && d.calculation.longitude_east === state.site.lon && d.calculation.elevation_m === state.site.elev && d.calculation.timezone === state.site.tz;
 let nextLoading = false;
@@ -439,17 +446,19 @@ function bindOptions() {
 const AKEY = 'enoch.atlas.v1';
 let atlasCamera: AtlasCamera = 'site';
 const atlasLayers = (): AtlasLayers => Object.fromEntries(Object.keys(ATLAS_LAYERS).map((k) => [k, document.querySelector(`[data-atlas-layer=${k}]`)?.classList.contains('on') ?? true])) as unknown as AtlasLayers;
+const saveAtlas = () => localStorage.setItem(AKEY, JSON.stringify({ camera: atlasCamera, layers: atlasLayers() }));
+const syncAtlasCam = () => document.querySelectorAll<HTMLElement>('[data-atlas-cam]').forEach((b) => { const on = b.dataset.atlasCam === atlasCamera; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
 function bindAtlas() {
   try {
     const saved = JSON.parse(localStorage.getItem(AKEY) ?? 'null') as { camera?: AtlasCamera; layers?: Partial<AtlasLayers> } | null;
     if (saved?.camera === 'stars') atlasCamera = 'stars';
     for (const [k, v] of Object.entries(saved?.layers ?? {})) { const b = document.querySelector<HTMLElement>(`[data-atlas-layer=${k}]`); if (b) { b.classList.toggle('on', !!v); b.setAttribute('aria-pressed', String(!!v)); } }
   } catch { /* nothing kept */ }
-  const save = () => localStorage.setItem(AKEY, JSON.stringify({ camera: atlasCamera, layers: atlasLayers() }));
-  const syncCam = () => document.querySelectorAll<HTMLElement>('[data-atlas-cam]').forEach((b) => { const on = b.dataset.atlasCam === atlasCamera; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  const save = saveAtlas, syncCam = syncAtlasCam;
   document.querySelectorAll<HTMLButtonElement>('[data-atlas-cam]').forEach((b) => b.addEventListener('click', () => { atlasCamera = b.dataset.atlasCam as AtlasCamera; syncCam(); state.atlas?.setCamera(atlasCamera); save(); update(); }));
   document.querySelectorAll<HTMLButtonElement>('[data-atlas-layer]').forEach((b) => b.addEventListener('click', () => { const on = !b.classList.contains('on'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); state.atlas?.setLayers(atlasLayers()); save(); }));
   syncCam();
+  $('insp').addEventListener('click', (e) => { if ((e.target as Element).closest('[data-atlas-coords]')) openSiteDialog(); });   // the details' Coordinates…
 }
 /** The views' tabs on a narrow screen scroll sideways: an arrow at the end that has more (tap: the next ones), and the tab on show kept in view. */
 function bindNavScroll() {
@@ -642,13 +651,15 @@ function changeSite(site: Site) {
   saveSite(site); siteChip();
   const doc = state.doc, i = doc ? cursorRow(annual(doc), state.cursor).i : -1, live = state.live;
   const jd = doc && i >= 0 ? jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part) : -1, part = state.part;   // the instant on show, kept across the site change
-  load({ date: doc && i >= 0 ? annual(doc)[i].civil_date : localISODate() }, 'today').then(() => {
+  return load({ date: doc && i >= 0 ? annual(doc)[i].civil_date : localISODate() }, 'today').then(() => {
     if (live) return goNow();                                       // a new site keeps following Now
     const d = state.doc, k = d && jd > 0 ? dayIndexAt(d, jd) : -1;   // otherwise it keeps the date being looked at ('today' would otherwise fall back to day 1 when Now is outside that year)
     if (d && k >= 0) { state.cursor = k; state.part = partOfDay(d, k, jd); } else if (d && i >= 0) { state.cursor = Math.min(i, annual(d).length - 1); state.part = part; }
     update();
   });
 }
+/** The Observer dialog: coordinates, elevation, zone, presets and the device's location (set up by bindSite). */
+let openSiteDialog = () => {};
 function bindSite() {
   const dlg = $<HTMLDialogElement>('site-dialog'), form = $<HTMLFormElement>('site-form');
   const fill = (s: Site) => { (form.lat as HTMLInputElement).value = String(s.lat); (form.lon as HTMLInputElement).value = String(s.lon); (form.elev as HTMLInputElement).value = String(s.elev); (form.tz as HTMLInputElement).value = s.tz; };
@@ -679,7 +690,8 @@ function bindSite() {
     geoUi(); siteChip();
   });
   geoUi();
-  $('site-chip').onclick = () => { fill(state.site); fromDevice = null; geo.filled = false; geoUi(); dlg.showModal(); permissionState().then((p) => { geo.perm = p; geoUi(); siteChip(); }); };
+  openSiteDialog = () => { fill(state.site); fromDevice = null; geo.filled = false; geoUi(); dlg.showModal(); permissionState().then((p) => { geo.perm = p; geoUi(); siteChip(); }); };
+  $('site-chip').onclick = () => { if (state.view === 'atlas' || !state.doc) openSiteDialog(); else setView('atlas'); };   // the place is chosen on the globe; there, the chip gives the coordinates
   form.onsubmit = (e) => {
     if ((e.submitter as HTMLButtonElement | null)?.value !== 'apply') return;
     const p = PRESETS.find((q) => q.lat === +(form.lat as HTMLInputElement).value && q.lon === +(form.lon as HTMLInputElement).value);

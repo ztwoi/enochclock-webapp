@@ -29,7 +29,9 @@ Five views share one time cursor:
 - **Atlas.** The same instant seen from outside the Earth: the globe lit by the Sun of the moment, the site under a
   crosshair, the stars and planets behind, the tropics and the polar limit of the era (beyond it some day of the year has
   no sunrise, and the calculator refuses the year). Over the site, the camera turns with the Earth; from the stars, the
-  Earth turns under a fixed sky. Coastlines: Natural Earth 1:50m. Choosing places, dates and saved moments here is in
+  Earth turns under a fixed sky. Drag the globe to move the site under the crosshair: while it moves, what a year there
+  would show (its band, the span of the portals, the longest and shortest day); let go and the year is calculated there,
+  the instant kept. The site chip opens Atlas. Coastlines: Natural Earth 1:50m. Dates and saved moments here are in
   progress ([`docs/atlas.md`](docs/atlas.md)).
 - **Deep Time.** About 30,000 annual Day 1s against the independently solved March equinox, with the 294-year cycle
   boundaries. Click a year to open it.

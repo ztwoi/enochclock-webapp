@@ -68,3 +68,22 @@ export function eqjToEarth(rot: number[][], gastDeg: number): number[] {
   return [...r0.map((x, k) => c * x + s * r1[k]), ...r0.map((x, k) => -s * x + c * r1[k]), ...r2];
 }
 export const apply3 = (m: number[], v: V3): V3 => [m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2]];
+
+/** Altitude of the Sun's centre at sunrise and sunset as the almanacs reckon it (refraction 34′, semidiameter 16′). */
+const H0 = -0.833;
+/** The Sun's rising azimuth (degrees from north) at a latitude for a declination; NaN when it does not rise or set. */
+export function riseAzimuth(lat: number, dec: number) {
+  const c = (Math.sin(dec * D) - Math.sin(lat * D) * Math.sin(H0 * D)) / (Math.cos(lat * D) * Math.cos(H0 * D));
+  return Math.abs(c) > 1 ? NaN : Math.acos(c) / D;
+}
+/** Hours from sunrise to sunset at a latitude for a declination (0 or 24 when the Sun does not rise or set). */
+export function dayHours(lat: number, dec: number) {
+  const c = (Math.sin(H0 * D) - Math.sin(lat * D) * Math.sin(dec * D)) / (Math.cos(lat * D) * Math.cos(dec * D));
+  return c <= -1 ? 24 : c >= 1 ? 0 : (2 * Math.acos(c)) / D / 15;
+}
+/** What a year at a latitude would show, before the calculator is asked: the span of sunrise azimuths and the longest and
+ *  shortest days, at the solstices of the era (its obliquity). */
+export function preview(lat: number, jdUt: number) {
+  const e = obliquity(jdUt), a = riseAzimuth(lat, e), b = riseAzimuth(lat, -e), d1 = dayHours(lat, e), d2 = dayHours(lat, -e);
+  return { north: a, south: b, longest: Math.max(d1, d2), shortest: Math.min(d1, d2), band: band(lat, jdUt) };
+}
