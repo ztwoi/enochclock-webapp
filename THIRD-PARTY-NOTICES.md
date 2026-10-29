@@ -25,6 +25,7 @@ The ephemeris files are downloaded at build time from <https://github.com/aloist
 | Star catalogue | HYG Database 4.1, David Nash / Astronomy Nexus | **CC BY-SA 4.0** — `/sky/HYG-LICENSE.txt` |
 | Constellation figures | Stellarium `modern` sky culture | **CC BY-SA 4.0** — `/sky/STELLARIUM-LICENSE.md` |
 | Magnetic declination | NOAA NCEI World Magnetic Model WMM2025 | Public domain |
+| Coastlines (Atlas) | Natural Earth 1:50m land, as TopoJSON by `world-atlas` 2 (Mike Bostock) | Public domain (Natural Earth); `world-atlas` ISC |
 | Text of 1 Enoch 72–82 | R. H. Charles, *The Book of Enoch* (1912) | Public domain |
 
 The files in `public/sky/` are modified exports of the originals: the HYG rows (without the Sun) reduced to the columns the

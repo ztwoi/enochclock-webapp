@@ -35,19 +35,22 @@ import { createDialView, loadSky as dialSky, type DialView } from './dial/view';
 import { createFilm } from './film';
 import { createDayView, dayPanel, geometryFor, type DayView } from './day/view';
 import { createFollow, type Follow } from './day/follow';
+import { createAtlas, LAYERS as ATLAS_LAYERS, type Atlas, type Camera as AtlasCamera, type Layers as AtlasLayers } from './atlas/view';
+import { atlasPanel } from './atlas/panel';
 
-type View = 'sky' | 'dial' | 'day' | 'deep';
+type View = 'sky' | 'dial' | 'day' | 'atlas' | 'deep';
 /** The tabs, in their order (the number keys follow it). */
-const ORDER: View[] = ['sky', 'dial', 'day', 'deep'];
+const ORDER: View[] = ['sky', 'dial', 'day', 'atlas', 'deep'];
 const VIEWS: Record<View, { name: string; title: string; quote: string; ref?: string; foot: [string, string] }> = {
   sky: { name: 'Sky', title: '', quote: '72:3 stars', ref: '72:3', foot: ['Click a star.', ''] },
   deep: { name: 'Deep Time', title: 'Thirty thousand years of Day 1', quote: '72:1',
     foot: ['Years: astronomical numbering. Click a year to open it.', 'Envelope = min–max per 100 years'] },
   dial: { name: 'The Dial', title: '', quote: '72:1', foot: ['', ''] },
   day: { name: 'The Day', title: '', quote: '72:1', foot: ['', ''] },
+  atlas: { name: 'Atlas', title: '', quote: '72:1', foot: ['The site is under the crosshair. Scroll or pinch to zoom; a double-click shows the whole Earth.', 'Today\'s coastlines · Natural Earth 1:50m'] },
 };
 /** The views with a time of day: played by degrees, drawn at the part of the day. */
-const timed = (v: View) => v === 'sky' || v === 'dial' || v === 'day';
+const timed = (v: View) => v === 'sky' || v === 'dial' || v === 'day' || v === 'atlas';
 const DEEP_HALF_WINDOW = 350;
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -58,6 +61,8 @@ const state = {
   dial: null as DialView | null, next: null as YearDoc | null,
   /** The Day: the Sky and the Dial together (src/day/view.ts), built when first shown, rebuilt per year and site. */
   day: null as DayView | null,
+  /** Atlas: the instant seen from outside the Earth (src/atlas/view.ts), built when first shown; it does not depend on the year. */
+  atlas: null as Atlas | null,
   /** Following the present (Now, as on the Dial): the day and, in Sky, the part of the day keep up with the clock. */
   live: false,
 };
@@ -166,6 +171,14 @@ function ensureStars() {
   loadCatalogue('/sky/', Number($<HTMLSelectElement>('mag').value)).then((c) => { state.cat = c; state.dial!.setCatalogue(c); }).catch(() => state.dial!.setCatalogue({ stars: [], segments: [] }))   // the face works without stars
     .finally(() => update());
 }
+/** Atlas, built when first shown. Its stars are the catalogue's (loaded for it if no other view has). */
+function ensureAtlas() {
+  if (!state.atlas) {
+    state.atlas = createAtlas($('view-atlas'), () => state.cat, { headClearance });
+    state.atlas.setLayers(atlasLayers()); state.atlas.setCamera(atlasCamera);
+  }
+  if (!state.cat) loadCatalogue('/sky/', Number($<HTMLSelectElement>('mag').value)).then((c) => { state.cat ??= c; update(); }).catch(() => undefined);   // the globe works without stars
+}
 const sameSite = (d: YearDoc) => d.calculation.latitude === state.site.lat && d.calculation.longitude_east === state.site.lon && d.calculation.elevation_m === state.site.elev && d.calculation.timezone === state.site.tz;
 let nextLoading = false;
 /** The next Enoch year, fetched near the year's end: the Dial glides into it without waiting. */
@@ -221,11 +234,12 @@ function update() {
   if (state.view === 'sky' || state.view === 'deep') ({ deep: state.deep, sky: state.sky }[state.view])?.render();
   if (state.view === 'dial') renderDial();
   if (state.view === 'day') state.day?.draw(jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part));
+  if (state.view === 'atlas') state.atlas?.draw(jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part), { lat: doc.calculation.latitude, lon: doc.calculation.longitude_east, name: state.site.name });
   $('when').innerHTML = `<div class="w1"><b>${enochText(r.enoch_date)}</b> <span class="course-chip">${doc.extended[i].course_name}</span>${accuracyFlag(doc.accuracy)}</div><div class="w2" id="when-t"></div>`;
   clock();
   $('now').classList.toggle('on', state.live); $('now').setAttribute('aria-pressed', String(state.live));
   cycleStrip($('cycle-track') as unknown as SVGSVGElement, doc, i);
-  const morning = state.view !== 'dial' && (i !== shown.i || doc !== shown.doc || state.view !== shown.view), moved = state.view === 'sky' && (state.part !== shown.part || shown.sel !== selSerial);
+  const morning = state.view !== 'dial' && (i !== shown.i || doc !== shown.doc || state.view !== shown.view), moved = (state.view === 'sky' || state.view === 'atlas') && (state.part !== shown.part || shown.sel !== selSerial);
   if (morning || moved) {                                          // once per morning, and in Sky as the part moves
     const now = performance.now(), only = !morning && shown.sel === selSerial;   // only the part moved: while it runs, a few times a second (a trailing one when it stops)
     if (only && now - panelAt < PANEL_MS) { panelTimer ||= window.setTimeout(() => { panelTimer = 0; update(); }, PANEL_MS - (now - panelAt)); }
@@ -239,6 +253,7 @@ const PANEL_MS = 120; let panelAt = 0, panelTimer = 0;
 function inspector(doc: YearDoc, i: number) {
   const el = $('insp'), acc = accuracySection(doc.accuracy, { stars: state.view === 'sky' || state.view === 'day' });           // every view: how far to trust this year
   if (state.view === 'deep') { el.innerHTML = (state.deepDoc ? deepPanel(state.deepDoc, firstYear(), doc, i) : '') + acc; return; }
+  if (state.view === 'atlas') { el.innerHTML = atlasPanel(doc, i, state.atlas?.info() ?? null, state.site.name) + acc; return; }
   if (state.view === 'day') { const d = state.day?.day(); el.innerHTML = (d && d.i === i ? dayPanel(doc, i, d.events, d.rising) : '') + acc; return; }
   el.innerHTML = (skyCompass.on ? skyCompass.html({ name: state.site.name, lat: doc.calculation.latitude, lon: doc.calculation.longitude_east, jd: state.sky?.info()?.jd ?? doc.rows[i].sunrise_jd_ut, date: annual(doc)[i].civil_date, year: doc.calculation.year_beginning_gregorian, tz: doc.calculation.timezone }) : '') + skyPanel(doc, i, state.part, state.sky?.info() ?? null) + acc;
 }
@@ -420,6 +435,37 @@ function bindOptions() {
   phone.addEventListener('change', place); place();
 }
 
+/** Atlas's camera and layers, remembered on the device. */
+const AKEY = 'enoch.atlas.v1';
+let atlasCamera: AtlasCamera = 'site';
+const atlasLayers = (): AtlasLayers => Object.fromEntries(Object.keys(ATLAS_LAYERS).map((k) => [k, document.querySelector(`[data-atlas-layer=${k}]`)?.classList.contains('on') ?? true])) as unknown as AtlasLayers;
+function bindAtlas() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(AKEY) ?? 'null') as { camera?: AtlasCamera; layers?: Partial<AtlasLayers> } | null;
+    if (saved?.camera === 'stars') atlasCamera = 'stars';
+    for (const [k, v] of Object.entries(saved?.layers ?? {})) { const b = document.querySelector<HTMLElement>(`[data-atlas-layer=${k}]`); if (b) { b.classList.toggle('on', !!v); b.setAttribute('aria-pressed', String(!!v)); } }
+  } catch { /* nothing kept */ }
+  const save = () => localStorage.setItem(AKEY, JSON.stringify({ camera: atlasCamera, layers: atlasLayers() }));
+  const syncCam = () => document.querySelectorAll<HTMLElement>('[data-atlas-cam]').forEach((b) => { const on = b.dataset.atlasCam === atlasCamera; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  document.querySelectorAll<HTMLButtonElement>('[data-atlas-cam]').forEach((b) => b.addEventListener('click', () => { atlasCamera = b.dataset.atlasCam as AtlasCamera; syncCam(); state.atlas?.setCamera(atlasCamera); save(); update(); }));
+  document.querySelectorAll<HTMLButtonElement>('[data-atlas-layer]').forEach((b) => b.addEventListener('click', () => { const on = !b.classList.contains('on'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); state.atlas?.setLayers(atlasLayers()); save(); }));
+  syncCam();
+}
+/** The views' tabs on a narrow screen scroll sideways: an arrow at the end that has more (tap: the next ones), and the tab on show kept in view. */
+function bindNavScroll() {
+  const nav = document.querySelector<HTMLElement>('.nav')!, arrow = (dir: 'l' | 'r') => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = `nav-more nav-more-${dir}`; b.hidden = true;
+    b.textContent = dir === 'l' ? '‹' : '›'; b.setAttribute('aria-label', dir === 'l' ? 'Earlier views' : 'More views');
+    b.addEventListener('click', () => nav.scrollBy({ left: (dir === 'l' ? -1 : 1) * nav.clientWidth * 0.7, behavior: 'smooth' })); return b;
+  };
+  const L = arrow('l'), Rr = arrow('r'); nav.prepend(L); nav.append(Rr);       // sticky at the bar's ends (style.css)
+  const edges = () => { const l = nav.scrollLeft > 2, r = nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 2; L.hidden = !l; Rr.hidden = !r; nav.classList.toggle('more-l', l); nav.classList.toggle('more-r', r); };
+  nav.addEventListener('scroll', edges, { passive: true });
+  new ResizeObserver(() => { nav.querySelector('a.on')?.scrollIntoView({ inline: 'nearest', block: 'nearest' }); edges(); }).observe(nav);
+  return () => { nav.querySelector('a.on')?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' }); requestAnimationFrame(edges); };
+}
+let navShow = () => {};
+
 /** A view has been set up (its title, options, focus and transport): until then, asking for the view already named is no repeat.
  *  The first load draws the opening view (Sky) before start() sets it up, and that must not skip the setting up. */
 let viewSetUp = false;
@@ -431,15 +477,17 @@ async function setView(v: View, push = true) {
   const meta = VIEWS[v];
   document.querySelectorAll<HTMLElement>('.view').forEach((n) => n.classList.toggle('on', n.id === `view-${v}`));
   document.querySelectorAll<HTMLAnchorElement>('.nav a[data-view]').forEach((a) => { const on = a.dataset.view === v; a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  navShow();
   if (v !== 'dial') { $('vh-title').textContent = meta.title; delete $('vh-title').dataset.h; }   // the Dial writes its own: the weekday and course
   $('vh-prim').hidden = v !== 'dial'; $('dial-controls').hidden = v !== 'dial';
   state.dial?.setActive(v === 'dial');
-  $('vh-quote').textContent = v === 'dial' || v === 'sky' || v === 'day' ? '' : state.doc ? `“${state.doc.text.quotes[meta.quote]}” — ${meta.ref ?? meta.quote}` : '';
+  $('vh-quote').textContent = v === 'dial' || v === 'sky' || v === 'day' || v === 'atlas' ? '' : state.doc ? `“${state.doc.text.quotes[meta.quote]}” — ${meta.ref ?? meta.quote}` : '';
   $('foot-a').textContent = meta.foot[0]; $('foot-b').textContent = (v === 'deep' && state.deep?.envelopeNote()) || meta.foot[1];
   if (push) history.replaceState(null, '', `${location.search}#${v}`);
   if (v === 'sky' || v === 'deep') ({ deep: state.deep, sky: state.sky }[v])?.stage.resize();   // its title block is now this view's
   $('sky-controls').hidden = v !== 'sky'; skySheetOpts();
   $('day-controls').hidden = v !== 'day';
+  $('atlas-controls').hidden = v !== 'atlas';
   layoutChanged();                                                  // the title block and the options row changed: what was measured is stale
   adoptCompass();                                                   // the compass came on elsewhere: Sky follows it from here
   focus.setAvailable(timed(v));                                     // the top bar folds away in Sky, the Dial and The Day
@@ -452,6 +500,7 @@ async function setView(v: View, push = true) {
     $('stage').setAttribute('aria-busy', 'false');
   }
   if (v === 'dial' && state.doc) ensureStars();
+  if (v === 'atlas') ensureAtlas();
   if (v === 'day' && state.doc) {
     $('stage').setAttribute('aria-busy', 'true');
     try { await ensureDay(); $('status').hidden = true; } catch (e) { $('status').className = 'status error'; $('status').hidden = false; $('status').textContent = `Star catalogue unavailable (${(e as Error).message}).`; }
@@ -549,6 +598,7 @@ function bindTransport() {
     if (e.key === 's' || e.key === 'S') tp.cycleSpeed();
     if (e.key === 'n' || e.key === 'N') goNow();
     if (e.key === 'f' || e.key === 'F') focus.toggle();
+    if (state.view === 'atlas') { if (e.key === '+' || e.key === '=') state.atlas?.zoomStep(1.25); if (e.key === '-') state.atlas?.zoomStep(0.8); if (e.key === '0') state.atlas?.home(); }
     const stage = state.view === 'sky' ? state.sky?.stage : state.view === 'day' ? state.day?.sky.stage : state.view === 'deep' ? state.deep?.stage : null;
     if (e.key === '+' || e.key === '=') stage?.zoomStep(1.25); if (e.key === '-') stage?.zoomStep(0.8);
     if (e.key === '0') { const sky = state.view === 'sky' ? state.sky : state.view === 'day' ? state.day?.sky : null; if (sky) sky.stage.home(); else stage?.setZoom(null); }   // following the Sun, home is its 1×
@@ -684,7 +734,7 @@ async function start() {
   mountLegal($('offline'));
   mountFeedback($('legal'), () => ({ mode: VIEWS[state.view].name, page: state.doc ? `Enoch year ${state.doc.calculation.enoch_year}` : '' }));
   onCalculatorProgress(calculatorNote);
-  bindTransport(); bindSite(); bindOptions();
+  bindTransport(); bindSite(); bindOptions(); bindAtlas(); navShow = bindNavScroll();
   const P = new URLSearchParams(location.search), urlSite = siteFromUrl(P);
   state.site = urlSite ?? savedSite() ?? FALLBACK;
   // First visit: no place given or saved. If location is already allowed, show the device's place from the start; never ask unprompted.

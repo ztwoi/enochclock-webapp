@@ -1,0 +1,29 @@
+/* Atlas (src/atlas/view.ts): the overlay's marks and words over the globe, and the site's tag. */
+#view-atlas { cursor: default; }
+#view-atlas svg.overlay { pointer-events: none; }
+.atlas-overlay text { font-family: var(--mono); font-size: 9.5px; letter-spacing: .04em; }
+.atlas-overlay .at-star { font-family: var(--serif); font-style: italic; font-size: 13px; fill: rgba(163,154,134,.75); letter-spacing: 0; }
+.atlas-overlay .at-body { font-size: 10px; }
+.atlas-overlay .at-tropic { fill: rgba(143,179,189,.9); }
+.atlas-overlay .at-polar { fill: rgba(212,106,90,.95); }
+.atlas-overlay .at-cross circle, .atlas-overlay .at-cross path { fill: none; stroke: var(--gold-hi); stroke-width: 1.2; }
+.atlas-overlay .at-cross circle.dot { fill: var(--gold-hi); stroke: none; }
+.atlas-tag { position: absolute; z-index: 2; pointer-events: none; font-family: var(--mono); font-size: 11px; color: var(--ivory); line-height: 1.5;
+  padding: 4px 8px; background: rgba(9,8,7,.72); border-left: 1px solid var(--gold-dim); white-space: nowrap; }
+.atlas-tag b { display: block; font-family: var(--serif); font-size: 16px; font-weight: 500; color: var(--gold-hi); }
+.atlas-tag em { font-style: normal; color: var(--ivory2); }
+.atlas-tag[hidden] { display: none; }
+/* the details */
+.atlas-site .at-name { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.atlas-site .at-name .n { font-family: var(--serif); font-size: 28px; font-weight: 500; color: var(--gold-hi); line-height: 1.1; }
+.atlas-site .at-name .s { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ivory2); }
+.atlas-site .at-coords { font-family: var(--mono); font-size: 13px; color: var(--ivory); margin-top: 4px; }
+
+/* the views' tabs when they do not all fit: arrows held at the ends of the scrolling bar, and a fade where more wait */
+.nav-more { display: none; }
+.nav { position: relative; }
+.nav.more-r, .nav.more-l { scroll-padding: 0 28px; }
+.nav-more:not([hidden]) { display: block; position: sticky; z-index: 1; flex: none; width: 26px; padding: 0; font-family: var(--serif); font-size: 22px; line-height: 1;
+  color: var(--gold); background: none; border: 0; }
+.nav-more-l { left: 0; background: linear-gradient(to right, var(--bg) 60%, transparent) !important; text-align: left; }
+.nav-more-r { right: 0; margin-left: auto; background: linear-gradient(to left, var(--bg) 60%, transparent) !important; text-align: right; }

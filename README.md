@@ -12,7 +12,7 @@ It is a static site. Every calculation runs in your browser; nothing is sent to 
 
 ## The instrument
 
-Four views share one time cursor:
+Five views share one time cursor:
 
 - **Sky.** The real sky over the six eastern portals (1 Enoch 72) at any of the 18 parts of the selected day: stars,
   constellation figures, Sun, Moon and planets. Turn to the east or west, or follow the device's compass.
@@ -26,6 +26,11 @@ Four views share one time cursor:
 - **The Day.** The Sky and the Dial together, sunrise to sunrise: the sky turns with the Sun and the Dial is turned to face
   it, joined by a gold thread through the Sun (sky over dial on a phone, side by side on a wide screen). Captions name each
   rising and setting as the day reaches it, and the day bar under it moves through the day.
+- **Atlas.** The same instant seen from outside the Earth: the globe lit by the Sun of the moment, the site under a
+  crosshair, the stars and planets behind, the tropics and the polar limit of the era (beyond it some day of the year has
+  no sunrise, and the calculator refuses the year). Over the site, the camera turns with the Earth; from the stars, the
+  Earth turns under a fixed sky. Coastlines: Natural Earth 1:50m. Choosing places, dates and saved moments here is in
+  progress ([`docs/atlas.md`](docs/atlas.md)).
 - **Deep Time.** About 30,000 annual Day 1s against the independently solved March equinox, with the 294-year cycle
   boundaries. Click a year to open it.
 

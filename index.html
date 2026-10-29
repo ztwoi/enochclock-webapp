@@ -10,7 +10,8 @@
    <a href="#sky" data-view="sky" class="on" aria-current="page"><i>01</i>Sky</a>
    <a href="#dial" data-view="dial"><i>02</i>The Dial</a>
    <a href="#day" data-view="day"><i>03</i>The Day</a>
-   <a href="#deep" data-view="deep"><i>04</i>Deep Time</a>
+   <a href="#atlas" data-view="atlas"><i>04</i>Atlas</a>
+   <a href="#deep" data-view="deep"><i>05</i>Deep Time</a>
   </nav>
   <div class="spacer"></div>
   <button class="chip film-link" id="film-btn" title="Watch: the courses of the luminaries (3 min)">▶ Watch</button>
@@ -46,6 +47,15 @@
     <button class="btn" id="day-daylight" aria-pressed="false" title="The sky lit by day and twilight. Off: a night sky at every hour, so the stars and planets by day show">Daylight</button>
     <button class="btn on" id="day-captions" aria-pressed="true" title="Each rising and setting named as the day reaches it">Captions</button>
    </div>
+   <div class="opts" id="atlas-controls" hidden>
+    <div class="seg" role="group" aria-label="Camera"><button class="btn on" data-atlas-cam="site" aria-pressed="true" title="The camera turns with the Earth: the site stays under the crosshair while the sky and the line of day and night sweep past">Over the site</button><button class="btn" data-atlas-cam="stars" aria-pressed="false" title="The sky holds still and the Earth turns under it: the site's pin rides on the Earth">From the stars</button></div>
+    <button class="btn on" data-atlas-layer="daynight" aria-pressed="true" title="The Earth lit by the Sun of the instant, with the line between day and night">Day &amp; night</button>
+    <button class="btn on" data-atlas-layer="tropics" aria-pressed="true" title="The tropics of this era: where the Sun can stand overhead">Tropics</button>
+    <button class="btn on" data-atlas-layer="polar" aria-pressed="true" title="The polar limit of this era: beyond it some day of the year has no sunrise, and the calculator refuses the year">Polar limit</button>
+    <button class="btn on" data-atlas-layer="bodies" aria-pressed="true" title="The Sun, the Moon and the planets, and where the Sun and the Moon stand overhead">Sun · Moon · planets</button>
+    <button class="btn on" data-atlas-layer="stars" aria-pressed="true" title="The stars behind the Earth">Stars</button>
+    <button class="btn on" data-atlas-layer="grid" aria-pressed="true" title="Latitude and longitude every 15°">Graticule</button>
+   </div>
    <div class="opts" id="deep-controls" hidden>
     <div class="seg" role="group" aria-label="Zoom acts on"><button class="btn on" data-deep-axis="years" aria-pressed="true" title="− and + zoom the years">Years</button><button class="btn" data-deep-axis="days" aria-pressed="false" title="− and + zoom the day scale">Days</button></div>
     <button class="btn" data-deep-z="out" aria-label="Zoom out" title="Zoom out (−)">−</button><button class="btn" data-deep-z="in" aria-label="Zoom in" title="Zoom in (+)">+</button><button class="btn" data-deep-z="home" aria-label="Back to the starting view" title="Back to the starting view (0)">⟲</button>
@@ -54,6 +64,7 @@
   <div class="view" id="view-sky"><p class="sky-note" id="sky-note" role="status" hidden></p><div class="sky-cal" id="sky-cal" role="dialog" aria-label="Calibrate the compass" hidden></div></div>
   <div class="view" id="view-dial"></div>
   <div class="view" id="view-day"></div>
+  <div class="view" id="view-atlas"></div>
   <button class="btn focus-btn" id="focus" hidden></button>
   <p class="status" id="status" role="status">Calculating the year…</p>
   <div class="foot"><span id="foot-a"></span><span id="foot-b"></span></div>

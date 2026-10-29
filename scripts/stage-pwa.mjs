@@ -9,7 +9,7 @@ const EXCLUDE=[/^\/film\//,/^\/tutorial\//,/^\/primer\//,/^\/phoenix\//,/^\/sw\.
 const walk=(d)=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(d,e.name)):[path.join(d,e.name)]);
 const files=walk(dist).map(f=>'/'+path.relative(dist,f).split(path.sep).join('/')).filter(p=>!EXCLUDE.some(r=>r.test(p))).sort()
  .map(p=>{const data=fs.readFileSync(path.join(dist,p));return {path:p,size:data.length,sha256:digest(data)};});
-for(const need of ['/index.html','/manifest.webmanifest','/calculator/worker.js','/calculator/wasm/swisseph.wasm','/sky/catalogue.json','/deep/head-100.json','/deep/series.json'])if(!files.some(f=>f.path===need))throw Error('Offline pack is missing '+need);
+for(const need of ['/index.html','/manifest.webmanifest','/calculator/worker.js','/calculator/wasm/swisseph.wasm','/sky/catalogue.json','/deep/head-100.json','/deep/series.json','/atlas/land-50m.json'])if(!files.some(f=>f.path===need))throw Error('Offline pack is missing '+need);
 if(files.filter(f=>f.path.startsWith('/calculator/ephe/')).length!==102)throw Error('Offline pack needs all 102 ephemeris files');
 const version=digest(JSON.stringify(files)).slice(0,16);
 fs.writeFileSync(path.join(dist,'offline-manifest.json'),JSON.stringify({version,bytes:files.reduce((n,f)=>n+f.size,0),files},null,1)+'\n');

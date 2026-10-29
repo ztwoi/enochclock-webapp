@@ -61,15 +61,22 @@ Mock-up: [`mockups/atlas/`](../mockups/atlas/README.md), a working sketch at des
   and scroll the current tab into view. The mock-up does this (`mockups/atlas/atlas.js`, "the tab bar on a phone").
   A fade alone was not enough: when the current tab exactly fills the bar, nothing peeks past the edge.
 
+## Measured
+
+- **A year for a new place takes about 0.3 s** in the browser (304–324 ms over five sites, the redraw included). So the
+  year is calculated when the hand lets go of the globe; calculating while dragging would stutter.
+- **The coast adds 170 KB gzipped** to the offline pack (Natural Earth 1:50m, TopoJSON decoded in the browser); the zone
+  lookup about 25 KB more.
+
 ## Items
 
 | # | Item | Size | Status |
 |---|---|---|---|
 | A.1 | Mock-ups at desktop and phone widths (globe, crosshair readout, When, Moments, the save dialog); agree them | M | first draft |
-| A.2 | Coastline data and a compact zone-from-coordinates lookup in the offline pack; sizes measured | S | |
-| A.3 | The globe view at the instant (Three.js): terminator, subsolar point, bodies, stars, tropics, the era's polar limit; both cameras; playback | L | |
+| A.2 | Coastline data and a compact zone-from-coordinates lookup in the offline pack; sizes measured | S | measured: the coast is Natural Earth 1:50m as TopoJSON, 545 KB (170 KB gzipped), in the pack (`public/atlas/`); a zone lookup (`@photostructure/tz-lookup`, 73 KB, ODbL boundaries) comes with A.4 |
+| A.3 | The globe view at the instant (Three.js): terminator, subsolar point, bodies, stars, tropics, the era's polar limit; both cameras; playback | L | done (`src/atlas/`, `tests/atlas.test.ts`) |
 | A.4 | Crosshair picking with the live readout; calculate on release; the site chip opens Atlas; the Observer dialog retired | M | |
-| A.4b | The tab bar for five tabs: Atlas in 04; on phones, the edge fade, ‹ › arrows and the current tab kept in view | S | |
+| A.4b | The tab bar for five tabs: Atlas in 04; on phones, the edge fade, ‹ › arrows and the current tab kept in view | S | done |
 | A.5 | When: Gregorian/Enoch, BCE/CE, The Day's day bar for the time, steps, jumps from the risings list | M | in the mock-up |
 | A.6 | Presets in Atlas with the tag filter; nearest preset to the crosshair | S | |
 | A.7 | Moments: save from every view; edit name, description, colour, tags; filter, open, share link, export/import | M | |
