@@ -4,7 +4,7 @@
 // (as the Swiss Ephemeris positions behind the portals have it), and the sunrise
 // convention's own refraction (below) on every drawn altitude when Refraction is on, and
 // always where a quantity is compared with the portal edges.
-import { BaryState, Body, C_AUDAY, Equator, EquatorFromVector, GeoVector, Illumination, ObserverVector, RotateVector, Rotation_ECT_EQJ, Rotation_EQJ_EQD, Vector, VectorFromSphere, Spherical, type AstroTime } from 'astronomy-engine';
+import { BaryState, Body, C_AUDAY, Equator, EquatorFromVector, GeoVector, Illumination, ObserverVector, RotateVector, Rotation_ECT_EQJ, Rotation_EQJ_EQD, SearchMoonPhase, SearchRiseSet, Vector, VectorFromSphere, Spherical, type AstroTime } from 'astronomy-engine';
 import { dayIndexAt } from '../model';
 import type { Portal, Row, YearDoc } from '../types';
 import { skyFrame, starVector } from './astronomy';
@@ -113,6 +113,44 @@ export function portalAt(az: number, portals: Portal[]) {
   const lo = Math.min(...portals.map((p) => p.union[0])), hi = Math.max(...portals.map((p) => p.union[1]));
   if (az < lo || az > hi) return { portal: null, where: 'outside' as const };
   return { portal: null, where: 'seam' as const };
+}
+
+/** UT Julian day of an Astronomy Engine time. */
+const jdOf = (t: AstroTime) => t.ut + 2451545;
+
+/** The Moon's day at an instant: the conjunction (new moon) it counts from, its age in days since then, and its day (1 for the first 24 hours). */
+export interface MoonDay { newMoon: number; nextNewMoon: number; age: number; day: number }
+/** Where the Moon last rose before an instant: when (UT JD), at what bearing (its apparent topocentric azimuth then), and the next rising after it. */
+export interface Moonrise { jd: number; az: number; next: number | null }
+
+/**
+ * The Moon's own day at a site, for any instant: its day counted from the conjunction (geocentric ecliptic longitudes of the Sun and Moon equal),
+ * and where it last rose (Astronomy Engine's rise: the upper limb at the refracted horizon, as a sunrise). Each answer holds until the next
+ * conjunction or the next rising, so a running clock searches once a month and once a day, not every frame.
+ */
+export function createMoonClock(latitude: number, longitude: number, height: number) {
+  const observer = skyFrame(2451545, latitude, longitude, height).observer;
+  let lunation: { a: number; b: number } | null = null, rise: Moonrise | null = null, noRise: { a: number; b: number } | null = null;
+  function day(jd: number): MoonDay | null {
+    if (!lunation || jd < lunation.a || jd >= lunation.b) {
+      const t = skyFrame(jd, latitude, longitude, height).time, a = SearchMoonPhase(0, t, -32), b = SearchMoonPhase(0, t, 32);
+      lunation = a && b ? { a: jdOf(a), b: jdOf(b) } : null;
+      if (!lunation) return null;
+    }
+    const age = jd - lunation.a;
+    return { newMoon: lunation.a, nextNewMoon: lunation.b, age, day: Math.floor(age) + 1 };
+  }
+  /** Null when the Moon has not risen in the week before (far north or south, near a lunar standstill). */
+  function lastRise(jd: number): Moonrise | null {
+    if (rise && jd >= rise.jd && (rise.next === null ? jd < rise.jd + 1 : jd < rise.next)) return rise;
+    if (noRise && jd >= noRise.a && jd < noRise.b) return null;
+    const t = skyFrame(jd, latitude, longitude, height).time, r = SearchRiseSet(Body.Moon, observer, +1, t, -7);
+    if (!r) { const n = SearchRiseSet(Body.Moon, observer, +1, t, 7); noRise = { a: jd, b: n ? jdOf(n) : jd + 1 }; rise = null; return null; }
+    const at = jdOf(r), m = moon(aberrated(skyFrame(at, latitude, longitude, height))), n = SearchRiseSet(Body.Moon, observer, +1, r.AddDays(0.01), 7);
+    rise = { jd: at, az: m.az, next: n ? jdOf(n) : null }; noRise = null;
+    return rise;
+  }
+  return { day, lastRise };
 }
 
 /** UT Julian day of a fractional part (0–18, equal parts) of the Enoch day from sunrise `a` to next sunrise `b`. */

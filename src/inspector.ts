@@ -64,6 +64,25 @@ function portalSection(doc: YearDoc, S: { portal: number; side: 'east' | 'west' 
    <p class="note">A morning counts when its ${noun} bearing falls within the portal's common span; a ${noun} in a seam between two portals counts for neither. Each tick on the horizon is one morning of the last pass, at the bearing where the Sun crossed the horizon; the brightest is the latest. The Sun keeps moving after it rises, about 0.15° of bearing a minute, so a few minutes later it has drifted past its own tick.</p></div>`;
 }
 
+/** Local date and time at the site, to the minute. */
+const localAt = (doc: YearDoc, jd: number) => new Intl.DateTimeFormat('en-GB', { timeZone: doc.calculation.timezone, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })
+  .format(new Date((jd - 2440587.5) * 86400000));
+const hoursAgo = (h: number) => (h < 1 ? `${Math.round(h * 60)} min ago` : `${Math.floor(h)} h ${Math.round((h % 1) * 60)} min ago`);
+
+/** The selected Moon: where it is, its light, its own day from the conjunction, and the portal it last rose in (the silver tick on the horizon). */
+function moonSection(doc: YearDoc, sky: SkyInfo) {
+  const m = sky.moon, d = sky.moonDay, r = sky.moonrise;
+  const rose = r ? (r.portal.where === 'within' ? `in portal ${ROMAN[r.portal.portal!]} <span class="geez">${GEEZ[r.portal.portal!]}</span>` : r.portal.where === 'seam' ? 'in a seam between portals' : `outside the six portals, ${r.az < 90 ? 'north' : 'south'} of them`) : '';
+  return `<div class="section"><div class="eyebrow">Selected</div><div class="big" style="font-size:30px">Moon</div>
+   ${d ? `<div class="sub" data-k="moon-day">day ${d.day} of the Moon · ${(m.fraction * 14).toFixed(2)} of 14 parts lit</div>` : ''}
+   <dl class="read"><dt>Now</dt><dd>az ${m.az.toFixed(4)}° · alt ${sgn(m.alt, 4)}°</dd>
+   <dt>Illuminated</dt><dd>${(m.fraction * 100).toFixed(2)} % · ${(m.fraction * 14).toFixed(2)}/14</dd>
+   ${d ? `<dt>Age</dt><dd>${d.age.toFixed(2)} d since the conjunction</dd><dt>Conjunction</dt><dd>${localAt(doc, d.newMoon)}</dd><dt>Next</dt><dd>${localAt(doc, d.nextNewMoon)}</dd>` : ''}
+   ${r ? `<dt>Last rose</dt><dd data-k="moon-portal">${rose}</dd><dt>At bearing</dt><dd>${r.az.toFixed(3)}°</dd><dt>When</dt><dd>${localAt(doc, r.jd)} · ${hoursAgo((sky.jd - r.jd) * 24)}</dd>`
+      : '<dt>Last rose</dt><dd data-k="moon-portal">not in the past week</dd>'}</dl>
+   <p class="note">The Moon's day counts from the conjunction, when the Sun and Moon share one longitude: day 1 is its first 24 hours. The silver tick on the eastern horizon is where it last rose, at its upper limb on the refracted horizon, as a sunrise. It swings about 5° farther north and south than the Sun, so in some months it rises outside the six portals.</p></div>`;
+}
+
 export function skyPanel(doc: YearDoc, i: number, part: number, sky: SkyInfo | null) {
   const days = annual(doc), r = days[i], next = doc.rows[i + 1];
   if (!sky) return `<div class="section"><div class="eyebrow">Sky</div><p class="note">Loading the stars…</p></div>`;
@@ -95,10 +114,11 @@ export function skyPanel(doc: YearDoc, i: number, part: number, sky: SkyInfo | n
      <p class="note" data-k="portal-planet">${portalText(q.portal, 'Rises')}; ${portalText(q.portalWest, 'sets').replace(/^S/, 's')} today. A planet moves against the stars, so where it rises shifts from day to day.</p></div>`;
   } else if (S?.kind === 'portal') {
     sel = portalSection(doc, S, sky.jd);
-  } else if (S?.kind === 'sun' || S?.kind === 'moon') {
-    const b = S.kind === 'sun' ? sky.sun : sky.moon;
-    sel = `<div class="section"><div class="eyebrow">Selected</div><div class="big" style="font-size:30px">${S.kind === 'sun' ? 'Sun' : 'Moon'}</div>
-     <dl class="read"><dt>Now</dt><dd>az ${b.az.toFixed(4)}° · alt ${sgn(b.alt, 4)}°</dd>${S.kind === 'moon' ? `<dt>Illuminated</dt><dd>${(sky.moon.fraction * 100).toFixed(2)} %</dd>` : ''}</dl></div>`;
+  } else if (S?.kind === 'sun') {
+    sel = `<div class="section"><div class="eyebrow">Selected</div><div class="big" style="font-size:30px">Sun</div>
+     <dl class="read"><dt>Now</dt><dd>az ${sky.sun.az.toFixed(4)}° · alt ${sgn(sky.sun.alt, 4)}°</dd></dl></div>`;
+  } else if (S?.kind === 'moon') {
+    sel = moonSection(doc, sky);
   }
   return `
   <div class="section"><div class="eyebrow">Instant · all around</div>
@@ -107,7 +127,7 @@ export function skyPanel(doc: YearDoc, i: number, part: number, sky: SkyInfo | n
    <dl class="read"><dt>Local</dt><dd>${local}</dd>
    <dt>JD</dt><dd data-k="sky-jd">${sky.jd.toFixed(6)} UT</dd>
    <dt>Sun</dt><dd>az ${sky.sun.az.toFixed(4)}° · alt ${sgn(sky.sun.alt, 3)}°</dd>
-   <dt>Moon</dt><dd>az ${sky.moon.az.toFixed(3)}° · alt ${sgn(sky.moon.alt, 3)}° · ${(sky.moon.fraction * 100).toFixed(1)} %</dd>
+   <dt>Moon</dt><dd>az ${sky.moon.az.toFixed(3)}° · alt ${sgn(sky.moon.alt, 3)}° · ${(sky.moon.fraction * 100).toFixed(1)} %${sky.moonDay ? ` · day ${sky.moonDay.day}` : ''}</dd>
    <dt>Planets up</dt><dd data-k="planets-up">${sky.planets.filter((p) => p.alt > 0).map((p) => p.name).join(' · ') || 'none'}</dd>
    <dt>Stars drawn</dt><dd>${sky.shown.toLocaleString('en-US')}</dd></dl></div>
   ${sel}

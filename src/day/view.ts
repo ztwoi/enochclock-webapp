@@ -14,7 +14,7 @@ import { skyFrame } from '../sky/astronomy';
 import { createSky, type Catalogue } from '../skyview';
 import type { YearDoc } from '../types';
 import { dayEvents, risingWithSun, SUN_COLOR, type DayEvent } from './events';
-import { createSunFollow } from './follow';
+import { createFollow } from './follow';
 import type { Box, Geometry } from './geometry';
 
 export { geometryFor, type Box, type Geometry } from './geometry';
@@ -60,7 +60,7 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
   sky.setMagLimit(opts.mag ?? 6.5);
   sky.setLayers({ daylight: false, below: true, figures: true, planets: true, portalStars: true, refraction: true, bearing: false });
   sky.setPaths(true);
-  const follow = createSunFollow(sky, true, () => opts.onFollow?.(false));   // a zoom while it follows is its own (src/day/follow.ts)
+  const follow = createFollow(sky, { kind: 'sun' }, () => opts.onFollow?.(false));   // a zoom while it follows is its own (src/day/follow.ts)
   // the face's sky as the Dial tab has it (its star limit, figures and centre: setDialSky); until told, the Dial's defaults
   const dial = createDial(dialSvg);
   let stars = cat.stars.filter((s) => s.mag_v <= BRIGHT_MAG), layers: SkyLayers = { figures: null, centre: 'off' };
@@ -177,7 +177,7 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
     day: () => ({ i: dayI, events, rising }),
     get follow() { return follow.on; },
     /** Follow the Sun again (or stop): the sky turns back to it at once. */
-    setFollow(on: boolean) { follow.set(on); opts.onFollow?.(on); if (isFinite(lastJd)) draw(lastJd); },
+    setFollow(on: boolean) { follow.set(on ? { kind: 'sun' } : null); opts.onFollow?.(on); if (isFinite(lastJd)) draw(lastJd); },
     setCaptions(on: boolean) { captionsOn = on; showCaptions(); },
     setDaylight(on: boolean) { sky.setLayers({ daylight: on }); if (isFinite(lastJd)) draw(lastJd); },
     setMagLimit(m: number) { sky.setMagLimit(m); },
@@ -204,7 +204,7 @@ export function dayPanel(doc: YearDoc, i: number, events: DayEvent[], rising: Re
   return `<div class="section"><div class="eyebrow">The day · sunrise to sunrise</div>
     <div class="big">${Math.floor(light / 60)}<small> h </small>${light % 60}<small> min of daylight</small></div>
     <p class="sub">${e.day_parts.toFixed(2)} of 18 parts · sunrise in portal ${e.portal}</p>
-    <p class="note">The Sky turns with the Sun and the Dial is turned to face it: the gold thread joins them. The solid gold path is where the Sun has been since sunrise, the dotted path where it goes until the next; the faint lines are the planets' paths. Drag the sky to look around; Follow Sun brings it back, as close as you have zoomed. Pinch or scroll to zoom while it follows (a double tap brings back the whole view); drag along the day bar to move through the day.</p></div>
+    <p class="note">The Sky turns with the Sun and the Dial is turned to face it: the gold thread joins them. The solid gold path is where the Sun has been since sunrise, the dotted path where it goes until the next; the faint lines are the Moon's and the planets' paths. Drag the sky to look around; Follow Sun brings it back, as close as you have zoomed. Pinch or scroll to zoom while it follows (a double tap brings back the whole view); drag along the day bar to move through the day.</p></div>
     <div class="section"><div class="eyebrow">Rising with the Sun · within two hours</div><dl class="read">${withSun}</dl></div>
     <div class="section"><div class="eyebrow">Risings and settings</div><dl class="read dv-events">${rows}</dl></div>`;
 }

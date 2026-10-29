@@ -25,7 +25,7 @@ import { loadCatalogue } from './sky/catalogue';
 import { jdOfPart } from './sky/instrument';
 import { createTransport } from './transport';
 import { createSheet } from './sheet';
-import { createSky, type Catalogue, type Side, type Sky } from './skyview';
+import { bodyName, createSky, followable, sameBody, type Catalogue, type Followed, type Side, type Sky } from './skyview';
 import { createSkyCompass } from './sky/compassmode';
 import { hub } from './compass/hub';
 import { createFocus } from './focus';
@@ -33,7 +33,7 @@ import { enochTime } from './dial/state';
 import { createDialView, loadSky as dialSky, type DialView } from './dial/view';
 import { createFilm } from './film';
 import { createDayView, dayPanel, geometryFor, type DayView } from './day/view';
-import { createSunFollow, type SunFollow } from './day/follow';
+import { createFollow, type Follow } from './day/follow';
 
 type View = 'sky' | 'dial' | 'day' | 'deep';
 /** The tabs, in their order (the number keys follow it). */
@@ -133,9 +133,9 @@ async function ensureSky() {
   if (!state.doc) return;
   if (!state.cat) { $('status').className = 'status'; $('status').hidden = false; $('status').textContent = 'Loading the catalogue stars…'; state.cat = await loadCatalogue('/sky/', Number($<HTMLSelectElement>('mag').value)); }
   if (!state.sky) {
-    state.sky = createSky($('view-sky'), state.doc, state.cat, () => { selSerial++; shown.sel = -1; update(); });
+    state.sky = createSky($('view-sky'), state.doc, state.cat, () => { selSerial++; shown.sel = -1; syncFollow(); update(); });
     state.sky.onUser(() => { if (compassFollowing) { compassFollowing = false; compassChanged(); } });   // a hand on the panorama takes the view from the compass
-    skyFollow = createSunFollow(state.sky, skyFollow?.on ?? false, syncSide, skyFollow?.k);   // and from the Sun (a new year or site keeps following, at its zoom)
+    skyFollow = createFollow(state.sky, skyFollow?.target ?? null, syncSide, skyFollow?.k);   // and from the body it follows (a new year or site keeps following it, at its zoom)
     state.sky.stage.onView(syncSide);
     if (startSide) { state.sky.recentre(startSide); startSide = null; }
     state.sky.setBearingHold(skyCompass.on && compassFollowing); syncSide();
@@ -214,7 +214,7 @@ function update() {
   const days = annual(doc), { i } = cursorRow(days, state.cursor), r = days[i];
   if (state.sky && state.view === 'sky') {
     state.sky.setInstant(jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part));
-    skyFollow?.aim();                                                // as The Day's sky: the horizon and the Sun in view, at the reader's zoom
+    skyFollow?.aim();                                                // as The Day's sky: the horizon and the body followed in view, at the reader's zoom
   }
   if (state.view === 'sky' || state.view === 'deep') ({ deep: state.deep, sky: state.sky }[state.view])?.render();
   if (state.view === 'dial') renderDial();
@@ -284,18 +284,33 @@ function tickNow() {
 const skyCompass = createSkyCompass((h) => { if (state.view === 'sky' && compassFollowing) state.sky?.turn(h); skyCompass.tick($('insp')); }, compassChanged);
 /** The compass turns the panorama only while following: a drag, a swipe, East or West pauses it (the sensor keeps running); Compass resumes. */
 let compassFollowing = false, startSide: Side | null = 'east';   // the first Sky opens turned to the east
-/** Sky follows the Sun (the Sun button): it turns and opens out with it, as The Day's sky, and a zoom meanwhile is its multiplier
- *  (src/day/follow.ts); a drag, East, West or Compass stops it. One per Sky (rebuilt with it). */
-let skyFollow: SunFollow | null = null;
-const sunFollowing = () => skyFollow?.on ?? false;
+/** Sky follows a body (the Sun button, or the Follow button over the sky for the body selected): it turns and opens out with it, as
+ *  The Day's sky, and a zoom meanwhile is its multiplier (src/day/follow.ts); a drag, East, West or Compass stops it. One per Sky (rebuilt with it). */
+let skyFollow: Follow | null = null;
+const sunFollowing = () => skyFollow?.target?.kind === 'sun';
+/** Follow a body (null: stop); the compass, if leading, stands aside. */
+function followBody(b: Followed | null) {
+  skyFollow?.set(b);
+  if (b && compassFollowing) { compassFollowing = false; compassChanged(); }
+  syncSide();
+}
+/** The Follow button over the sky: while the view follows a body, which one, and a way to stop; for a body selected and not followed, Follow it. */
+function syncFollow() {
+  const el = $('sky-follow'), t = skyFollow?.target ?? null, s = followable(state.sky?.info()?.selection ?? null), offer = s && !sameBody(s, t) ? s : null;
+  const html = (t ? `<button class="btn on" data-follow="stop" aria-pressed="true" aria-label="Following ${bodyName(t)}: tap to stop" title="The sky turns with ${bodyName(t)}. Dragging the sky, East, West or Compass also stops it.">Following ${bodyName(t)}<span class="x" aria-hidden="true">✕</span></button>` : '')
+    + (offer ? `<button class="btn" data-follow="go" title="The sky turns with ${bodyName(offer)}, opening out as it climbs or sinks, so the horizon and ${bodyName(offer)} are both in view. Zoom in first and it follows that close.">Follow ${bodyName(offer)}</button>` : '');
+  if (el.innerHTML !== html) el.innerHTML = html;
+  el.hidden = !html;
+}
 /** The sensor is the device's, not Sky's: on in the Dial or after a reload, Sky follows it too (when it is shown), and off anywhere is off here. */
-function adoptCompass() { if (hub.active && !skyCompass.on && state.view === 'sky') { compassFollowing = true; skyFollow?.set(false); skyCompass.adopt(); syncSide(); } }
+function adoptCompass() { if (hub.active && !skyCompass.on && state.view === 'sky') { compassFollowing = true; skyFollow?.set(null); skyCompass.adopt(); syncSide(); } }
 hub.onChange(() => { if (hub.active) adoptCompass(); else if (['locating', 'waiting', 'live'].includes(skyCompass.phase)) skyCompass.released(); });   // (a refusal or a start under way answers for itself)
 /** East and West light while their portals are the way the view faces. */
 function syncSide() {
-  const at = sunFollowing() ? null : state.sky?.sideAt() ?? null;            // following the Sun, the Sun's button is lit, not a side's
+  const at = skyFollow?.on ? null : state.sky?.sideAt() ?? null;            // following a body, no side's button is lit (the Sun's, when it is the Sun)
   for (const side of ['east', 'west']) { const b = document.querySelector(`[data-facing=${side}]`); if (b && b.classList.contains('on') !== (at === side)) { b.classList.toggle('on', at === side); b.setAttribute('aria-pressed', String(at === side)); } }
   const sb = document.querySelector('[data-facing=sun]'); sb?.classList.toggle('on', sunFollowing()); sb?.setAttribute('aria-pressed', String(sunFollowing()));
+  syncFollow();
 }
 let noteTimer = 0;
 const focus = createFocus($('app'), $<HTMLButtonElement>('focus'));
@@ -331,15 +346,13 @@ function bindOptions() {
   document.querySelectorAll<HTMLButtonElement>('[data-facing]').forEach((b) => b.addEventListener('click', () => {
     const f = b.dataset.facing as Side | 'compass' | 'sun';
     if (f === 'sun') {                                                                     // follow the Sun, or stop (the view stays where it is)
-      skyFollow?.set(!sunFollowing());                                                     // from the zoom on show
-      if (sunFollowing() && compassFollowing) { compassFollowing = false; compassChanged(); }   // the compass, if on, stands aside
-      syncSide();
+      followBody(sunFollowing() ? null : { kind: 'sun' });                                 // from the zoom on show (following the Moon or a planet: the Sun instead)
     } else if (f === 'compass') {
-      skyFollow?.set(false); syncSide();
+      skyFollow?.set(null); syncSide();
       if (!skyCompass.on) { compassFollowing = true; skyCompass.start(); }                // still inside the tap: iOS asks for orientation here
       else if (compassFollowing) { compassFollowing = false; skyCompass.stop(); }          // following: off
       else { compassFollowing = true; compassChanged(); }                                  // paused by a hand: follow again from the next reading
-    } else { compassFollowing = false; skyFollow?.set(false); state.sky?.recentre(f); syncSide(); compassChanged(); }   // the view goes to its side; the compass or the Sun, if leading, stands aside
+    } else { compassFollowing = false; skyFollow?.set(null); state.sky?.recentre(f); syncSide(); compassChanged(); }   // the view goes to its side; the compass or the Sun, if leading, stands aside
     shown.view = ''; update();
   }));
   // compass calibration, from the card over the sky or the details panel
@@ -369,7 +382,19 @@ function bindOptions() {
   $('refraction').onclick = () => { state.sky?.setLayers({ refraction: toggle('refraction') }); shown.view = ''; update(); };
   $('figures').onclick = () => { state.sky?.setLayers({ figures: toggle('figures') }); };
   $('portal-stars').onclick = () => { state.sky?.setLayers({ portalStars: toggle('portal-stars') }); };
-  $('planets').onclick = () => { state.sky?.setLayers({ planets: toggle('planets') }); shown.view = ''; update(); };
+  $('planets').onclick = () => {
+    const v = toggle('planets'); state.sky?.setLayers({ planets: v });
+    if (!v && skyFollow?.target?.kind === 'planet') skyFollow.set(null);           // a planet no longer drawn is no longer followed
+    syncSide(); shown.view = ''; update();
+  };
+  // the Follow button over the sky (src/day/follow.ts): its taps are its own, not a hand on the sky
+  const fol = $('sky-follow');
+  for (const t of ['pointerdown', 'pointermove', 'pointerup', 'wheel', 'dblclick'] as const) fol.addEventListener(t, (e) => e.stopPropagation());
+  fol.addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLElement>('[data-follow]'); if (!b) return;
+    followBody(b.dataset.follow === 'stop' ? null : followable(state.sky?.info()?.selection ?? null));
+    shown.view = ''; update();
+  });
   $('bearing').onclick = () => { const on = toggle('bearing'); localStorage.setItem(BKEY, on ? '1' : '0'); state.sky?.setLayers({ bearing: on }); };
   if (localStorage.getItem(BKEY) === '1') toggle('bearing');                    // Bearing is remembered on the device (off by default)
   $('paths').onclick = () => { const v = toggle('paths'); localStorage.setItem(PKEY, v ? '1' : '0'); state.sky?.setPaths(v); };
