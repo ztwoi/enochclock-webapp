@@ -129,8 +129,7 @@ async function load(by: { date: string } | { enochYear: number } | { year: numbe
     $('stage').classList.add('calculation-failed');
     $('when').textContent = 'No valid year loaded';
     status.hidden = false; status.className = 'status error';
-    $('insp').innerHTML = `<div class="section"><div class="eyebrow">No year loaded</div><p class="note">The calculator needs a sunrise every day of the year at this site.</p><p style="margin-top:14px"><button class="btn on" id="pick-site">Choose another site</button></p></div>`;
-    $('pick-site').onclick = () => openSiteDialog();
+    noYear();
     tp.pause(); crossing = false;
     status.textContent = `The calculator refused this year: ${(e as Error).message}`;
   } finally { setCalcBusy(false); }
@@ -181,6 +180,16 @@ function ensureAtlas() {
   }
   if (!state.cat) loadCatalogue('/sky/', Number($<HTMLSelectElement>('mag').value)).then((c) => { state.cat ??= c; update(); }).catch(() => undefined);   // the globe works without stars
 }
+/** No year loaded (the calculator refused the site): Atlas offers another site; elsewhere, a way to it. */
+function noYear() {
+  if (state.view === 'atlas') {
+    atlasDetails.renderNoYear(state.site); $('insp').replaceChildren(atlasDetails.el);
+    state.atlas?.draw(jdFromMs(Date.now()), { lat: state.site.lat, lon: state.site.lon, name: state.site.name });   // the globe at the present, the site on it
+    return;
+  }
+  $('insp').innerHTML = `<div class="section"><div class="eyebrow">No year loaded</div><p class="note">The calculator needs a sunrise every day of the year at this site.</p><p style="margin-top:14px"><button class="btn on" id="pick-site">Choose another site</button></p></div>`;
+  $('pick-site').onclick = () => { atlasDetails.show('where'); setView('atlas'); };
+}
 /** Atlas's details: Where and When, built once (src/atlas/details.ts); the accuracy section under them. */
 const atlasAcc = document.createElement('div');
 const atlasDetails = createAtlasDetails({
@@ -195,6 +204,8 @@ const atlasDetails = createAtlasDetails({
     const i = cursorRow(annual(doc), state.cursor).i, jd = nextSeason(doc, jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part), k);
     if (jd != null) showJd(jd);
   },
+  onSite: (s) => { tp.pause(); chooseSite(s); },
+  onLocate: () => { locateHere(); },
 });
 /** A local date and clock time at the site (When's Gregorian fields and Exact): the Enoch day it falls in, at that time. A time
  *  before that morning's sunrise belongs to the Enoch day before (and, before Day 1's sunrise, to the year before). */
@@ -226,10 +237,12 @@ async function showJd(jd: number) {
 const yearRange = () => { const s = $('status'); s.hidden = false; s.className = 'status error'; s.textContent = `The calculator's years run from ${yearLabel(YEAR_MIN)} to ${YEAR_MAX}.`; setTimeout(() => { s.hidden = true; }, 6000); };
 /** A site chosen on the globe: the year is calculated there, keeping the instant on show. If the calculator refuses it after all
  *  (the polar limit is an estimate near its edge), the site on show before stays, and Atlas says why. */
-async function pickSite(lat: number, lon: number) {
-  const before = state.site;
-  await changeSite(siteAt(lat, lon));
-  if (!state.doc) { state.atlas?.refuse('The calculator refused a year at this site: some day of it has no sunrise. Back to the site before.'); await changeSite(before); }
+const pickSite = (lat: number, lon: number) => chooseSite(siteAt(lat, lon));
+/** A site chosen in Atlas (on the globe, a place, typed coordinates, the device): if the calculator refuses it, the site before stays. */
+async function chooseSite(site: Site) {
+  const before = state.site, had = !!state.doc;
+  await changeSite(site);
+  if (!state.doc && had) { state.atlas?.refuse('The calculator refused a year at this site: some day of it has no sunrise. Back to the site before.'); await changeSite(before); }
 }
 const sameSite = (d: YearDoc) => d.calculation.latitude === state.site.lat && d.calculation.longitude_east === state.site.lon && d.calculation.elevation_m === state.site.elev && d.calculation.timezone === state.site.tz;
 let nextLoading = false;
@@ -306,7 +319,7 @@ function inspector(doc: YearDoc, i: number) {
   const el = $('insp'), acc = accuracySection(doc.accuracy, { stars: state.view === 'sky' || state.view === 'day' });           // every view: how far to trust this year
   if (state.view === 'deep') { el.innerHTML = (state.deepDoc ? deepPanel(state.deepDoc, firstYear(), doc, i) : '') + acc; return; }
   if (state.view === 'atlas') {                                    // kept, not rebuilt: its fields and the day bar take a hand (src/atlas/details.ts)
-    atlasDetails.render(doc, i, state.part, jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part), state.atlas?.info() ?? null, state.site.name);
+    atlasDetails.render(doc, i, state.part, jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, state.part), state.atlas?.info() ?? null, state.site);
     if (atlasDetails.el.parentElement !== el) el.replaceChildren(atlasDetails.el, atlasAcc);
     if (atlasAcc.dataset.h !== acc) { atlasAcc.innerHTML = acc; atlasAcc.dataset.h = acc; }
     return;
@@ -559,7 +572,7 @@ async function setView(v: View, push = true) {
     $('stage').setAttribute('aria-busy', 'false');
   }
   if (v === 'dial' && state.doc) ensureStars();
-  if (v === 'atlas') ensureAtlas();
+  if (v === 'atlas') { ensureAtlas(); if (!state.doc) noYear(); }
   if (v === 'day' && state.doc) {
     $('stage').setAttribute('aria-busy', 'true');
     try { await ensureDay(); $('status').hidden = true; } catch (e) { $('status').className = 'status error'; $('status').hidden = false; $('status').textContent = `Star catalogue unavailable (${(e as Error).message}).`; }
@@ -694,6 +707,7 @@ function siteChip() {
   chip.dataset.geo = st;
   chip.title = `${s.name}: ${Math.abs(s.lat).toFixed(4)}° ${s.lat >= 0 ? 'N' : 'S'}, ${Math.abs(s.lon).toFixed(4)}° ${s.lon >= 0 ? 'E' : 'W'}. ${CHIP_TIP[st]}`;
   chip.setAttribute('aria-label', `Observer location: ${chip.title}`);
+  atlasGeo();
 }
 /** A new observer site, kept: the year is calculated there again, and the moment on show stays (or keeps following Now). */
 function changeSite(site: Site) {
@@ -707,6 +721,22 @@ function changeSite(site: Site) {
     if (d && k >= 0) { state.cursor = k; state.part = partOfDay(d, k, jd); } else if (d && i >= 0) { state.cursor = Math.min(i, annual(d).length - 1); state.part = part; }
     update();
   });
+}
+/** Atlas's My location, as the app knows it now: asking, a failure and what to do, or a default standing in. */
+function atlasGeo() {
+  const blocked = geo.fail ?? (geo.perm === 'denied' ? 'blocked' : null), insecure = !window.isSecureContext;
+  atlasDetails.setGeo({
+    disabled: insecure || geo.busy, label: geo.busy ? 'Locating…' : blocked ? '⌖ Retry my location' : '⌖ My location', alert: !!blocked,
+    note: insecure ? failMessage('insecure') : geo.busy ? 'Asking your browser for your location…' : blocked ? failMessage(blocked) : geo.defaulted ? `${state.site.name} is a default, not your place: My location, a place, or coordinates.` : '',
+  });
+}
+/** My location in Atlas: the device's fix, calculated there at once. */
+async function locateHere() {
+  geo.busy = true; geo.fail = null; atlasGeo(); siteChip();
+  let s: Site | null = null;
+  try { s = await deviceSite(); geo.perm = 'granted'; } catch (e) { geo.fail = (e as { kind?: FailKind }).kind ?? 'unavailable'; }
+  geo.busy = false; atlasGeo(); siteChip();
+  if (s) { tp.pause(); await chooseSite(s); atlasGeo(); }
 }
 /** The Observer dialog: coordinates, elevation, zone, presets and the device's location (set up by bindSite). */
 let openSiteDialog = () => {};
@@ -737,9 +767,9 @@ function bindSite() {
     const was = geo.perm; geo.perm = p;
     if (p === 'granted' && dlg.open && (geo.fail || was === 'denied')) return void useDevice();   // they were told it was blocked and have allowed it: look now
     if (p !== 'denied' && geo.fail === 'blocked') geo.fail = null;
-    geoUi(); siteChip();
+    geoUi(); atlasGeo(); siteChip();
   });
-  geoUi();
+  geoUi(); atlasGeo();
   openSiteDialog = () => { fill(state.site); fromDevice = null; geo.filled = false; geoUi(); dlg.showModal(); permissionState().then((p) => { geo.perm = p; geoUi(); siteChip(); }); };
   $('site-chip').onclick = () => { if (state.view === 'atlas' || !state.doc) openSiteDialog(); else setView('atlas'); };   // the place is chosen on the globe; there, the chip gives the coordinates
   form.onsubmit = (e) => {

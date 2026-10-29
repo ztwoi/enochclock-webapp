@@ -77,13 +77,40 @@
 .at-jumps { margin-top: 10px; } .at-jumps .btn { padding: 6px 10px; font-size: 11px; }
 @media (max-width: 1100px), (max-aspect-ratio: 1/1) {
   .atlas-details .at-tabs { display: flex; position: sticky; top: 0; z-index: 2; background: #0c0b09; margin-bottom: 4px; border-bottom: 1px solid var(--rule); }
-  .atlas-details .at-tabs button { flex: 1; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ivory3); padding: 10px 0 9px; border-bottom: 2px solid transparent; touch-action: manipulation; }
+  .atlas-details .at-tabs button { flex: 1; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ivory3); padding: 10px 0 9px; border: 0; border-bottom: 2px solid transparent; touch-action: manipulation; }
   .atlas-details .at-tabs button.on { color: var(--gold-hi); border-bottom-color: var(--gold); }
   .atlas-details .at-sec { display: none; }
-  .atlas-details[data-tab=where] [data-at-sec=where], .atlas-details[data-tab=when] [data-at-sec=when] { display: block; }
+  .atlas-details[data-tab=where] [data-at-sec=where], .atlas-details[data-tab=when] [data-at-sec=when], .atlas-details[data-tab=places] [data-at-sec=places] { display: block; }
   .atlas-details .at-sec > .eyebrow { display: none; }
   .at-date { flex-wrap: wrap; }
 }
 @media (pointer: coarse) { .atlas-details input, .atlas-details select { font-size: 16px; } }
 .atlas-details dl.at-rows { grid-template-columns: auto minmax(0, 1fr); }
 .atlas-details dl.at-rows dd { white-space: normal; }
+/* Where's tools: snap, typed coordinates, the device's location */
+.at-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.at-geo { font-size: 13.5px; }
+.at-geo[role=alert] { color: #e3a07a; }
+.at-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.at-form[hidden] { display: none; }
+.at-form .at-btns, .at-form-note { grid-column: 1 / 3; margin-top: 0; }
+.at-form-note { font-family: var(--mono); font-size: 11.5px; color: #e3a07a; }
+.at-form-note:empty { display: none; }
+.atlas-site .note.warn { color: #e3a07a; }
+/* no year at the site: When waits for one */
+.atlas-details.no-year [data-at-sec=when], .atlas-details.no-year [data-at-tab=when], .atlas-details.no-year [data-w=globe] { display: none !important; }
+/* Places: the presets, a tag filter and a search */
+.at-search { margin: 12px 0 10px; }
+.at-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.at-tags .tag { font-family: var(--mono); font-size: 10.5px; color: var(--ivory3); border: 1px solid var(--rule2); padding: 3px 7px; touch-action: manipulation; }
+.at-tags .tag.on { color: var(--gold-hi); border-color: var(--gold-dim); background: rgba(214,178,106,.12); }
+.at-list { list-style: none; margin: 12px 0 0; padding: 0; }
+.at-list li { border-top: 1px solid var(--rule); }
+.at-list li.none { font-family: var(--serif); font-style: italic; color: var(--ivory3); padding: 10px 0; }
+.at-item { display: block; width: 100%; text-align: left; padding: 9px 6px 10px 10px; border: 0; border-left: 3px solid transparent; background: none; color: inherit; font: inherit; touch-action: manipulation; }
+.at-item:hover { background: rgba(214,178,106,.04); }
+.at-item.cur { background: rgba(214,178,106,.08); border-left-color: var(--gold); }
+.at-item .nm { font-family: var(--serif); font-size: 18px; color: var(--ivory); }
+.at-item .rg { font-family: var(--mono); font-size: 10px; color: var(--ivory3); margin-left: 8px; }
+.at-item .mt { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--ivory2); margin-top: 2px; }
+.at-item .ds { display: block; font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--ivory3); margin-top: 2px; }
