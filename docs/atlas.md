@@ -50,7 +50,7 @@ Mock-up: [`mockups/atlas/`](../mockups/atlas/README.md), a working sketch at des
   Equinox, Solstice and Day 1.
 - **Follow** (Sky and The Day follow the Sun, the Moon or a planet) is the same idea as Atlas's cameras. Use the same
   words and behaviour where they meet: a hand on the view pauses following, and a tap brings it back.
-- **The tutorial** should get an Atlas step.
+- **The tutorial** has an Atlas step (section 10, "Where you stand, and when").
 
 ## Decided since
 
