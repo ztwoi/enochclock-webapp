@@ -76,9 +76,28 @@ export interface ZoomHook { active(): boolean; zoom(factor: number | null): bool
 export interface Wrap { x0: number; period: number }
 /** THREE layer of objects drawn once, not once per turn (spans of several turns: no seam where copies would meet). */
 export const UNTILED = 1;
+/** Layout reads that every redraw would otherwise repeat (the title block's height, the note along the bottom): a read after the page changed
+ *  makes the browser lay it out on the spot, several times a frame while a view plays or follows. Read once, and again only after the layout
+ *  may have moved: the window or a watched element resized, or `layoutChanged()` (a title's text, a change of view). */
+let layoutStamp = 0;
+export const layoutChanged = () => { layoutStamp++; };
+/** Stages draw what they measured (the labels held clear of the title block): when the window or a watched element resizes, after the page is laid
+ *  out and before it is drawn, they draw again. A change made in the middle of a task is seen by them then, not by reads made before it. */
+const layoutSubs = new Set<() => void>();
+const layoutMoved = () => { layoutStamp++; for (const f of layoutSubs) f(); };
+const layoutWatch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(layoutMoved);
+if (typeof addEventListener === 'function') addEventListener('resize', layoutMoved);
+export function layoutRead<T>(read: () => T, ...watch: string[]) {
+  let at = -1, v!: T, pending = watch;
+  return () => {
+    if (pending.length && typeof document !== 'undefined') pending = pending.filter((q) => { const e = document.querySelector(q); if (e) layoutWatch?.observe(e); return !e; });
+    if (at !== layoutStamp) { v = read(); at = layoutStamp; }
+    return v;
+  };
+}
 /** Pixels at the top of a portrait stage held by the page (the view's title and options); its frame opens below them. */
 let headClear = () => 0;
-export function setHeadClearance(f: () => number) { headClear = f; }
+export function setHeadClearance(f: () => number) { headClear = layoutRead(f, '.view-head'); }
 /** Pixels at the top of the stage held by the view's title block. */
 export const headClearance = () => headClear();
 
@@ -88,8 +107,13 @@ export function createStage(host: HTMLElement, label: string, opts: StageOptions
   let DW = W, DH = H;
   /** The host's exact layout size in CSS pixels: clientWidth/Height round (a rounded size stretches the canvas against the
    *  overlay), and getBoundingClientRect includes transforms (a view's entrance scale). 0 when it has no layout. */
-  const size = () => { const c = getComputedStyle(host), w = parseFloat(c.width), h = parseFloat(c.height); return [w > 0 ? w : 0, h > 0 ? h : 0] as const; };
-  const measure = () => { if (opts.pixels && host.clientWidth && host.clientHeight) { DW = host.clientWidth; DH = host.clientHeight; } };
+  const sizeNow = () => { const c = getComputedStyle(host), w = parseFloat(c.width), h = parseFloat(c.height); return [w > 0 ? w : 0, h > 0 ? h : 0] as const; };
+  /** Both sizes are read once and again after the host resizes (its observer below, or `resize()` from outside), not on every turn and zoom. */
+  let sizeCache: readonly [number, number] | null = null, clientCache: readonly [number, number] | null = null;
+  const size = () => (sizeCache ??= sizeNow());
+  const clientSize = () => (clientCache ??= [host.clientWidth, host.clientHeight] as const);
+  const stale = () => { sizeCache = clientCache = null; };
+  const measure = () => { const [cw, ch] = clientSize(); if (opts.pixels && cw && ch) { DW = cw; DH = ch; } };
   measure();
   // top = 0, bottom = H gives y down like the overlay; it mirrors triangle winding, so surfaces are double-sided.
   const camera = new THREE.OrthographicCamera(0, DW, 0, DH, -10, 10);
@@ -213,7 +237,8 @@ export function createStage(host: HTMLElement, label: string, opts: StageOptions
     }
     camera.left = L; camera.right = R; camera.updateProjectionMatrix(); camera.layers.set(0); renderer.autoClear = true;
   };
-  const ro = new ResizeObserver(() => { resize(); render(); }); ro.observe(host);
+  const redraw = () => { stale(); resize(); render(); };
+  const ro = new ResizeObserver(redraw); ro.observe(host); layoutSubs.add(redraw);
   resize();
 
   const setZoom = (z: Zoom | null) => {
@@ -296,7 +321,11 @@ export function createStage(host: HTMLElement, label: string, opts: StageOptions
   }
 
   return {
-    scene, camera, renderer, overlay, layer, line, fill, rect, sector, circle, text, render, resize,
+    scene, camera, renderer, overlay, layer, line, fill, rect, sector, circle, text, render,
+    /** Lay the view out again: the page around it may have changed (a title, the note along the bottom) as well as its own size. */
+    resize() { stale(); layoutChanged(); resize(); },
+    /** The host's client size, as of its last resize (a read on every frame would make the browser lay the page out each time). */
+    clientSize,
     /** Repeat the design sideways (a panorama all around), or stop (null). The overlay's `layer` repeats with it. */
     setWrap(w: Wrap | null) {
       wrap = w; copies.forEach((u, i) => { if (w) { u.setAttribute('transform', `translate(${(i ? 1 : -1) * w.period} 0)`); u.removeAttribute('display'); } else u.setAttribute('display', 'none'); });
@@ -325,6 +354,6 @@ export function createStage(host: HTMLElement, label: string, opts: StageOptions
     toScreen(x: number, y: number) { const m = overlay.getScreenCTM(); if (!m) return null; const q = new DOMPoint(x, y).matrixTransform(m); return { x: q.x, y: q.y }; },
     /** Client pixels → design space. */
     fromScreen(x: number, y: number) { const m = overlay.getScreenCTM(); if (!m) return null; const q = new DOMPoint(x, y).matrixTransform(m.inverse()); return { x: q.x, y: q.y }; },
-    dispose() { for (const f of offs) f(); ro.disconnect(); renderer.dispose(); renderer.domElement.remove(); overlay.remove(); },
+    dispose() { for (const f of offs) f(); ro.disconnect(); layoutSubs.delete(redraw); renderer.dispose(); renderer.domElement.remove(); overlay.remove(); },
   };
 }

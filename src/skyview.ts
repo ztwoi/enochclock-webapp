@@ -7,17 +7,18 @@
 // Positions: HYG 4.1 + Astronomy Engine, astrometric; refracted as at sunrise (Swiss Ephemeris' refraction,
 // the year's pressure and temperature), unless Refraction is off.
 // The planets are the Dial's (src/dial/state.ts PLANETS, PCOL): the same bodies, places and colours.
+import { Body } from 'astronomy-engine';
 import { StarField } from './sky/starfield';
 import * as THREE from 'three';
 import { skyFrame, starVector } from './sky/astronomy';
 import type { Star } from './sky/catalogue';
-import { aberrated, aberration, createMoonClock, declinationOfDate, ecliptic, horizonAzimuth, litPortals, moon, passageRun, planet, portalAt, refracted, type MoonDay, type Moonrise } from './sky/instrument';
+import { aberrated, aberration, bodyDirection, createMoonClock, declinationOfDate, ecliptic, horizonAzimuth, litPortals, moon, passageRun, planet, portalAt, refracted, type MoonDay, type Moonrise } from './sky/instrument';
 import { MOON_COLOR } from './day/events';
 import { PCOL, PLANETS } from './dial/state';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { easeHeading, mod360, wrap180 } from './sky/heading';
 import { dayIndexAt, GEEZ, H, PORTAL_ALT, pillars, W } from './model';
-import { C, createStage, hatchMaterial, headClearance, sprite, svgEl, UNTILED, type Pt } from './stage';
+import { C, createStage, hatchMaterial, headClearance, layoutRead, sprite, svgEl, UNTILED, type Pt } from './stage';
 import type { Portal, YearDoc } from './types';
 
 /** The side whose six portals the home view centres: where the Sun rises (east) or sets (west). */
@@ -72,7 +73,7 @@ const starMaterial = () => new THREE.ShaderMaterial({
 });
 
 /** Pixels along the stage's bottom held by the page's note (the method line under the view), when it shows. */
-const footInset = () => { const f = document.querySelector<HTMLElement>('.foot'); return f && f.offsetHeight ? f.offsetHeight + 22 : 0; };
+const footInset = layoutRead(() => { const f = document.querySelector<HTMLElement>('.foot'); return f && f.offsetHeight ? f.offsetHeight + 22 : 0; }, '.foot');
 
 /** One star field per catalogue (its list grows when fainter stars load): the per-star numbers are computed once, not per view. */
 const fields = new WeakMap<object, StarField>();
@@ -178,7 +179,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   }
   /** Labels held at the view's edges as it moves (the altitudes left, the daylight note right, the heading above), clear of the title block. */
   st.onView((v) => {
-    const px = host.clientWidth ? v.w / host.clientWidth : 1, top = v.y + (headClearance() + 18) * px;   // design units per pixel; the first clear line
+    const cw = st.clientSize()[0], px = cw ? v.w / cw : 1, top = v.y + (headClearance() + 18) * px;   // design units per pixel; the first clear line
     for (const t of pinned.querySelectorAll('[data-alt]')) { const y = skyY(Number(t.getAttribute('data-alt'))); t.setAttribute('x', String(v.x + 8 * px)); t.setAttribute('display', y < top || y > bottom() ? 'none' : 'inline'); }
     const cx = v.x + v.w / 2, h = mod360((cx - SL.x0) / K), y = Math.min(top + 14 * px, SL.horizon - 60);
     for (const l of pinned.querySelectorAll('[data-k=heading-line]')) { l.setAttribute('x1', String(cx)); l.setAttribute('x2', String(cx)); l.setAttribute('y1', String(y + 8 * px)); }
@@ -241,7 +242,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
       pathKey = key; sunDirs = []; const tracks: Dir[][] = PLANETS.map(() => []), moonDirs: Dir[] = [], starDirs: Dir[] = [];
       for (let s = 0; s <= n; s++) {
         const t = skyFrame(a + ((b - a) * s) / n, lat, lon, elev), fr = refractionOn ? refracted(aberrated(t), hpa, celsius) : aberrated(t);
-        sunDirs.push(fr.sun); moonDirs.push(moon(fr)); PLANETS.forEach(([body], q) => tracks[q].push(planet(fr, body)));
+        sunDirs.push(fr.sun); moonDirs.push(bodyDirection(fr, Body.Moon)); PLANETS.forEach(([body], q) => tracks[q].push(bodyDirection(fr, body)));
         if (star) starDirs.push(fr.direction(starVector(star, fr.time)));
       }
       sunTrack = trackOf(sunDirs); bodyTracks = new Map();
@@ -278,6 +279,14 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   const figA = new THREE.BufferAttribute(new Float32Array(FIG_MAX * 6), 3); figA.setUsage(THREE.DynamicDrawUsage); figGeom.setAttribute('position', figA);
   const upload = (a: THREE.BufferAttribute, count: number) => { a.clearUpdateRanges(); a.addUpdateRange(0, count * a.itemSize); a.needsUpdate = true; };
   let info: SkyInfo | null = null;
+  /** Whether each star rises (east) or sets (west) within the portals' span, worked out lazily for the day on show: where a star crosses the
+   *  horizon moves by about 0.0001° a day (aberration, precession), so every frame of a day agrees with the first. 0: not yet, 1: no, 2: yes. */
+  let portalOf = new Uint8Array(0), portalDay = NaN;
+  function portalStar(i: number, dec: () => number, spans: [number[], boolean][]) {
+    let v = portalOf[i];
+    if (!v) { const d = dec(); v = portalOf[i] = spans.some(([span, rising]) => { const ha = horizonAzimuth(d, lat, rising); return ha !== null && ha >= span[0] && ha <= span[1]; }) ? 2 : 1; }
+    return v === 2;
+  }
   function update() {
     // drawn: apparent places (annual aberration, as Swiss Ephemeris has them), refracted as at sunrise (so the Sun's upper
     // limb meets the horizon at the measured sunrise) or at true altitudes; daylight and twilight stay on the Sun's true altitude
@@ -293,6 +302,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     // stars (computed positions; size, tint, dimming in daylight are presentation)
     const pos = posA.array as Float32Array, size = sizeA.array as Float32Array, alpha = alphaA.array as Float32Array, tint = tintA.array as Float32Array;
     frameStamp = ++field.clock; nShown = 0;
+    if (portalDay !== Math.floor(jd) || portalOf.length < field.n) { portalDay = Math.floor(jd); portalOf = new Uint8Array(Math.max(field.n, 1024)); }
     const n = field.n, mags = field.mag, base = field.alpha, rgb = field.rgb, dim = 1 - 0.82 * twilight;
     for (let i = 0; i < n; i++) {
       if (mags[i] > magLimit) continue;
@@ -303,10 +313,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
       field.az[i] = az; field.alt[i] = alt; field.stamp[i] = frameStamp;
       const x = skyX(az), y = skyY(alt), k = nShown++;
       let a = base[i] * dim * (alt < 0 ? (belowOn ? 0.9 : 0.35) : 1), r = rgb[3 * i], g = rgb[3 * i + 1], bl = rgb[3 * i + 2];
-      if (portalStarsOn) {
-        const dec = proj.dec();
-        if (spans.some(([span, rising]) => { const ha = horizonAzimuth(dec, lat, rising); return ha !== null && ha >= span[0] && ha <= span[1]; })) { r = 1.0; g = 0.78; bl = 0.36; a = Math.min(1, a * 1.5); }
-      }
+      if (portalStarsOn && portalStar(i, () => proj.dec(), spans)) { r = 1.0; g = 0.78; bl = 0.36; a = Math.min(1, a * 1.5); }
       pos[3 * k] = x; pos[3 * k + 1] = y; size[k] = field.size[i]; alpha[k] = Math.max(0.05, a);
       tint[3 * k] = r; tint[3 * k + 1] = g; tint[3 * k + 2] = bl;
       shownIdx[k] = i; shownX[k] = x; shownY[k] = y;
@@ -503,7 +510,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     setFollowed(b: Followed | null) { followed = b; update(); },
     /** Face bearing `az` with altitude `alt` at the middle of the view, `span`° of altitude from its top to its bottom. */
     look(az: number, alt: number, span: number) {
-      const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return;
+      const [w, h] = st.clientSize(); if (!w || !h) return;
       st.setZoom({ cx: skyX(az), cy: skyY(alt), k: h / (Math.min(w / W, h / H) * span * K) });
     },
     /** Degrees of altitude from the view's top to its bottom. */

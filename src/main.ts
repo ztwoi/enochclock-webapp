@@ -19,7 +19,7 @@ import { createDeep, type Deep } from './deep';
 import { deepPanel, skyPanel, skyReading } from './inspector';
 import { cycleStrip } from './cycleui';
 import { annual, cursorRow, dayIndexAt, fmt, jdFromMs, partOfDay } from './model';
-import { headClearance, setHeadClearance } from './stage';
+import { headClearance, layoutChanged, setHeadClearance } from './stage';
 import type { DeepDoc, Site, YearDoc } from './types';
 import { loadCatalogue } from './sky/catalogue';
 import { jdOfPart } from './sky/instrument';
@@ -224,10 +224,17 @@ function update() {
   clock();
   $('now').classList.toggle('on', state.live); $('now').setAttribute('aria-pressed', String(state.live));
   cycleStrip($('cycle-track') as unknown as SVGSVGElement, doc, i);
-  if (state.view !== 'dial' && (i !== shown.i || doc !== shown.doc || state.view !== shown.view) || (state.view === 'sky' && (state.part !== shown.part || shown.sel !== selSerial))) { inspector(doc, i); shown = { i, doc, view: state.view, part: state.part, sel: selSerial }; } // once per morning (or per part in Sky)
+  const morning = state.view !== 'dial' && (i !== shown.i || doc !== shown.doc || state.view !== shown.view), moved = state.view === 'sky' && (state.part !== shown.part || shown.sel !== selSerial);
+  if (morning || moved) {                                          // once per morning, and in Sky as the part moves
+    const now = performance.now(), only = !morning && shown.sel === selSerial;   // only the part moved: while it runs, a few times a second (a trailing one when it stops)
+    if (only && now - panelAt < PANEL_MS) { panelTimer ||= window.setTimeout(() => { panelTimer = 0; update(); }, PANEL_MS - (now - panelAt)); }
+    else { clearTimeout(panelTimer); panelTimer = 0; panelAt = now; inspector(doc, i); shown = { i, doc, view: state.view, part: state.part, sel: selSerial }; }
+  }
   document.title = `Enoch ${r.enoch_date} · ${VIEWS[state.view].name}`;
 }
 
+/** The details panel is rebuilt as the part of the day runs at most every PANEL_MS: a frame's worth of markup is no use to a reader at 60 a second. */
+const PANEL_MS = 120; let panelAt = 0, panelTimer = 0;
 function inspector(doc: YearDoc, i: number) {
   const el = $('insp'), acc = accuracySection(doc.accuracy, { stars: state.view === 'sky' || state.view === 'day' });           // every view: how far to trust this year
   if (state.view === 'deep') { el.innerHTML = (state.deepDoc ? deepPanel(state.deepDoc, firstYear(), doc, i) : '') + acc; return; }
@@ -298,8 +305,8 @@ function followBody(b: Followed | null) {
 /** Sky's reading under its options (src/inspector.ts skyReading): the selection, or the body followed, with its Follow toggle. */
 function syncReading() {
   const el = $('sky-read'), html = state.view === 'sky' && state.doc ? skyReading(state.doc, state.sky?.info() ?? null, skyFollow?.target ?? null) : '';
-  if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
-  el.hidden = !html;
+  if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; layoutChanged(); }   // the title block's height changes with it
+  if (el.hidden === !!html) { el.hidden = !html; layoutChanged(); }
 }
 /** The sensor is the device's, not Sky's: on in the Dial or after a reload, Sky follows it too (when it is shown), and off anywhere is off here. */
 function adoptCompass() { if (hub.active && !skyCompass.on && state.view === 'sky') { compassFollowing = true; skyFollow?.set(null); skyCompass.adopt(); syncSide(); } }
@@ -432,6 +439,7 @@ async function setView(v: View, push = true) {
   if (v === 'sky' || v === 'deep') ({ deep: state.deep, sky: state.sky }[v])?.stage.resize();   // its title block is now this view's
   $('sky-controls').hidden = v !== 'sky'; skySheetOpts();
   $('day-controls').hidden = v !== 'day';
+  layoutChanged();                                                  // the title block and the options row changed: what was measured is stale
   adoptCompass();                                                   // the compass came on elsewhere: Sky follows it from here
   focus.setAvailable(timed(v));                                     // the top bar folds away in Sky, the Dial and The Day
   tp.setDegreeAvailable(timed(v));                                  // only Sky, the Dial and The Day have a time of day

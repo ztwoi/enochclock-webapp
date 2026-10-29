@@ -4,7 +4,7 @@ import { correctionSection, courseSection } from './cycleui';
 import { civil } from './dates';
 import { annual, fmt, GEEZ, ROMAN } from './model';
 import { declinationOfDate, horizonAzimuth, lastPassage, litPortals, passageRun, portalAt } from './sky/instrument';
-import { skyFrame } from './sky/astronomy';
+import { AstroTime } from 'astronomy-engine';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { PCOL } from './dial/state';
 import { MOON_COLOR } from './day/events';
@@ -99,7 +99,7 @@ export function skyReading(doc: YearDoc, sky: SkyInfo | null, followed: Followed
     const q = sky.planets.find((x) => x.name === (b as { name: string }).name);
     html = part(name(b!.name, PCOL[b!.name])) + az + alt + (q ? part(`mag ${q.mag.toFixed(1)}`, true) + part(crossing(q.dec), true) : '');
   } else {
-    const st = b!.star, dec = declinationOfDate(st, skyFrame(sky.jd, c.latitude, c.longitude_east, c.elevation_m).time);
+    const st = b!.star, dec = declinationOfDate(st, new AstroTime(sky.jd - 2451545));
     html = part(name(st.name ?? st.designation ?? st.id, C.ivory)) + (st.constellation ? part(CONSTELLATION_NAMES[st.constellation] ?? st.constellation, true) : '') + part(`mag ${st.mag_v.toFixed(1)}`, true) + az + alt + part(crossing(dec), true);
   }
   const on = sameBody(b, followed);
@@ -107,7 +107,13 @@ export function skyReading(doc: YearDoc, sky: SkyInfo | null, followed: Followed
 }
 
 /** Local date and time at the site, to the minute. */
-const localAt = (doc: YearDoc, jd: number) => new Intl.DateTimeFormat('en-GB', { timeZone: doc.calculation.timezone, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })
+const formats = new Map<string, Intl.DateTimeFormat>();       // building one is slow, and the panel is rebuilt as a view plays
+const formatter = (key: string, tz: string, o: Intl.DateTimeFormatOptions) => {
+  let f = formats.get(`${key}|${tz}`);
+  if (!f) formats.set(`${key}|${tz}`, f = new Intl.DateTimeFormat('en-GB', { timeZone: tz, ...o }));
+  return f;
+};
+const localAt = (doc: YearDoc, jd: number) => formatter('at', doc.calculation.timezone, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })
   .format(new Date((jd - 2440587.5) * 86400000));
 const hoursAgo = (h: number) => (h < 1 ? `${Math.round(h * 60)} min ago` : `${Math.floor(h)} h ${Math.round((h % 1) * 60)} min ago`);
 
@@ -128,7 +134,7 @@ function moonSection(doc: YearDoc, sky: SkyInfo) {
 export function skyPanel(doc: YearDoc, i: number, part: number, sky: SkyInfo | null) {
   const days = annual(doc), r = days[i], next = doc.rows[i + 1];
   if (!sky) return `<div class="section"><div class="eyebrow">Sky</div><p class="note">Loading the stars…</p></div>`;
-  const local = new Intl.DateTimeFormat('en-GB', { timeZone: doc.calculation.timezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZoneName: 'short' })
+  const local = formatter('clock', doc.calculation.timezone, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZoneName: 'short' })
     .format(new Date((sky.jd - 2440587.5) * 86400000));
   let sel = '';
   const S = sky.selection;

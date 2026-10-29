@@ -29,11 +29,16 @@ export function isoFromJd(jd: number): string {
 
 /** The Gregorian date and clock time of an instant at a site. Years 2–9998: the time zone's own rules (summer time
  *  exact to the second). Beyond: the calculator's UTC offset for that day (`offset` as in "-07:52:58", local mean time). */
+const zoneFormats = new Map<string, Intl.DateTimeFormat>();   // building one is slow, and this runs every frame while a view plays
+const zoneFormat = (tz: string) => {
+  let f = zoneFormats.get(tz);
+  if (!f) zoneFormats.set(tz, f = new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }));
+  return f;
+};
 export function localDateTime(jd: number, tz: string, offset: string): { date: string; time: string } {
   const ms = (jd - 2440587.5) * 86400000, p2 = (n: number) => String(n).padStart(2, '0'), y = yearOf(isoFromJd(jd));
   if (y >= 2 && y <= 9998) {
-    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
-      .formatToParts(new Date(ms)).map((q) => [q.type, q.value]));
+    const parts = Object.fromEntries(zoneFormat(tz).formatToParts(new Date(ms)).map((q) => [q.type, q.value]));
     return { date: civil(isoDate(Number(parts.year), Number(parts.month), Number(parts.day))), time: `${parts.hour}:${parts.minute}:${parts.second}` };
   }
   const m = /^([+-])(\d{2}):(\d{2})(?::(\d{2}))?/.exec(offset), off = m ? (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 3600 + Number(m[3]) * 60 + Number(m[4] ?? 0)) : 0;

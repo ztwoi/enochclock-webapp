@@ -35,8 +35,18 @@ export const HORIZON_REFRACTION_DEG = refraction(0);
 export function apparentAltitude(alt: number, hpa = STANDARD_HPA, celsius = STANDARD_C) {
   const r0 = refraction(0, hpa, celsius);
   if (alt <= -r0) return alt + r0;
+  // Newton on a − alt − R(a) = 0 from the first guess, with R's own derivative: the root the fixed-point iteration
+  // converges to, to its 1e-12° tolerance, in 3–4 steps where that took up to 20 (this runs for every star in view, every frame).
+  const P = (hpa - 80) / 930 / 60, T = 0.00008 * (celsius - 10);
   let a = alt + r0;
-  for (let k = 0; k < 50; k++) { const n = alt + refraction(a, hpa, celsius); if (Math.abs(n - a) < 1e-12) return n; a = n; }
+  for (let k = 0; k < 50; k++) {
+    let r: number, dr: number;                                    // Sinclair's R (arcminutes) and its slope per degree
+    if (a > 17.904104638432) { const t = Math.tan(a * D); r = 0.97 / t; dr = -0.97 * D * (1 + t * t) / (t * t); }
+    else { const n = 34.46 + 4.23 * a + 0.004 * a * a, m = 1 + 0.505 * a + 0.0845 * a * a; r = n / m; dr = ((4.23 + 0.008 * a) * m - n * (0.505 + 0.169 * a)) / (m * m); }
+    const q = 1 + T * (r + 39), g = a - alt - (P * r) / q, slope = 1 - (P * dr * (1 + 39 * T)) / (q * q), step = g / slope;
+    a -= step;
+    if (Math.abs(step) < 1e-12) break;
+  }
   return a;
 }
 
@@ -67,19 +77,22 @@ export function refracted(frame: Frame, hpa = STANDARD_HPA, celsius = STANDARD_C
   return { ...frame, direction, sun: { az: frame.sun.az, alt: apparentAltitude(frame.sun.alt, hpa, celsius) } };
 }
 
-/** Topocentric Moon (observer origin subtracted: lunar parallax reaches ~1°) and its illuminated fraction. */
+/** Topocentric direction of a body (observer origin subtracted: lunar parallax reaches ~1°), as the frame has it. Alone, for a path that
+ *  samples it hundreds of times: the phase, magnitude and declination below are each several more ephemeris calls. */
+export function bodyDirection(frame: Frame, body: Body) {
+  const g = GeoVector(body, frame.time, false), o = ObserverVector(frame.time, frame.observer, false);
+  return frame.direction(new Vector(g.x - o.x, g.y - o.y, g.z - o.z, frame.time));
+}
+
+/** Topocentric Moon and its illuminated fraction. */
 export function moon(frame: Frame) {
-  const g = GeoVector(Body.Moon, frame.time, false), o = ObserverVector(frame.time, frame.observer, false);
-  const v = new Vector(g.x - o.x, g.y - o.y, g.z - o.z, frame.time);
-  return { ...frame.direction(v), fraction: Illumination(Body.Moon, frame.time).phase_fraction };
+  return { ...bodyDirection(frame, Body.Moon), fraction: Illumination(Body.Moon, frame.time).phase_fraction };
 }
 
 /** A planet at the instant: topocentric direction (as the Dial draws it), visual magnitude, and declination of date
  *  (apparent, for where it crosses the horizon that day). */
 export function planet(frame: Frame, body: Body) {
-  const g = GeoVector(body, frame.time, false), o = ObserverVector(frame.time, frame.observer, false);
-  return { ...frame.direction(new Vector(g.x - o.x, g.y - o.y, g.z - o.z, frame.time)), mag: Illumination(body, frame.time).mag,
-    dec: Equator(body, frame.time, frame.observer, true, true).dec };
+  return { ...bodyDirection(frame, body), mag: Illumination(body, frame.time).mag, dec: Equator(body, frame.time, frame.observer, true, true).dec };
 }
 
 /** The ecliptic of date, sampled every `step` degrees of longitude, in local horizontal coordinates. */

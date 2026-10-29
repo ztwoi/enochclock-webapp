@@ -78,7 +78,7 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
   // ---- layout: the boxes from the geometry; a change of shape redraws the instant
   function layout() {
     if (!host.clientWidth || !host.clientHeight) return;
-    place();
+    place(); sky.stage.resize();                                  // the sky's box just changed: it measures it again, not as it was
     if (dayI >= 0) buildBar();
     if (isFinite(lastJd)) draw(lastJd);
   }

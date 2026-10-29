@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { skyFrame, starVector } from '../src/sky/astronomy.ts';
 import { decodeStars } from '../src/sky/catalogue.ts';
 import { Body, GeoVector, ObserverVector, Vector } from 'astronomy-engine';
-import { aberrated, apparentAltitude, declinationOfDate, ecliptic, horizonAzimuth, HORIZON_REFRACTION_DEG, jdOfPart, moon, portalAt, refracted, refraction } from '../src/sky/instrument.ts';
+import { aberrated, apparentAltitude, bodyDirection, declinationOfDate, ecliptic, horizonAzimuth, HORIZON_REFRACTION_DEG, jdOfPart, moon, planet, portalAt, refracted, refraction } from '../src/sky/instrument.ts';
 import type { YearDoc } from '../src/types.ts';
 
 const doc = JSON.parse(readFileSync(new URL('./fixtures/sf-2026.json', import.meta.url), 'utf8')) as YearDoc;
@@ -101,4 +101,33 @@ test('parts of the Enoch day are equal divisions from sunrise to next sunrise', 
   const a = doc.rows[0].sunrise_jd_ut, b = doc.rows[1].sunrise_jd_ut;
   assert.equal(jdOfPart(a, b, 0), a);
   assert.equal(jdOfPart(a, b, 18), b);
+});
+
+test('apparentAltitude (Newton) agrees with the fixed-point inversion of refraction it replaced, in every atmosphere', () => {
+  const old = (alt: number, hpa: number, c: number) => {          // the previous implementation, kept here as the reference
+    const r0 = refraction(0, hpa, c);
+    if (alt <= -r0) return alt + r0;
+    let a = alt + r0;
+    for (let k = 0; k < 50; k++) { const n = alt + refraction(a, hpa, c); if (Math.abs(n - a) < 1e-12) return n; a = n; }
+    return a;
+  };
+  let worst = 0;
+  for (const [hpa, c] of [[1013.25, 15], [850, -20], [1040, 38], [600, 5], [1000, 10]]) {
+    for (let alt = -2; alt <= 90; alt += 0.0137) {
+      worst = Math.max(worst, Math.abs(apparentAltitude(alt, hpa, c) - old(alt, hpa, c)));
+      // and it inverts the refraction exactly: the apparent altitude refracts back to the true one
+      const app = apparentAltitude(alt, hpa, c);
+      if (alt > -refraction(0, hpa, c)) assert.ok(Math.abs(app - refraction(app, hpa, c) - alt) < 1e-9, `${alt} ${hpa} ${c}`);
+    }
+  }
+  console.log({ worstApparentAltitudeDifference: worst });
+  assert.ok(worst < 1e-9, `${worst}`);
+});
+
+test('bodyDirection is the direction moon() and planet() already gave, without their phase, magnitude and declination', () => {
+  for (const jd of [2461041.5, 2461200.25, 2461333.7]) {
+    const f = refracted(aberrated(skyFrame(jd, ...SF)));
+    assert.deepEqual(bodyDirection(f, Body.Moon), { az: moon(f).az, alt: moon(f).alt });
+    for (const b of [Body.Mercury, Body.Venus, Body.Mars, Body.Jupiter, Body.Saturn]) { const p = planet(f, b); assert.deepEqual(bodyDirection(f, b), { az: p.az, alt: p.alt }); }
+  }
 });
