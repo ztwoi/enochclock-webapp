@@ -98,6 +98,13 @@ docker compose up -d --build     # http://127.0.0.1:4176
 The image runs the tests, builds the site and serves it with nginx. Copy `.env.example` to `.env` to change the address it
 binds to (`ENOCH_BIND`) or the repository the app's **Source** link points to (`VITE_SOURCE_URL`).
 
+**Publishing enochclock.com** (beta and production): build with `npm run build:site`, not `npm run build`. It sets the two
+things the hosted site needs and a plain build leaves off: `VITE_SOURCE_URL`, which shows the **Source** link to this
+repository in the licence line under the inspector (the AGPL's offer of source to the people using the site), and
+`VITE_FEEDBACK=1`, which shows the **Feedback** link (the site serves `POST /api/feedback`). A plain build has neither, so a
+copy built that way publishes no link to its source. Then `deploy/push.sh beta` (or `prod`) uploads `dist/`; it refuses a
+build that lacks either link.
+
 `dist/` is the whole site. Any static host can serve it if it sends `.wasm` as `application/wasm` and sets the headers in
 `nginx/`, which include a strict Content-Security-Policy. The compass, device location and the offline install need a
 secure page: HTTPS, or `localhost`.
@@ -142,7 +149,8 @@ and scrub a day.
 
 Enoch Clock is free software under the GNU Affero General Public License, version 3 or (at your option) any later version.
 See [LICENSE](LICENSE). If you host a modified copy, the AGPL requires you to offer your users its source: set
-`VITE_SOURCE_URL` and the app shows the link.
+`VITE_SOURCE_URL` to where your copy's source is, and the app shows the link (`npm run build:site` does this for
+enochclock.com).
 
 Third-party software and data, with their licences, are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). The
 Swiss Ephemeris is © Astrodienst AG; the star catalogue is HYG 4.1; the constellation figures are Stellarium's; the text of

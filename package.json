@@ -11,6 +11,7 @@
     "stage": "node scripts/fetch-ephe.mjs && node scripts/stage-legal.mjs && node scripts/stage-calculator.mjs",
     "dev": "npm run stage && vite --host 127.0.0.1",
     "build": "npm run stage && tsc --noEmit && vite build && node scripts/stage-pwa.mjs",
+    "build:site": "VITE_SOURCE_URL=https://github.com/ztwoi/enochclock-webapp VITE_FEEDBACK=1 npm run build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "tsx --test tests/*.test.ts",
     "video": "node scripts/day-video.mjs"
