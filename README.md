@@ -15,9 +15,12 @@ It is a static site. Every calculation runs in your browser; nothing is sent to 
 Four views share one time cursor:
 
 - **Sky.** The real sky over the six eastern portals (1 Enoch 72) at any of the 18 parts of the selected day: stars,
-  constellation figures, Sun, Moon and planets. Turn to the east or west, follow the device's compass, or follow the Sun.
-  **Paths** draws the day's course of the Sun (solid behind it, dotted ahead) and of each planet. Click a star or planet to
-  see where it rises and sets against the portals.
+  constellation figures, Sun, Moon and planets. Turn to the east or west, or follow the device's compass.
+  Tap the Sun, the Moon, a planet or any star and a line of reading appears under the options (where it is, and which
+  portal it rises in); its **Follow** turns the view with it as the day or the years play. The Moon's reading also gives
+  its day, counted from the conjunction, its light in fourteenths, and the portal it last rose in (a silver tick on the
+  horizon marks where). **Paths** draws the day's course of the Sun, the Moon and each planet (solid behind it, dotted
+  ahead), and of the body you follow.
 - **The Dial.** Every layer of the calendar on one face, each ring turned onto the Sun's line, with the planets, Moon and
   bright stars. Frame it north-up, Sun-up or by compass.
 - **The Day.** The Sky and the Dial together, sunrise to sunrise: the sky turns with the Sun and the Dial is turned to face
@@ -26,9 +29,13 @@ Four views share one time cursor:
 - **Deep Time.** About 30,000 annual Day 1s against the independently solved March equinox, with the 294-year cycle
   boundaries. Click a year to open it.
 
-| Sky | Deep Time | On a phone |
+| Sky | Following the Moon | On a phone |
 |---|---|---|
-| ![Sky: the six eastern portals and the Sun rising](docs/img/sky.png) | ![Deep Time: thirty thousand years of Day 1 against the March equinox](docs/img/deep-time.png) | <img src="docs/img/dial-phone.png" alt="The Dial on a phone" width="200"> |
+| ![Sky: the six eastern portals and the Sun rising](docs/img/sky.png) | ![Sky following the Moon: its reading, its path across the sky and the portal it last rose in](docs/img/sky-follow.png) | <img src="docs/img/sky-phone.png" alt="Sky on a phone, following Neptune" width="200"> |
+
+| The Day | Deep Time | On a phone |
+|---|---|---|
+| ![The Day: the Sky and the Dial joined by a thread through the Sun, with the day's risings and settings](docs/img/day.png) | ![Deep Time: thirty thousand years of Day 1 against the March equinox](docs/img/deep-time.png) | <img src="docs/img/dial-phone.png" alt="The Dial on a phone" width="200"> |
 
 **Playback** is one bar on every view: step or play by the Day or by the Degree (1° is 1/360 of sunrise to sunrise), at
 0.5× to 16×, forwards or in reverse. Playing past the end of an Enoch year carries on into the next one. **Now** follows the
@@ -43,9 +50,11 @@ present.
 | 1 2 3 4 | Sky · The Dial · The Day · Deep Time |
 | + − 0 | zoom Sky, The Day or Deep Time in, out, home |
 
-Following the Sun, the view opens out at midday and midnight so the horizon and the Sun are both in view. Zoom in first
-and it follows that close; a pinch or the wheel zooms while it follows, and a double tap (or 0) brings back the whole view.
-A drag takes the sky back.
+Following a body, the view opens out as it climbs high or sinks deep so the horizon and the body are both in view. Zoom in
+first and it follows that close; a pinch or the wheel zooms while it follows, and a double tap (or 0) brings back the whole
+view. A drag, East, West or Compass takes the sky back. Selecting something else does not stop it: the body followed wears
+a double ring, and with nothing selected the reading shows it, so **Following** is always there to tap. The Sun button
+follows the Sun in one tap.
 
 Each year carries an **Accuracy** section. It stays closed while Day 1 is within 1.5 days of the March equinox and the
 uncertainty in Earth's rotation (ΔT) is under an hour; beyond that it opens and gives the reasons.
@@ -122,7 +131,7 @@ and scrub a day.
 | `src/` | the app (TypeScript, Three.js, Vite) |
 | `src/calculator/` | the browser calculator: a worker that runs the Swiss Ephemeris (WebAssembly) and `engine/`, the calendar, sunrise and cycle arithmetic |
 | `src/dial/`, `src/sky/`, `src/compass/`, `src/pwa/` | the Dial, the sky, the compass and magnetic declination, and offline install |
-| `src/day/`, `src/studio/` | The Day (the Sky and the Dial together, its events and its following of the Sun) and its video frame |
+| `src/day/`, `src/studio/` | The Day (the Sky and the Dial together, its events), the follow that turns the Sky with a body (`follow.ts`), and the video frame |
 | `public/` | fonts, icons, the star catalogue (`sky/`), Deep Time's data (`deep/`) and the Tutorial, Primer (Enoch) and Evidence (Phoenix) pages |
 | `scripts/` | the ephemeris download, the build's staging steps and the day-video recorder |
 | `tests/` | unit tests and their fixtures |
