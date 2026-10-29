@@ -27,7 +27,7 @@ export function accuracySection(a?: Accuracy, opts: { stars?: boolean } = {}): s
    <dl class="read">
     <dt${mark(aligned)}>Day 1 − equinox</dt><dd${mark(aligned)} data-k="acc-offset">${sgn(a.day1_offset_days)} d <small>(uniform time; bound ±${b.alignment_days})</small></dd>
     <dt>Day 1 sunrise − equinox</dt><dd>${sgn(a.day1_sunrise_minus_equinox_ut_days)} d <small>(clock time, UT)</small></dd>
-    <dt>This calendar year</dt><dd>${a.calendar_year_days} days</dd>
+    <dt>This calendar year</dt><dd>364 days <small>(+ ${a.calendar_year_days - 364} hold ${a.calendar_year_days - 364 === 1 ? 'date' : 'dates'})</small></dd>
     <dt>Calendar's average year</dt><dd>${a.calendar_mean_year_days.toFixed(5)} d</dd>
     <dt>Equinox year here</dt><dd data-k="acc-year">${a.mean_equinox_year_days.toFixed(5)} d <small>(mean ${yearLabel(a.mean_equinox_year_span[0])}–${yearLabel(a.mean_equinox_year_span[1])})</small></dd>
     <dt>Drift</dt><dd>${sgn(a.drift_days_per_millennium)} d per 1,000 years</dd>
