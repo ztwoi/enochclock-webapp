@@ -16,7 +16,7 @@
   <div class="spacer"></div>
   <button class="chip film-link" id="film-btn" title="Watch: the courses of the luminaries (3 min)">▶ Watch</button>
   <a class="chip primer-link" href="/tutorial/" title="Tutorial: how the Enoch clock works, and how to read it">Tutorial</a>
-  <button class="chip" id="site-chip" aria-haspopup="dialog" aria-controls="site-dialog">—</button>
+  <button class="chip" id="site-chip" title="The observer's place: choose it in Atlas">—</button>
   <span class="chip" id="time-chip">TIME SCALE <b>UT</b></span>
   <button class="chip" id="calc-status" data-mode="server" title="Calculator and offline use" aria-label="Calculator and offline use"></button>
  </header>
@@ -82,19 +82,6 @@
   </div>
   <button class="more" id="more" aria-expanded="false" aria-controls="insp-wrap" aria-label="Details">⋯</button>
  </footer>
- <dialog id="site-dialog" aria-label="Observer location">
-  <form method="dialog" id="site-form">
-   <h2>Observer</h2>
-   <p class="sub" id="geo-note"></p>
-   <button type="button" class="btn" id="use-device">Use this device's location</button>
-   <div class="presets" id="presets"></div>
-   <label>Latitude ° N <input name="lat" type="number" step="any" min="-90" max="90" required></label>
-   <label>Longitude ° E <input name="lon" type="number" step="any" min="-180" max="180" required></label>
-   <label>Elevation m <input name="elev" type="number" step="any" value="0"></label>
-   <label>Time zone <input name="tz" type="text" required></label>
-   <menu><button class="btn" value="cancel" formnovalidate>Cancel</button><button class="btn on" id="site-apply" value="apply">Calculate</button></menu>
-  </form>
- </dialog>
 </div>
 <script type="module" src="/src/main.ts"></script>
 </body></html>

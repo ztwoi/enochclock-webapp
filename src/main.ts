@@ -11,7 +11,7 @@ import './feedback.css';
 import {registerServiceWorker} from './pwa/register';
 import {pruneStaleVersions,verifyInstalled} from './pwa/install';
 import './style.css';
-import { browserZone, deviceSite, FALLBACK, fetchInstant, fetchDeep, fetchDeepSeries, fetchEnochYear, fetchGregorianYear, fetchYearContaining, PRESETS, saveSite, savedSite } from './api';
+import { browserZone, deviceSite, FALLBACK, fetchInstant, fetchDeep, fetchDeepSeries, fetchEnochYear, fetchGregorianYear, fetchYearContaining, saveSite, savedSite } from './api';
 import { accuracyFlag, accuracySection } from './accuracy';
 import { failMessage, onPermissionChange, permissionState, type FailKind, type PermState } from './geo/location';
 import { enochText, isoDate, isoFromJd, localDateTime, localParts, readDate, YEAR_MAX, YEAR_MIN, yearLabel, yearOf } from './dates';
@@ -592,7 +592,6 @@ function bindAtlas() {
   document.querySelectorAll<HTMLButtonElement>('[data-atlas-cam]').forEach((b) => b.addEventListener('click', () => { atlasCamera = b.dataset.atlasCam as AtlasCamera; syncCam(); state.atlas?.setCamera(atlasCamera); save(); update(); }));
   document.querySelectorAll<HTMLButtonElement>('[data-atlas-layer]').forEach((b) => b.addEventListener('click', () => { const on = !b.classList.contains('on'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); state.atlas?.setLayers(atlasLayers()); save(); }));
   syncCam();
-  $('insp').addEventListener('click', (e) => { if ((e.target as Element).closest('[data-atlas-coords]')) openSiteDialog(); });   // the details' Coordinates…
 }
 /** The views' tabs on a narrow screen scroll sideways: an arrow at the end that has more (tap: the next ones), and the tab on show kept in view. */
 function bindNavScroll() {
@@ -762,7 +761,7 @@ const localISODate = () => { const d = new Date(); return `${d.getFullYear()}-${
 
 // ---------------------------------------------------------------- observer
 /** What the observer chip knows about the device's location: the browser's permission, a lookup in flight, the last failure. */
-const geo = { perm: 'unknown' as PermState, busy: false, fail: null as FailKind | null, defaulted: false, filled: false };
+const geo = { perm: 'unknown' as PermState, busy: false, fail: null as FailKind | null, defaulted: false };
 /** The chip's pin says where the site came from: gold, a fix from this device; a ring, a place chosen; pulsing, asking; struck, blocked. */
 const PIN = '<svg class="pin" viewBox="0 0 12 14" aria-hidden="true"><path d="M6 13.2C6 13.2 1.6 8.6 1.6 5.4a4.4 4.4 0 0 1 8.8 0C10.4 8.6 6 13.2 6 13.2Z"/><circle cx="6" cy="5.4" r="1.5"/><path class="slash" d="M1 1.2 11 13"/></svg>';
 function chipState(s: Site) { return geo.busy ? 'locating' : s.source === 'device' ? 'here' : geo.fail === 'blocked' || geo.perm === 'denied' ? 'blocked' : geo.defaulted ? 'default' : 'chosen'; }
@@ -810,48 +809,20 @@ async function locateHere() {
   geo.busy = false; atlasGeo(); siteChip();
   if (s) { tp.pause(); await chooseSite(s); atlasGeo(); }
 }
-/** The Observer dialog: coordinates, elevation, zone, presets and the device's location (set up by bindSite). */
-let openSiteDialog = () => {};
+/** The site chip opens Atlas at Where (on a phone, its details too): the place is chosen there. The browser's location permission,
+ *  allowed or blocked in its settings, is followed without a reload. */
 function bindSite() {
-  const dlg = $<HTMLDialogElement>('site-dialog'), form = $<HTMLFormElement>('site-form');
-  const fill = (s: Site) => { (form.lat as HTMLInputElement).value = String(s.lat); (form.lon as HTMLInputElement).value = String(s.lon); (form.elev as HTMLInputElement).value = String(s.elev); (form.tz as HTMLInputElement).value = s.tz; };
-  let fromDevice: Site | null = null;                                   // the fix the form was last filled with: applying it keeps the name Here
-  $('presets').innerHTML = PRESETS.map((p, k) => `<button type="button" class="btn" data-k="${k}">${p.name}</button>`).join('');
-  $('presets').onclick = (e) => { const k = (e.target as HTMLElement).dataset.k; if (k) fill(PRESETS[+k]); };
-  const use = $<HTMLButtonElement>('use-device'), note = $('geo-note');
-  /** The dialog's words and button for what is known now: asking, a failure and what to do, or the plain invitation. */
-  function geoUi() {
-    const blocked = geo.fail ?? (geo.perm === 'denied' ? 'blocked' : null), insecure = !window.isSecureContext;
-    use.disabled = insecure || geo.busy;
-    use.textContent = geo.busy ? 'Locating…' : blocked || geo.fail ? 'Retry my location' : 'Use my location';
-    note.dataset.state = insecure ? 'insecure' : geo.busy ? 'busy' : blocked ? 'fail' : 'idle';
-    note.textContent = insecure ? `${failMessage('insecure')} Meanwhile, choose a preset or enter coordinates.` : geo.busy ? 'Asking your browser for your location…' : blocked ? failMessage(blocked) : geo.filled ? 'Your location is filled in below. Tap Calculate to use it.' : geo.defaulted ? `Showing ${state.site.name} as a default. Use your location, a preset, or coordinates.` : 'Your location, a preset, or coordinates.';
-    if (blocked || geo.fail) note.setAttribute('role', 'alert'); else note.removeAttribute('role');
-  }
-  async function useDevice() {
-    geo.busy = true; geo.fail = null; geo.filled = false; geoUi(); siteChip();
-    try { fromDevice = await deviceSite(); fill(fromDevice); geo.perm = 'granted'; geo.filled = true; }
-    catch (e) { geo.fail = (e as { kind?: FailKind }).kind ?? 'unavailable'; }
-    geo.busy = false; geoUi(); siteChip();
-  }
-  use.onclick = useDevice;
-  onPermissionChange((p) => {                                            // allowed or blocked in the browser's settings: no reload needed
-    const was = geo.perm; geo.perm = p;
-    if (p === 'granted' && dlg.open && (geo.fail || was === 'denied')) return void useDevice();   // they were told it was blocked and have allowed it: look now
-    if (p !== 'denied' && geo.fail === 'blocked') geo.fail = null;
-    geoUi(); atlasGeo(); siteChip();
-  });
-  geoUi(); atlasGeo();
-  openSiteDialog = () => { fill(state.site); fromDevice = null; geo.filled = false; geoUi(); dlg.showModal(); permissionState().then((p) => { geo.perm = p; geoUi(); siteChip(); }); };
-  $('site-chip').onclick = () => { if (state.view === 'atlas' || !state.doc) openSiteDialog(); else setView('atlas'); };   // the place is chosen on the globe; there, the chip gives the coordinates
-  form.onsubmit = (e) => {
-    if ((e.submitter as HTMLButtonElement | null)?.value !== 'apply') return;
-    const p = PRESETS.find((q) => q.lat === +(form.lat as HTMLInputElement).value && q.lon === +(form.lon as HTMLInputElement).value);
-    const dev = fromDevice && fromDevice.lat === +(form.lat as HTMLInputElement).value && fromDevice.lon === +(form.lon as HTMLInputElement).value ? fromDevice : null;
-    state.site = dev ? { ...dev, elev: +(form.elev as HTMLInputElement).value || 0, tz: (form.tz as HTMLInputElement).value.trim() || dev.tz } : { name: p?.name ?? 'Custom site', lat: +(form.lat as HTMLInputElement).value, lon: +(form.lon as HTMLInputElement).value,
-      elev: +(form.elev as HTMLInputElement).value || 0, tz: (form.tz as HTMLInputElement).value.trim() || browserZone(), source: p ? 'preset' : 'manual' } as Site;
-    changeSite(state.site);
+  $('site-chip').onclick = () => {
+    atlasDetails.show('where');
+    if (state.view !== 'atlas') setView('atlas'); else if (sheet.narrow) sheet.open();
   };
+  onPermissionChange((p) => {
+    const was = geo.perm; geo.perm = p;
+    if (p === 'granted' && geo.fail && was === 'denied' && state.view === 'atlas') return void locateHere();   // they were told it was blocked and have allowed it: look now
+    if (p !== 'denied' && geo.fail === 'blocked') geo.fail = null;
+    atlasGeo(); siteChip();
+  });
+  permissionState().then((p) => { geo.perm = p; atlasGeo(); siteChip(); });
 }
 
 // ---------------------------------------------------------------- start

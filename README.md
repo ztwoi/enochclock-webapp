@@ -31,8 +31,10 @@ Five views share one time cursor:
   no sunrise, and the calculator refuses the year). Over the site, the camera turns with the Earth; from the stars, the
   Earth turns under a fixed sky. Drag the globe to move the site under the crosshair: while it moves, what a year there
   would show (its band, the span of the portals, the longest and shortest day); let go and the year is calculated there,
-  the instant kept. The site chip opens Atlas. Coastlines: Natural Earth 1:50m. Dates and saved moments here are in
-  progress ([`docs/atlas.md`](docs/atlas.md)).
+  the instant kept. The site chip opens Atlas. Its details: **Where** (snap to the nearest of 100 places, typed
+  coordinates, My location), **When** (a Gregorian date with BCE/CE or an Enoch date, the time of day on The Day's bar,
+  ±1/10/100 years, Now, Equinox, Solstice, Day 1) and **Moments** (saved moments and the 100 places, under one tag filter).
+  Coastlines: Natural Earth 1:50m. See [`docs/atlas.md`](docs/atlas.md).
 - **Deep Time.** About 30,000 annual Day 1s against the independently solved March equinox, with the 294-year cycle
   boundaries. Click a year to open it.
 
@@ -70,7 +72,11 @@ uncertainty in Earth's rotation (ΔT) is under an hour; beyond that it opens and
 keeps it. The Offline section at the foot of the inspector installs the whole app (about 120 MB, with all 102 ephemeris
 files) so that it opens and works with no connection.
 
-**Observer.** Choose a preset, enter coordinates, or tap *Use my location*. The browser asks only when you tap.
+**Observer.** Tap the site chip: Atlas opens at Where. Drag the globe, pick a place, enter coordinates, or tap
+*My location*. The browser asks only when you tap.
+
+**Moments.** *☆ Save*, on every view, keeps the place and the instant on show with a name, a note, a colour and tags.
+They are kept in this browser only; each is also a link, and Atlas's Moments exports and imports the list as JSON.
 
 ## Run it
 

@@ -116,7 +116,7 @@ dd.cal { color: var(--gold); } dd.txt { color: var(--bronze); } dd.der { color: 
 .btn.on { color: var(--gold-hi); border-color: var(--gold-dim); }
 :focus-visible { outline: 1px solid var(--gold-hi); outline-offset: 2px; }
 
-/* site dialog */
+/* dialogs (the moment editor, src/atlas/editor.ts) */
 dialog { margin: auto; background: #110f0c; color: var(--ivory); border: 1px solid var(--rule2); padding: 28px 30px; width: 420px; }
 dialog::backdrop { background: rgba(0,0,0,.6); }
 dialog h2 { font-family: var(--serif); font-weight: 500; font-size: 26px; }
@@ -124,7 +124,6 @@ dialog form { display: grid; gap: 12px; }
 dialog label { display: grid; gap: 4px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ivory3); }
 dialog input { font-family: var(--mono); font-size: 13px; background: #0b0a08; color: var(--ivory); border: 1px solid var(--rule2); padding: 8px 10px; }
 dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
-.presets { display: flex; gap: 6px; flex-wrap: wrap; }
 
 @media (max-width: 1680px) {
   .app { grid-template-columns: minmax(0, 1fr) 380px; }
@@ -182,7 +181,7 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6p
   .when .course-chip { font-size: 13px; margin-left: 4px; }
   .transport { padding: 4px 8px calc(6px + env(safe-area-inset-bottom)); }
   .mark span, #time-chip { display: none; } .mark b { font-size: 18px; } .top { padding: 6px 12px; gap: 6px 10px; }
-  #site-chip { flex: 1 1 0; min-width: 0; max-width: none; text-align: right; } #site-chip .coords { display: none; }   /* the place sits in the bar's first row, beside Watch and Primer; its coordinates are in the chip's title and the site dialog */
+  #site-chip { flex: 1 1 0; min-width: 0; max-width: none; text-align: right; } #site-chip .coords { display: none; }   /* the place sits in the bar's first row, beside Watch and Primer; its coordinates are in the chip's title and Atlas's Where */
 }
 /* focus: the top bar folds away (Sky, the Dial, The Day); the button stays at the stage's top right */
 .app.focus { grid-template-rows: 0 minmax(0, 1fr) auto; padding-top: env(safe-area-inset-top); }
