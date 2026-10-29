@@ -28,6 +28,9 @@
 .nav-more-r { right: 0; margin-left: auto; background: linear-gradient(to left, var(--bg) 60%, transparent) !important; text-align: right; }
 /* choosing: the globe turns under the hand; the tag reads what a year here would show */
 #view-atlas { cursor: grab; touch-action: none; }
+/* a hand held on the globe is a drag, not a selection: on an iPad a long press otherwise selects the stage (its words, the
+   buttons, the tag) and tints it with the selection's blue until the next tap elsewhere */
+.stage[data-view=atlas] { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 #view-atlas.dragging { cursor: grabbing; }
 .atlas-tag span { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--ivory2); }
 .atlas-tag span.state { color: var(--gold); }
