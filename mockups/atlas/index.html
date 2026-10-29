@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Enoch · Atlas (mock-up)</title>
+<link rel="stylesheet" href="../../src/theme.css">
+<link rel="stylesheet" href="atlas.css">
+</head>
+<body>
+<div class="app" id="app">
+ <header class="top">
+  <div class="mark"><b>ENOCH</b></div>
+  <nav class="nav" aria-label="Views">
+   <a href="#"><i>01</i>Sky</a><a href="#"><i>02</i>The Dial</a><a href="#"><i>03</i>The Day</a><a href="#" class="on" aria-current="page"><i>04</i>Atlas</a><a href="#"><i>05</i>Deep Time</a>
+  </nav>
+  <div class="spacer"></div>
+  <span class="chip hide-s">▶ WATCH</span><span class="chip gold hide-s">TUTORIAL</span>
+  <button class="chip" id="site-chip" title="Opens Atlas"></button>
+ </header>
+
+ <section class="stage" id="stage">
+  <canvas id="globe"></canvas>
+  <div class="view-head">
+   <div class="opts">
+    <div class="seg" role="group" aria-label="Camera"><button class="btn on" data-cam="site" title="The camera turns with the Earth: the place stays under the crosshair, the sky and the terminator sweep past">Over the site</button><button class="btn" data-cam="stars" title="The Earth turns under a fixed sky; the place rides on it. A drag returns to Over the site">From the stars</button></div>
+    <button class="btn on" data-layer="terminator">Day &amp; night</button>
+    <button class="btn on" data-layer="tropics">Tropics</button>
+    <button class="btn on" data-layer="polar">Polar limit</button>
+    <button class="btn on" data-layer="bodies">Sun · Moon · planets</button>
+    <button class="btn on" data-layer="stars">Stars</button>
+    <button class="btn on" data-layer="grid">Graticule</button>
+   </div>
+  </div>
+  <div class="zoom"><button class="btn" data-z="in" aria-label="Zoom in">+</button><button class="btn" data-z="out" aria-label="Zoom out">−</button></div>
+  <div class="reticle-tag" id="tag"></div>
+  <div class="foot"><span id="foot-a">Drag the globe: the place under the crosshair is the observer. Let go to calculate there.</span><span id="foot-b">Today's coastlines (Natural Earth 1:50m) · mock-up</span></div>
+ </section>
+
+ <aside class="inspector" id="insp">
+  <div class="tabs" role="tablist"><button class="on" data-tab="where">Where</button><button data-tab="when">When</button><button data-tab="moments">Moments</button></div>
+
+  <section class="section" data-sec="where">
+   <div class="eyebrow">Where · under the crosshair</div>
+   <div class="place"><span class="pname" id="pname"></span><span class="psub" id="psub"></span></div>
+   <div class="coords" id="coords"></div>
+   <p class="calc" id="calc"></p>
+   <dl class="rows" id="where-rows"></dl>
+   <div class="row-btns"><button class="btn" id="snap" hidden></button><button class="btn" id="exact">Coordinates…</button><button class="btn" id="use-here">⌖ My location</button></div>
+   <div class="exact" id="exact-form" hidden>
+    <label>Latitude ° N<input id="f-lat" type="number" step="any"></label><label>Longitude ° E<input id="f-lon" type="number" step="any"></label>
+    <label>Elevation m<input id="f-elev" type="number" step="any"></label><label>Time zone<input id="f-tz" type="text"></label>
+   </div>
+  </section>
+
+  <section class="section" data-sec="when">
+   <div class="eyebrow">When</div>
+   <div class="seg cal" role="group" aria-label="Calendar"><button class="btn on" data-cal="greg">Gregorian</button><button class="btn" data-cal="enoch">Enoch</button><button class="btn" disabled title="Later: a Julian layer">Julian</button></div>
+   <div class="date-row">
+    <label class="f-year">Year<input id="w-year" type="number" min="1"></label>
+    <div class="seg era" role="group" aria-label="Era"><button class="btn" data-era="bce">BCE</button><button class="btn on" data-era="ce">CE</button></div>
+    <label class="f-mon">Month<select id="w-mon"></select></label>
+    <label class="f-day">Day<select id="w-day"></select></label>
+   </div>
+   <div class="tod">
+    <div class="tod-head"><span class="lab">Time of day</span><span class="tod-read" id="tod-read"></span></div>
+    <svg class="daybar" id="daybar" aria-label="The day, sunrise to sunrise: drag to set the time"></svg>
+    <div class="events" id="events"></div>
+    <div class="tod-exact">
+     <label class="f-time" id="time-lab">Exact<input id="w-time" type="time" step="60"></label>
+     <div class="seg" role="group" aria-label="Time as"><button class="btn on" data-tm="clock">Clock</button><button class="btn" data-tm="part">Part of day</button></div>
+    </div>
+   </div>
+   <div class="steps"><button class="btn" data-step="-100">−100</button><button class="btn" data-step="-10">−10</button><button class="btn" data-step="-1">−1</button><span>years</span><button class="btn" data-step="1">+1</button><button class="btn" data-step="10">+10</button><button class="btn" data-step="100">+100</button></div>
+   <div class="jumps"><button class="btn" data-jump="now">Now</button><button class="btn" data-jump="eq">Equinox</button><button class="btn" data-jump="sol">Solstice</button><button class="btn" data-jump="day1">Day 1</button></div>
+   <dl class="rows" id="when-rows"></dl>
+  </section>
+
+  <section class="section" data-sec="moments">
+   <div class="eyebrow">Moments</div>
+   <div class="seg" role="group" aria-label="List"><button class="btn on" data-list="saved">Saved</button><button class="btn" data-list="places">Places · 100</button></div>
+   <input class="search" id="search" type="search" placeholder="Search names and notes">
+   <div class="tags" id="tagbar"></div>
+   <ul class="list" id="list"></ul>
+   <div class="row-btns"><button class="btn" disabled>Export</button><button class="btn" disabled>Import</button></div>
+  </section>
+ </aside>
+
+ <footer class="transport">
+  <div class="when"><div class="enoch" id="t-enoch"></div><div class="greg" id="t-greg"></div></div>
+  <div class="tp">
+   <div class="seg"><button class="btn" data-mode="day">Day</button><button class="btn on" data-mode="degree">Degree</button></div>
+   <div class="seg"><button class="btn hide-s" data-play="ff-back">◀◀</button><button class="btn" data-play="back">◀</button><button class="btn" data-play="fwd" id="play">▶</button><button class="btn hide-s" data-play="ff">▶▶</button></div>
+   <button class="btn hide-s" id="speed">1×</button>
+  </div>
+  <div class="ctl">
+   <button class="btn save" id="save" title="Save this moment: the place, the instant and the view">☆ Save</button>
+   <button class="btn hide-m" id="now">Now</button>
+   <input class="goto hide-m" placeholder="go to date: 2026-10-20 · −500-03-21">
+  </div>
+ </footer>
+</div>
+
+<dialog id="editor" aria-label="Save this moment">
+ <form method="dialog" id="ed-form">
+  <h2>Save this moment</h2>
+  <p class="sub" id="ed-sum"></p>
+  <label>Name<input id="ed-name" required></label>
+  <label>Description<textarea id="ed-desc" rows="3"></textarea></label>
+  <div class="lab">Colour</div><div class="swatches" id="ed-col"></div>
+  <label>Tags<input id="ed-tags" placeholder="solstice, history, Enoch — comma separated"></label>
+  <div class="tags" id="ed-sugg"></div>
+  <p class="sub small">Kept on this device. The moment is also a link: <span class="mono" id="ed-link"></span></p>
+  <menu><button class="btn" value="cancel" formnovalidate>Cancel</button><button class="btn on" value="save">Save</button></menu>
+ </form>
+</dialog>
+
+<script src="../../node_modules/astronomy-engine/astronomy.browser.min.js"></script>
+<script type="module" src="atlas.js"></script>
+</body></html>
