@@ -25,6 +25,7 @@ import { loadCatalogue } from './sky/catalogue';
 import { jdOfPart } from './sky/instrument';
 import { createTransport } from './transport';
 import { createSheet } from './sheet';
+import { guaranteeTaps } from './taps';
 import { createSky, followable, sameBody, type Catalogue, type Followed, type Side, type Sky } from './skyview';
 import { createSkyCompass } from './sky/compassmode';
 import { hub } from './compass/hub';
@@ -641,6 +642,7 @@ function bindSite() {
 
 // ---------------------------------------------------------------- start
 /** On tablets and phones the inspector is a sheet over the bar; it also takes the year jumps. The view's own options stay under its title. */
+guaranteeTaps();
 const sheet = createSheet({
   sheet: $('insp-wrap'), footer: document.querySelector<HTMLElement>('.transport')!, toggle: $<HTMLButtonElement>('more'), close: $('sheet-close'), handle: $('handle'),
   place: (narrow) => {

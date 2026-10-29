@@ -23,7 +23,7 @@ export function createSheet(o: SheetOpts) {
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && body.classList.contains('side-open')) set(false); });
   // swipe down on the handle bar closes
   let y0 = -1;
-  o.handle.addEventListener('pointerdown', (e) => { y0 = e.clientY; o.handle.setPointerCapture(e.pointerId); });
+  o.handle.addEventListener('pointerdown', (e) => { if ((e.target as Element).closest('button')) return; y0 = e.clientY; o.handle.setPointerCapture(e.pointerId); });   // the ✕ is a button of its own: capturing its touch would take its click
   o.handle.addEventListener('pointerup', (e) => { if (y0 >= 0 && e.clientY - y0 > 40) set(false); y0 = -1; });
   // the sheet sits on top of the footer, whatever its height
   new ResizeObserver(() => document.documentElement.style.setProperty('--foot-h', `${o.footer.getBoundingClientRect().height}px`)).observe(o.footer);
