@@ -173,7 +173,9 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6p
     .stage:is([data-view=sky], [data-view=day]) .view-head { right: 56px; }
   .view-head { left: 16px; top: 12px; } .view-head h1 { font-size: 24px; } .view-head .quote { display: none; }
   .foot { display: none; }
-  .sheet-ctl .ctl { width: 100%; justify-content: flex-start; }
+  .sheet-ctl .ctl { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .sheet-ctl .goto { flex: 1 1 150px; min-width: 0; width: auto; }   /* the date box takes the row's rest (with Save beside the year steps it no longer fits at 240), or a row of its own */
+  #insp-wrap { overflow-x: hidden; }                                  /* the sheet scrolls up and down only: a hand on it never pans it sideways */
   .opts { margin-top: 10px; gap: 6px; } .opts .btn { padding: 0 9px; }
 }
 @media (max-width: 700px) {
