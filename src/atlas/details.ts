@@ -1,5 +1,6 @@
 // Atlas's details (docs/atlas.md): Where (the site, the nearest place, typed coordinates, the device's location), When (the
-// date, the time of day on The Day's bar, steps and jumps) and Places (the 100 presets, filtered by tag). Built
+// date, the time of day on The Day's bar, steps and jumps) and Moments (the saved moments and the 100 places, under one tag
+// filter and search; export and import). Built
 // once and kept: the panel's words are redrawn as the instant moves, but a field a hand is in is left alone, and the controls
 // keep their listeners. On a phone the sections are tabs; on a wide screen they stand one under another.
 import { createDayBar } from '../day/bar';
@@ -8,13 +9,13 @@ import { localParts, yearLabel } from '../dates';
 import { annual, fmt } from '../model';
 import { enochTime } from '../dial/state';
 import type { Site, YearDoc } from '../types';
-import { filterItems } from './moments';
+import { filterItems, type Moment } from './moments';
 import { atlasPanel, globePanel, placeSite, siteAt, snapTo } from './panel';
 import { places } from './places';
 import type { AtlasInfo } from './view';
 import { amongEvents, daysIn, ENOCH_MONTH_DAYS, eventName, fromEra, MONTHS, toEra } from './when';
 
-export type AtlasTab = 'where' | 'when' | 'places';
+export type AtlasTab = 'where' | 'when' | 'moments';
 export type Cal = 'greg' | 'enoch';
 export interface AtlasDetailsOptions {
   /** A part of the day shown (0 at sunrise, 18 at the next). */
@@ -28,6 +29,12 @@ export interface AtlasDetailsOptions {
   onSite(site: Site): void;
   /** My location: the app asks the device, and says how it went with setGeo. */
   onLocate(): void;
+  /** A saved moment: open it, edit it, copy its link; export the list, or import a file. */
+  onMoment(m: Moment, act: 'open' | 'edit' | 'link'): void;
+  onExport(): void;
+  onImport(file: File): void;
+  /** How a saved moment reads in the list: its place and its local date and time ("Qumran · 2026 Mar 21 · 05:52"). */
+  momentMeta(m: Moment): string;
 }
 /** The device's location as the app knows it: the button's words, and a note (a failure says what to do). */
 export interface GeoState { label: string; disabled: boolean; note: string; alert: boolean }
@@ -35,13 +42,19 @@ export interface AtlasDetails {
   readonly el: HTMLElement;
   /** Redraw for day i of the year at the part of the day (`jd`, the instant), with the globe's info and the site's name. */
   render(doc: YearDoc, i: number, part: number, jd: number, info: AtlasInfo | null, site: Site): void;
-  /** No year loaded (the calculator refused the site): Where and Places only, to choose another. */
+  /** No year loaded (the calculator refused the site): Where and Moments only, to choose another. */
   renderNoYear(site: Site): void;
+  /** The saved moments changed (or were opened, saved, imported: `note` says so under the list). */
+  setMoments(list: Moment[], note?: string): void;
+  /** Show the saved moments (after a save). */
+  showSaved(): void;
   setGeo(g: GeoState): void;
   show(tab: AtlasTab): void;
 }
 
 const p2 = fmt.pad;
+/** Text from a person (a moment's name, notes, tags; an imported file) as HTML text. */
+const esc = (t: string) => t.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const coord = (x: number, pos: string, neg: string) => `${Math.abs(x).toFixed(4)}° ${x >= 0 ? pos : neg}`;
 /** A zone this browser can keep time in. */
 const zoneOk = (tz: string) => { try { new Intl.DateTimeFormat('en', { timeZone: tz }); return true; } catch { return false; } };
@@ -49,7 +62,7 @@ const hm = (t: string) => t.slice(0, 5);
 
 export function createAtlasDetails(opts: AtlasDetailsOptions): AtlasDetails {
   const el = document.createElement('div'); el.className = 'atlas-details';
-  el.innerHTML = `<div class="at-tabs" role="tablist" aria-label="Atlas"><button type="button" role="tab" data-at-tab="where">Where</button><button type="button" role="tab" data-at-tab="when">When</button><button type="button" role="tab" data-at-tab="places">Places</button></div>
+  el.innerHTML = `<div class="at-tabs" role="tablist" aria-label="Atlas"><button type="button" role="tab" data-at-tab="where">Where</button><button type="button" role="tab" data-at-tab="when">When</button><button type="button" role="tab" data-at-tab="moments">Moments</button></div>
   <div class="at-sec section atlas-site" data-at-sec="where">
     <div data-w="site"></div>
     <p class="note">Drag the globe to move the site under the crosshair; the year is calculated where you let go.</p>
@@ -87,11 +100,14 @@ export function createAtlasDetails(opts: AtlasDetailsOptions): AtlasDetails {
     <dl class="read at-rows" data-w="rows"></dl>
   </div>
   <div class="at-sec" data-at-sec="where" data-w="globe"></div>
-  <div class="at-sec section" data-at-sec="places">
-    <div class="eyebrow">Places · ${places.length}</div>
-    <input type="search" class="at-search" data-w="search" placeholder="Search names, regions and notes" aria-label="Search the places">
+  <div class="at-sec section" data-at-sec="moments">
+    <div class="eyebrow">Moments</div>
+    <div class="seg at-lists" role="group" aria-label="List"><button type="button" class="btn on" data-list="saved" aria-pressed="true">Saved</button><button type="button" class="btn" data-list="places" aria-pressed="false">Places · ${places.length}</button></div>
+    <input type="search" class="at-search" data-w="search" placeholder="Search names, notes and regions" aria-label="Search the list">
     <div class="at-tags" data-w="tags"></div>
     <ul class="at-list" data-w="list"></ul>
+    <p class="note at-mnote" data-w="mnote" role="status" hidden></p>
+    <div class="at-btns" data-w="io"><button type="button" class="btn" data-w="export">Export</button><button type="button" class="btn" data-w="import">Import</button><input type="file" accept="application/json,.json" data-w="file" hidden></div>
   </div>`;
   const q = <T extends Element = HTMLElement>(s: string) => el.querySelector(s) as T;
   const siteBox = q('[data-w=site]'), globe = q('[data-w=globe]'), year = q<HTMLInputElement>('[data-w=year]'), month = q<HTMLSelectElement>('[data-w=month]'), day = q<HTMLSelectElement>('[data-w=day]');
@@ -166,17 +182,35 @@ export function createAtlasDetails(opts: AtlasDetailsOptions): AtlasDetails {
     openForm(false);
   });
 
-  // Places: the presets, filtered by tag and by words
-  const search = q<HTMLInputElement>('[data-w=search]'), tagBox = q('[data-w=tags]'), list = q('[data-w=list]');
-  const allTags = [...new Set(places.flatMap((p) => p.tags))].sort((a, b) => a.localeCompare(b)), items = places.map((p, k) => ({ ...p, desc: p.note, k }));
+  // Moments: the saved moments or the places, under one tag filter and search
+  const search = q<HTMLInputElement>('[data-w=search]'), tagBox = q('[data-w=tags]'), list = q('[data-w=list]'), mnote = q('[data-w=mnote]'), file = q<HTMLInputElement>('[data-w=file]');
+  const items = places.map((p, k) => ({ ...p, desc: p.note, k }));
+  let mode: 'saved' | 'places' = 'saved', saved: Moment[] = [];
+  const setMode = (m: typeof mode) => { mode = m; tags.clear(); seg('data-list', m); q('[data-w=io]').hidden = m !== 'saved'; listPlaces(); };
+  el.querySelectorAll<HTMLElement>('[data-list]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.list as typeof mode)));
   search.addEventListener('input', () => listPlaces());
-  tagBox.addEventListener('click', (e) => { const t = (e.target as HTMLElement).closest<HTMLElement>('[data-tag]')?.dataset.tag; if (!t) return; if (!tags.delete(t)) tags.add(t); listPlaces(); });
-  list.addEventListener('click', (e) => { const k = (e.target as HTMLElement).closest<HTMLElement>('[data-k]')?.dataset.k; if (k != null) opts.onSite(placeSite(places[Number(k)])); });
+  tagBox.addEventListener('click', (e) => { const t = (e.target as HTMLElement).closest<HTMLElement>('[data-tag]')?.dataset.tag; if (t == null) return; if (!tags.delete(t)) tags.add(t); listPlaces(); });
+  list.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-k], [data-m]'); if (!b) return;
+    if (b.dataset.k != null) return opts.onSite(placeSite(places[Number(b.dataset.k)]));
+    const m = saved.find((x) => x.id === b.dataset.m); if (m) opts.onMoment(m, (b.dataset.act ?? 'open') as 'open');
+  });
+  q('[data-w=export]').addEventListener('click', () => opts.onExport());
+  q('[data-w=import]').addEventListener('click', () => file.click());
+  file.addEventListener('change', () => { const f = file.files?.[0]; if (f) opts.onImport(f); file.value = ''; });
+  const here = (p: { lat: number; lon: number } | null) => !!p && !!site && Math.abs(p.lat - site.lat) < 1e-4 && Math.abs(p.lon - site.lon) < 1e-4;
   function listPlaces() {
-    tagBox.innerHTML = allTags.map((t) => `<button type="button" class="tag${tags.has(t) ? ' on' : ''}" data-tag="${t}" aria-pressed="${tags.has(t)}">${t}</button>`).join('');
-    const shown = filterItems(items, tags, search.value), at = (p: { lat: number; lon: number }) => !!site && Math.abs(p.lat - site.lat) < 1e-4 && Math.abs(p.lon - site.lon) < 1e-4;
-    const html = shown.map((p) => `<li><button type="button" class="at-item${at(p) ? ' cur' : ''}" data-k="${p.k}"><span class="nm">${p.name}</span><span class="rg">${p.region}</span>
-      <span class="mt">${coord(p.lat, 'N', 'S')} · ${coord(p.lon, 'E', 'W')} · ${p.tags.join(' · ')}</span><span class="ds">${p.note}</span></button></li>`).join('') || '<li class="none">Nothing matches.</li>';
+    const all = [...new Set((mode === 'saved' ? saved : places).flatMap((p) => p.tags))].sort((a, b) => a.localeCompare(b));
+    for (const t of [...tags]) if (!all.includes(t)) tags.delete(t);
+    const th = all.map((t) => `<button type="button" class="tag${tags.has(t) ? ' on' : ''}" data-tag="${esc(t)}" aria-pressed="${tags.has(t)}">${esc(t)}</button>`).join('');
+    if (tagBox.dataset.h !== th) { tagBox.innerHTML = th; tagBox.dataset.h = th; }
+    const html = mode === 'places'
+      ? filterItems(items, tags, search.value).map((p) => `<li><button type="button" class="at-item${here(p) ? ' cur' : ''}" data-k="${p.k}"><span class="nm">${esc(p.name)}</span><span class="rg">${esc(p.region)}</span>
+        <span class="mt">${coord(p.lat, 'N', 'S')} · ${coord(p.lon, 'E', 'W')} · ${esc(p.tags.join(' · '))}</span><span class="ds">${esc(p.note)}</span></button></li>`).join('') || '<li class="none">Nothing matches.</li>'
+      : filterItems(saved, tags, search.value).map((m) => `<li class="at-moment"><button type="button" class="at-item${here(m.place) ? ' cur' : ''}" data-m="${esc(m.id)}" style="border-left-color:${m.color}"><span class="nm">${esc(m.name)}</span>
+        <span class="mt">${esc(opts.momentMeta(m))}${m.tags.length ? ` · ${esc(m.tags.join(' · '))}` : ''}</span>${m.desc ? `<span class="ds">${esc(m.desc)}</span>` : ''}</button>
+        <span class="at-acts"><button type="button" class="btn" data-m="${esc(m.id)}" data-act="edit">Edit</button><button type="button" class="btn" data-m="${esc(m.id)}" data-act="link">Link</button></span></li>`).join('')
+        || `<li class="none">${saved.length ? 'Nothing matches.' : 'Nothing saved yet. ☆ Save, from any view, keeps the place and the instant on show.'}</li>`;
     if (list.dataset.h !== html) { list.innerHTML = html; list.dataset.h = html; }
   }
   function where(s: Site) {
@@ -219,6 +253,11 @@ export function createAtlasDetails(opts: AtlasDetailsOptions): AtlasDetails {
   return {
     el,
     show,
+    setMoments(l, note) {
+      saved = l; listPlaces();
+      mnote.textContent = note ?? ''; mnote.hidden = !note;
+    },
+    showSaved() { show('moments'); if (mode !== 'saved') setMode('saved'); search.value = ''; tags.clear(); listPlaces(); },
     setGeo(g) {
       locate.textContent = g.label; locate.disabled = g.disabled;
       geo.textContent = g.note; geo.hidden = !g.note;

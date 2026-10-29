@@ -36,8 +36,10 @@ import { createFilm } from './film';
 import { createDayView, dayPanel, geometryFor, type DayView } from './day/view';
 import { createFollow, type Follow } from './day/follow';
 import { createAtlas, LAYERS as ATLAS_LAYERS, type Atlas, type Camera as AtlasCamera, type Layers as AtlasLayers } from './atlas/view';
-import { siteAt } from './atlas/panel';
+import { siteAt, siteName } from './atlas/panel';
 import { createAtlasDetails } from './atlas/details';
+import { createMomentEditor } from './atlas/editor';
+import { COLOURS, exportJson, importJson, isoAt, jdAt, loadMoments, merge, momentLink, newId, saveMoments, type Moment } from './atlas/moments';
 import { clockToJd, enochIndex, nextSeason } from './atlas/when';
 
 type View = 'sky' | 'dial' | 'day' | 'atlas' | 'deep';
@@ -206,7 +208,76 @@ const atlasDetails = createAtlasDetails({
   },
   onSite: (s) => { tp.pause(); chooseSite(s); },
   onLocate: () => { locateHere(); },
+  onMoment: (m, act) => { if (act === 'open') openMoment(m); else if (act === 'edit') editMoment(m, false); else shareMoment(m); },
+  onExport: () => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([exportJson(moments)], { type: 'application/json' }));
+    a.download = `enoch-moments-${localISODate()}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  },
+  onImport: (file) => {
+    file.text().then((t) => {
+      const r = importJson(t); keepMoments(merge(moments, r.moments), `${r.moments.length} moment${r.moments.length === 1 ? '' : 's'} imported${r.skipped ? `; ${r.skipped} left out (not moments)` : ''}.`);
+    }).catch((e) => atlasDetails.setMoments(moments, `That file could not be read: ${(e as Error).message}.`));
+  },
+  momentMeta: (m) => momentText(m).join(' · '),
 });
+
+// ---------------------------------------------------------------- moments (src/atlas/moments.ts): saved on this device, listed in Atlas
+let moments = loadMoments();
+const keepMoments = (list: Moment[], note?: string) => {
+  moments = list;
+  atlasDetails.setMoments(moments, saveMoments(moments) ? note : 'This browser would not keep the moments (storage is full or closed): export them to keep a copy.');
+};
+const momentBase = () => `${location.origin}${location.pathname}`;
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** A moment's place and its local date and time there (or at the site on show): ["Qumran", "2026 Mar 21 · 05:52"]. */
+function momentText(m: Pick<Moment, 'place' | 'at'>): string[] {
+  const out: string[] = [];
+  if (m.place) out.push(m.place.name || `${m.place.lat.toFixed(2)}, ${m.place.lon.toFixed(2)}`);
+  if (m.at) {
+    const at = m.place ?? state.site, lmt = Math.round(at.lon * 4), o = `${lmt < 0 ? '-' : '+'}${fmt.pad(Math.floor(Math.abs(lmt) / 60))}:${fmt.pad(Math.abs(lmt) % 60)}`;   // beyond the zone's records: local mean time
+    const g = localParts(jdAt(m.at), at.tz, o);
+    out.push(`${yearLabel(g.y)} ${MON[g.m - 1]} ${g.d} · ${g.time.slice(0, 5)}`);
+  } else out.push('any time');
+  return out;
+}
+const editor = createMomentEditor($('app'), momentBase, {
+  save: (m) => {
+    const known = moments.some((x) => x.id === m.id);
+    keepMoments(known ? moments.map((x) => (x.id === m.id ? m : x)) : [m, ...moments], known ? `“${m.name}” saved.` : `“${m.name}” saved on this device.`);
+    if (!known) { if (state.view === 'atlas') atlasDetails.showSaved(); else saidSaved(m.name); }
+  },
+  remove: (m) => keepMoments(moments.filter((x) => x.id !== m.id), `“${m.name}” deleted.`),
+});
+function editMoment(m: Moment, isNew: boolean) {
+  editor.open(m, { isNew, known: [...new Set(moments.flatMap((x) => x.tags))].sort((a, b) => a.localeCompare(b)), placeText: momentText({ place: m.place, at: null })[0], atText: m.at ? momentText({ place: m.place, at: m.at })[m.place ? 1 : 0] : '' });
+}
+/** ☆ Save: the place and the instant on show (following Now, the present), named for them. */
+function saveMoment() {
+  const doc = state.doc;
+  const i = doc ? cursorRow(annual(doc), state.cursor).i : -1;
+  const jd = state.live || !doc ? jdFromMs(Date.now()) : jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, timed(state.view) ? state.part : 0);
+  const name = siteName(state.site).name, place = { name, lat: state.site.lat, lon: state.site.lon, elev: state.site.elev, tz: state.site.tz };
+  const m: Moment = { id: newId(), name: '', desc: '', color: COLOURS[0], tags: [], place, at: isoAt(jd), saved: new Date().toISOString() };
+  m.name = `${name} · ${momentText(m)[1].split(' · ')[0]}`;
+  editMoment(m, true);
+}
+/** Saved from a view other than Atlas: say where the moment went. */
+function saidSaved(name: string) {
+  const s = $('status'); s.className = 'status'; s.hidden = false; s.textContent = `“${name}” saved: open it in Atlas, under Moments.`;
+  setTimeout(() => { if (s.textContent?.startsWith(`“${name}”`)) s.hidden = true; }, 5000);
+}
+/** Open a moment: its place (the year calculated there) and its instant; a place alone keeps the time on show, an instant alone the site. */
+async function openMoment(m: Moment) {
+  manual(); tp.pause();
+  if (m.place && !m.at) return void chooseSite({ ...m.place, source: 'manual' });
+  if (m.place) { state.site = { ...m.place, source: 'manual' }; geo.defaulted = false; saveSite(state.site); siteChip(); }
+  if (m.at) { await goJd(jdAt(m.at)); update(); }
+}
+/** A moment's link: copied when the browser allows, and shown under the list either way. */
+function shareMoment(m: Moment) {
+  const link = momentLink(m, momentBase()), say = (how: string) => atlasDetails.setMoments(moments, `${how}: ${link}`);
+  navigator.clipboard?.writeText(link).then(() => say('Link copied'), () => say('The link')) ?? say('The link');
+}
 /** A local date and clock time at the site (When's Gregorian fields and Exact): the Enoch day it falls in, at that time. A time
  *  before that morning's sunrise belongs to the Enoch day before (and, before Day 1's sunrise, to the year before). */
 async function goLocal(y: number, m: number, d: number, hhmm: string) {
@@ -652,6 +723,7 @@ function bindTransport() {
   $('year-prev').onclick = () => { manual(); tp.pause(); state.doc && load({ enochYear: state.doc.calculation.enoch_year - 1 }, 'start'); };
   $('year-next').onclick = () => { manual(); tp.pause(); state.doc && load({ enochYear: state.doc.calculation.enoch_year + 1 }, 'start'); };
   $('now').onclick = () => { goNow(); };
+  $('save').onclick = () => saveMoment();
   $<HTMLInputElement>('goto').onchange = (e) => {
     const box = e.target as HTMLInputElement, iso = readDate(box.value);
     box.classList.toggle('bad', !iso); if (!iso) return;
@@ -827,6 +899,7 @@ async function start() {
   mountFeedback($('legal'), () => ({ mode: VIEWS[state.view].name, page: state.doc ? `Enoch year ${state.doc.calculation.enoch_year}` : '' }));
   onCalculatorProgress(calculatorNote);
   bindTransport(); bindSite(); bindOptions(); bindAtlas(); navShow = bindNavScroll();
+  atlasDetails.setMoments(moments);
   const P = new URLSearchParams(location.search), urlSite = siteFromUrl(P);
   state.site = urlSite ?? savedSite() ?? FALLBACK;
   // First visit: no place given or saved. If location is already allowed, show the device's place from the start; never ask unprompted.

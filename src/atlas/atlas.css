@@ -80,7 +80,7 @@
   .atlas-details .at-tabs button { flex: 1; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ivory3); padding: 10px 0 9px; border: 0; border-bottom: 2px solid transparent; touch-action: manipulation; }
   .atlas-details .at-tabs button.on { color: var(--gold-hi); border-bottom-color: var(--gold); }
   .atlas-details .at-sec { display: none; }
-  .atlas-details[data-tab=where] [data-at-sec=where], .atlas-details[data-tab=when] [data-at-sec=when], .atlas-details[data-tab=places] [data-at-sec=places] { display: block; }
+  .atlas-details[data-tab=where] [data-at-sec=where], .atlas-details[data-tab=when] [data-at-sec=when], .atlas-details[data-tab=moments] [data-at-sec=moments] { display: block; }
   .atlas-details .at-sec > .eyebrow { display: none; }
   .at-date { flex-wrap: wrap; }
 }
@@ -114,3 +114,26 @@
 .at-item .rg { font-family: var(--mono); font-size: 10px; color: var(--ivory3); margin-left: 8px; }
 .at-item .mt { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--ivory2); margin-top: 2px; }
 .at-item .ds { display: block; font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--ivory3); margin-top: 2px; }
+/* Moments: the saved list, and the editor */
+.at-lists { margin: 12px 0 0; }
+.at-moment { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.at-acts { display: flex; gap: 4px; padding: 9px 0 0 6px; }
+.at-acts .btn { padding: 4px 7px; font-size: 10.5px; }
+.at-mnote { font-size: 13px; overflow-wrap: anywhere; }
+.btn.save { color: var(--gold-hi); }
+.moment-dialog { width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; }
+.moment-dialog textarea { font-family: var(--mono); font-size: 13px; background: #0b0a08; color: var(--ivory); border: 1px solid var(--rule2); padding: 8px 10px; resize: vertical; }
+.moment-dialog .md-lab { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ivory3); }
+.md-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.md-swatches button { width: 28px; height: 28px; border: 1px solid var(--rule2); }
+.md-swatches button.on { outline: 1px solid var(--gold-hi); outline-offset: 3px; }
+.md-sugg { display: flex; gap: 5px; flex-wrap: wrap; }
+.md-sugg .tag { font-family: var(--mono); font-size: 10.5px; color: var(--ivory3); border: 1px solid var(--rule2); padding: 3px 7px; }
+.moment-dialog label.md-check { display: flex; gap: 10px; align-items: center; text-transform: none; letter-spacing: 0; font-family: var(--mono); font-size: 12px; color: var(--ivory2); }
+.moment-dialog label.md-check input { width: auto; }
+.md-small { font-family: var(--serif); font-style: italic; font-size: 13px; color: var(--ivory3); }
+.md-link { font-family: var(--mono); font-style: normal; font-size: 10.5px; overflow-wrap: anywhere; }
+.moment-dialog menu { align-items: center; }
+.moment-dialog .md-gap { flex: 1; }
+.moment-dialog .md-del { color: #e3a07a; }
+@media (pointer: coarse) { .moment-dialog input, .moment-dialog textarea { font-size: 16px; } }
