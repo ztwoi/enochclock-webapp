@@ -49,11 +49,21 @@ export function createFilm(button: HTMLElement, root: HTMLElement) {
   const fs = dlg.querySelector<HTMLButtonElement>('.film-fs')!;
   fs.hidden = !stage.requestFullscreen;
   fs.addEventListener('click', () => (document.fullscreenElement ? document.exitFullscreen() : stage.requestFullscreen()).catch(() => undefined));
-  const src = () => (matchMedia('(max-width: 700px)').matches ? '/film/sun-720.mp4' : '/film/sun-1080.mp4');
+  // The ?v= is part of the URL the browser caches under: bump FILM_V when the video files change, so a browser holding a stale or
+  // failed copy (the files once went live a day after the page did) asks again. S3 ignores the query.
+  const FILM_V = '2';
+  let bust = '';
+  const src = () => `${matchMedia('(max-width: 700px)').matches ? '/film/sun-720.mp4' : '/film/sun-1080.mp4'}?v=${FILM_V}${bust}`;
+  // A failed load is retried once under a fresh URL (past any bad cached copy); after that the next Watch tries again.
+  let retried = false;
+  video.addEventListener('error', () => {
+    if (!retried) { retried = true; bust = `&r=${Date.now()}`; video.src = src(); video.load(); video.play().catch(() => undefined); }
+    else { video.removeAttribute('src'); video.load(); retried = false; bust = ''; }
+  });
 
   const open = () => {
     invite.remove(); markSeen();
-    if (!video.src) video.src = src();
+    if (!video.getAttribute('src')) video.src = src();
     dlg.showModal(); layout(); lift(); loadCues().then(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); });
     video.play().catch(() => undefined);
   };
