@@ -65,13 +65,13 @@ export function createDialView(host: HTMLElement, head: { title: HTMLElement; pr
   const svg = $('dl-svg') as unknown as SVGSVGElement, face = $('dl-face'), ledger = $('dl-ledger');
   const dial = createDial(svg);
   const st = {
-    framing: ((new URLSearchParams(location.search).get('framing') as Framing) || (localStorage.getItem(FKEY) as Framing) || 'north') as Framing,
+    framing: ((new URLSearchParams(location.search).get('framing') as Framing) || (localStorage.getItem(FKEY) as Framing) || 'sun') as Framing,
     heading: 0, reading: null as Reading | null, sel: null as RingKey | null, sky: loadSky(),
     stars: [] as Star[], segments: [] as [string, string][], skyStars: [] as Star[],
     day: null as DayState | null, s: null as DialState | null, rings: [] as RingReport[], site: null as Site | null, active: false,
     starsIn: false,   // the catalogue has answered (or failed): the face is complete
   };
-  if (!['north', 'sun', 'compass'].includes(st.framing)) st.framing = 'north';
+  if (!['north', 'sun', 'compass'].includes(st.framing)) st.framing = 'sun';
   const compass = hub.compass;                                     // the one sensor, shared with Sky: on in either, on in both
   let sx = 0, sy = 0, primed = false;
   const ease = (h: number) => { const k = primed ? 0.25 : 1, a = h * Math.PI / 180; primed = true; sx = (1 - k) * sx + k * Math.sin(a); sy = (1 - k) * sy + k * Math.cos(a); return wrap(Math.atan2(sx, sy) * 180 / Math.PI); };   // each reading eased on the unit circle
@@ -85,7 +85,7 @@ export function createDialView(host: HTMLElement, head: { title: HTMLElement; pr
   let borrowed = false;
   const follow = () => {
     if (hub.active && st.framing !== 'compass') { st.framing = 'compass'; borrowed = true; }
-    else if (!hub.active && borrowed) { borrowed = false; const f = localStorage.getItem(FKEY) as Framing | null; st.framing = f && f !== 'compass' ? f : 'north'; }
+    else if (!hub.active && borrowed) { borrowed = false; const f = localStorage.getItem(FKEY) as Framing | null; st.framing = f && f !== 'compass' ? f : 'sun'; }
     else return;
     primed = false; sideKey = ''; if (st.active) { head.controls.querySelectorAll<HTMLButtonElement>('[data-framing]').forEach((b) => { const on = b.dataset.framing === st.framing; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); h.redraw(); }
   };

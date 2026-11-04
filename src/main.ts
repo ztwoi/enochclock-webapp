@@ -144,7 +144,7 @@ async function ensureSky() {
   if (!state.sky) {
     state.sky = createSky($('view-sky'), state.doc, state.cat, () => { selSerial++; shown.sel = -1; update(); });
     state.sky.onUser(() => { if (compassFollowing) { compassFollowing = false; compassChanged(); } });   // a hand on the panorama takes the view from the compass
-    skyFollow = createFollow(state.sky, skyFollow?.target ?? null, syncSide, skyFollow?.k);   // and from the body it follows (a new year or site keeps following it, at its zoom)
+    skyFollow = createFollow(state.sky, skyFollow ? skyFollow.target : { kind: 'sun' }, syncSide, skyFollow?.k);   // and from the body it follows (a new year or site keeps following it, at its zoom; the first Sky follows the Sun)
     state.sky.stage.onView(syncSide);
     if (startSide) { state.sky.recentre(startSide); startSide = null; }
     state.sky.setBearingHold(skyCompass.on && compassFollowing); syncSide();
@@ -566,7 +566,7 @@ function bindOptions() {
   $('day-daylight').onclick = () => { state.day?.setDaylight(toggle('day-daylight')); };
   $('day-captions').onclick = () => { state.day?.setCaptions(toggle('day-captions')); };
   $('daylight').onclick = () => { const on = toggle('daylight'); localStorage.setItem(DKEY, on ? '1' : '0'); state.sky?.setLayers({ daylight: on }); };
-  if (localStorage.getItem(DKEY) === '0') toggle('daylight');                   // Daylight is remembered on the device (on by default)
+  if (localStorage.getItem(DKEY) === '1') toggle('daylight');                   // Daylight is remembered on the device (off by default)
   // on a phone, Refraction, Figures, Portal ★, Planets, Daylight, Bearing, Below horizon and Paths sit in the details sheet: one tap away, the row shorter
   const phone = matchMedia('(max-width: 700px)'), place = () => {
     const into = phone.matches ? $('sky-sheet-opts') : $('sky-controls');
