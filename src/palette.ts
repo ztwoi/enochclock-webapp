@@ -7,7 +7,7 @@
  *  the stylesheet has loaded. tests/palette.test.ts holds them equal to src/theme.css's :root. */
 export const DARK = {
   bg: '#090807',
-  ivory: '#ece3cf', ivory2: '#a39a86', ivory3: '#635d51', label: '#635d51',
+  ivory: '#ece3cf', ivory2: '#a39a86', ivory3: '#635d51', label: '#857c6c',
   gold: '#d6b26a', goldHi: '#f4dc9f', goldDim: '#7d6a43',
   bronze: '#a8875a', bronzeDim: '#5e4c33', silver: '#8fb3bd', silverDim: '#4b6268',
   field: '#0b0a08', ink: '#0c0b09', box: '#0d0c0a',

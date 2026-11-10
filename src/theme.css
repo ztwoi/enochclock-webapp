@@ -15,7 +15,7 @@
   --gold: #d6b26a; --gold-hi: #f4dc9f; --gold-dim: #7d6a43; --gold-rgb: 214,178,106; --gold-hi-rgb: 244,220,159;
   --bronze: #a8875a; --bronze-dim: #5e4c33; --silver: #8fb3bd; --silver-dim: #4b6268; --silver-rgb: 143,179,189;
   /* the dim tier for text in the interface (labels, the views not shown, options off); --ivory3 stays the drawings' faint engraving */
-  --label: #635d51;
+  --label: #857c6c;                                           /* 4.9:1 on --bg: small text stays legible (--ivory3, 3.1:1, is for engraving, not reading) */
   /* surfaces */
   --bg-glow: #14110d;                                         /* the centre of the app's glow */
   --bar: #070605;                                             /* the transport */
