@@ -26,7 +26,8 @@ Five views share one time cursor:
 - **The Day.** The Sky and the Dial together, sunrise to sunrise: the sky turns with the Sun and the Dial is turned to face
   it, joined by a gold thread through the Sun (sky over dial on a phone, side by side on a wide screen). Captions name each
   rising and setting as the day reaches it, and the day bar under it moves through the day. Both halves zoom: pinch or scroll the
-  sky or the Dial (a drag moves round the Dial when zoomed in; a double tap, or 0, brings back the whole view).
+  sky or the Dial, the whole clock growing over its side of the view (a drag moves round it when zoomed in; a double tap, or 0,
+  brings back the whole view).
 - **Atlas.** The same instant seen from outside the Earth: the globe lit by the Sun of the moment, the site under a
   crosshair, the stars and planets behind, the tropics and the polar limit of the era (beyond it some day of the year has
   no sunrise, and the calculator refuses the year). Over the site, the camera turns with the Earth; from the stars, the

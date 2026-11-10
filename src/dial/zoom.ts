@@ -6,9 +6,12 @@
 // far, at every zoom, as bringing the face's edge to the middle of the stage, never stuck.
 // The SVG may be larger than the room the face rests in (`rest`, an element: the Dial's SVG fills its
 // whole view, the face rests in the cell the header and the counts leave), so a zoom spreads under them.
+// Or `face` says outright where the face rests in the SVG (CSS px: its centre and diameter, and the SVG's size): The Day's
+// face is placed by its own geometry (on a phone a little wider than the screen, its foot off the edge), in a box it spreads over.
 const FULL = 1000, MIN = 1, MAX = 6;
 
-export function attachZoom(svg: SVGSVGElement, onTap: (x: number, y: number) => void, onChange?: (z: number) => void, top: () => boolean = () => false, rest?: Element | null) {
+export interface FaceAt { x: number; y: number; d: number; w: number; h: number }
+export function attachZoom(svg: SVGSVGElement, onTap: (x: number, y: number) => void, onChange?: (z: number) => void, top: () => boolean = () => false, rest?: Element | null, face?: () => FaceAt | null) {
   /** z: the magnification; (cx, cy): the view's centre in viewBox units, as an offset from the centre at rest. */
   let z = 1, cx = 0, cy = 0;
   const pts = new Map<number, { x: number; y: number }>();
@@ -17,6 +20,8 @@ export function attachZoom(svg: SVGSVGElement, onTap: (x: number, y: number) => 
   /** The viewBox at rest: the face's 1000 units across the shorter side of its room (the SVG itself, or `rest`); (ox, oy) is that
    *  viewBox's centre as an offset from the face's centre (0 = the face centred, or the face at the top of its room). */
   const home = () => {
+    const f = face?.();
+    if (f && f.w > 0 && f.h > 0 && f.d > 0) { const s = f.d / FULL, w = f.w / s, h = f.h / s; return { w, h, ox: w / 2 - f.x / s, oy: h / 2 - f.y / s }; }
     const r = svg.getBoundingClientRect(), q = rest?.getBoundingClientRect(), b = q && q.width > 0 && q.height > 0 ? q : r;
     const s = Math.min(b.width, b.height) / FULL || 1, w = r.width > 0 && r.height > 0 ? r.width / s : FULL, h = r.width > 0 && r.height > 0 ? r.height / s : FULL;
     const fx = b.left + b.width / 2 - r.left, fy = (top() ? b.top + (s * FULL) / 2 : b.top + b.height / 2) - r.top;   // the face's centre, in px of the SVG

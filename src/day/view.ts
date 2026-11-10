@@ -40,7 +40,7 @@ const MAX_CAPTIONS = 3;
 export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, opts: DayViewOptions) {
   const root = document.createElement('div'); root.className = 'dv-root';
   root.innerHTML = `<div class="dv-sky"></div>
-    <svg class="dv-dial" viewBox="-500 -500 1000 1000" role="img" aria-label="The Dial, turned with the Sun toward the sky"></svg>
+    <svg class="dv-dial" viewBox="-500 -500 1000 1000" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The Dial, turned with the Sun toward the sky"></svg>
     <svg class="dv-thread" aria-hidden="true"><path class="dv-glow"/><path class="dv-line"/></svg>
     <div class="dv-foot"><div class="dv-caps" aria-live="off"></div><svg class="dv-bar" aria-hidden="true"></svg></div>`;
   host.append(root);
@@ -49,13 +49,19 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
   const caps = q<HTMLElement>('.dv-caps'), barSvg = q<SVGSVGElement>('.dv-bar');
   /** The boxes from the geometry. Placed before the Sky is made: a sky made in a box with no size starts from a camera that sees
    *  its placeholder lines, and a line drawn once never draws more segments than it had then (its path would stay one segment). */
-  let g = opts.geometry(host.clientWidth, host.clientHeight);
+  let g = opts.geometry(host.clientWidth, host.clientHeight), dialBox: Box = { x: 0, y: 0, w: 0, h: 0 };
+  /** The Dial's SVG fills the Dial's part of the view, the face resting where the geometry puts it: zoomed in, the whole clock grows
+   *  over that part (under the sky, on a tall screen; right of it, on a wide one), never over the sky. */
+  const dialRegion = (w: number, h: number): Box => {
+    if (!g.side) { const y = g.sky.y + g.sky.h; return { x: 0, y, w, h: h - y }; }
+    const x = Math.max(0, g.dial.cx - g.dial.d / 2 - 2); return { x, y: 0, w: w - x, h };
+  };
   function place() {
     g = opts.geometry(host.clientWidth, host.clientHeight);
     root.classList.toggle('side', g.side);
     const put = (el: HTMLElement | SVGElement, b: Box) => Object.assign((el as HTMLElement).style, { left: `${b.x}px`, top: `${b.y}px`, width: `${b.w}px`, height: `${b.h}px` });
     put(skyEl, g.sky); put(foot, g.foot);
-    put(dialSvg, { x: g.dial.cx - g.dial.d / 2, y: g.dial.cy - g.dial.d / 2, w: g.dial.d, h: g.dial.d });
+    dialBox = dialRegion(host.clientWidth, host.clientHeight); put(dialSvg, dialBox);
   }
   place();
 
@@ -66,10 +72,11 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
   const follow = createFollow(sky, { kind: 'sun' }, () => opts.onFollow?.(false));   // a zoom while it follows is its own (src/day/follow.ts)
   // the face's sky as the Dial tab has it (its star limit, figures and centre: setDialSky); until told, the Dial's defaults
   const dial = createDial(dialSvg);
-  /** The face zooms as the Dial tab's does (wheel, pinch, drag when zoomed, double tap for the whole face), inside its own circle
-   *  (day.css): the thread follows its Sun wherever the zoom puts it. */
+  /** The face zooms as the Dial tab's does (wheel, pinch, drag when zoomed, double tap for the whole face): the whole clock grows
+   *  over the Dial's part of the view. The thread follows its Sun wherever the zoom puts it. */
   let lastSun: { az: number; alt: number } | null = null;
-  const dialZoom = attachZoom(dialSvg, () => undefined, () => { if (lastSun) thread(lastSun); });
+  const dialZoom = attachZoom(dialSvg, () => undefined, () => { if (lastSun) thread(lastSun); }, undefined, null,
+    () => ({ x: g.dial.cx - dialBox.x, y: g.dial.cy - dialBox.y, d: g.dial.d, w: dialBox.w, h: dialBox.h }));
   let stars = cat.stars.filter((s) => s.mag_v <= BRIGHT_MAG), layers: SkyLayers = { figures: null, centre: 'off' };
 
   // ---- the day: its state for the Dial, its events, its bar and captions (built when the instant moves into another day)
@@ -98,7 +105,8 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
     const hr = host.getBoundingClientRect(), k = hr.width / (host.offsetWidth || hr.width) || 1;
     const p = sky.toScreen(sun.az, sun.alt), r = dialSvg.querySelector('[data-body=sun]')?.getBoundingClientRect(), f = dialSvg.getBoundingClientRect();
     const x1 = p ? (p.x - hr.left) / k : NaN, y1 = p ? (p.y - hr.top) / k : NaN, inSky = x1 >= g.sky.x && x1 <= g.sky.x + g.sky.w && y1 >= g.sky.y && y1 <= g.sky.y + g.sky.h;
-    const onFace = !!r && Math.hypot(r.left + r.width / 2 - (f.left + f.width / 2), r.top + r.height / 2 - (f.top + f.height / 2)) <= f.width / 2;   // a zoom may take the face's Sun out of its circle
+    const sx = r ? r.left + r.width / 2 : NaN, sy = r ? r.top + r.height / 2 : NaN;
+    const onFace = !!r && sx >= f.left && sx <= f.right && sy >= f.top && sy <= Math.min(f.bottom, hr.bottom);   // a zoom may take the face's Sun out of the Dial's part of the view
     const on = onFace && inSky;
     threadSvg.style.visibility = on ? 'visible' : 'hidden';
     if (!on) return;
@@ -193,7 +201,7 @@ export function dayPanel(doc: YearDoc, i: number, events: DayEvent[], rising: Re
   return `<div class="section"><div class="eyebrow">The day · sunrise to sunrise</div>
     <div class="big">${Math.floor(light / 60)}<small> h </small>${light % 60}<small> min of daylight</small></div>
     <p class="sub">${e.day_parts.toFixed(2)} of 18 parts · sunrise in portal ${e.portal}</p>
-    <p class="note">The Sky turns with the Sun and the Dial is turned to face it: the gold thread joins them. The solid gold path is where the Sun has been since sunrise, the dotted path where it goes until the next; the faint lines are the Moon's and the planets' paths. Drag the sky to look around; Follow Sun brings it back, as close as you have zoomed. Pinch or scroll to zoom while it follows (a double tap brings back the whole view). The Dial zooms the same way, and a drag moves round it when zoomed in. Drag along the day bar to move through the day.</p></div>
+    <p class="note">The Sky turns with the Sun and the Dial is turned to face it: the gold thread joins them. The solid gold path is where the Sun has been since sunrise, the dotted path where it goes until the next; the faint lines are the Moon's and the planets' paths. Drag the sky to look around; Follow Sun brings it back, as close as you have zoomed. Pinch or scroll to zoom while it follows (a double tap brings back the whole view). The Dial zooms the same way, the whole clock growing over its side of the view, and a drag moves round it when zoomed in. Drag along the day bar to move through the day.</p></div>
     <div class="section"><div class="eyebrow">Rising with the Sun · within two hours</div><dl class="read">${withSun}</dl></div>
     <div class="section"><div class="eyebrow">Risings and settings</div><dl class="read dv-events">${rows}</dl></div>`;
 }
