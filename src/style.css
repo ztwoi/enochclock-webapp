@@ -238,7 +238,8 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6p
 /* Settings: a quiet section at the foot of the details, above Offline (main.ts mountSettings) */
 .settings { border-top: 1px solid var(--rule); border-bottom: 0; margin-top: 18px; padding: 18px 0 4px; display: grid; gap: 10px; }   /* Offline, under it, draws the rule between them */
 .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.set-row.stack { flex-direction: column; align-items: stretch; gap: 8px; } .set-row.stack .seg .btn { flex: 1 1 0; min-width: 0; padding: 8px 4px; text-align: center; }   /* Theme: five choices, the row's whole width */
+.set-row.stack { flex-direction: column; align-items: stretch; gap: 8px; }
+.set-row.stack .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; } .set-row.stack .seg .btn + .btn { margin-left: 0; } .set-row.stack .seg .btn { min-width: 0; padding: 8px 4px; text-align: center; }   /* Theme: six choices, two rows of three */
 .set-l { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--label); }
 .settings .seg { display: flex; } .settings .seg .btn { min-height: 36px; } .settings .seg .btn + .btn { margin-left: -1px; } .settings .seg .btn.on { position: relative; background: rgba(var(--gold-rgb),.10); }
 .set-note { font-family: var(--mono); font-size: 10.5px; color: var(--label); }

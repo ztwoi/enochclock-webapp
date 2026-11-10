@@ -54,7 +54,8 @@ Five views share one time cursor:
 carries on into the next one, calculated ahead so the crossing does not wait. **Now** follows the present.
 
 **Settings**, at the foot of the details: clock times in 12-hour (the default) or 24-hour; and the theme: Dark (the default);
-Light (the instrument printed on vellum, the sky a star atlas in ink, the globe a printed globe: for daylight); Contrast
+Light (the instrument printed on vellum, the sky a star atlas in ink, the globe a printed globe: for daylight); Sepia
+(the same printed instrument on toned paper, darker than Light); Contrast
 (black, every line and word at its brightest: for glare and low vision); Red (night vision: the whole page, sky and film
 included, in red light, so the eyes stay dark-adapted); or Auto (Light or Dark as the device's appearance, Contrast when it
 asks for more contrast). Both are kept on the device.

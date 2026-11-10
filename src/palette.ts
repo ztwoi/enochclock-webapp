@@ -23,7 +23,7 @@ export const DARK = {
   globeSea: '#0a0a0c', globeSeaDay: '#171511', globeLand: '#26231e', globeLandDay: '#705c3a', globePolar: '#782622',
   dlOx: '#3b1513', dlOx2: '#4a1a17', dlRed: '#b4291f', dlOxEdge: '#1a0b0a',
   dlSageDim: '#4d6149',
-  dlPortal: '#2a2318', dlPortal2: '#1f1a12', dlCell: '#15130f', dlCell2: '#1b1814', dlDay: '#1d1a15', dlSabbath: '#3a2f1c',
+  dlDisc: '#0b0a08', dlPortal: '#2a2318', dlPortal2: '#1f1a12', dlCell: '#15130f', dlCell2: '#1b1814', dlDay: '#1d1a15', dlSabbath: '#3a2f1c',
 };
 export type PaletteKey = keyof typeof DARK;
 export type Palette = Readonly<Record<PaletteKey, string>>;

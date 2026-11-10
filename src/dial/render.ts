@@ -132,7 +132,7 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
     }
     // centre: the disc, the optional sky chart (redrawn per instant, screen angles), then on top the
     // compass, the six portals east and west, today's sunrise and sunset bearings (true bearings)
-    el('circle', { r: DR.cmp, fill: C.field, stroke: C.ivory3, 'stroke-width': 0.8 }, W);
+    el('circle', { r: DR.cmp, fill: C.dlDisc, stroke: C.ivory3, 'stroke-width': 0.8 }, W);
     chart = el('g', { class: 'dl-chart' }, root) as SVGGElement;
     centre = new Layer(root, 'dl-centre'); const Z = centre.g;
     for (const PP of [doc.portals, doc.portals_west]) for (const p of PP) {
@@ -239,14 +239,14 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
     if (sky.figures) el('path', { d: figurePath(s, sky.figures, (az, alt) => polar(altRadius(alt), bear(az)), true), fill: 'none', stroke: C.silver, 'stroke-width': 0.6, opacity: 0.45, 'data-figures': 'band' }, B);
     // stars: the default set (V ≤ 3.2) brighter; fainter ones (a deeper limit, the figures' stars) dimmer
     let stars = '', faint = '';
+    const inkDot = paper();                               // ink needs a mark a light point does not: no star under ~1.5 px on a phone, the bright ones bold
     for (const st of s.bright) if (st.alt > 0) {
-      const [x, y] = polar(altRadius(st.alt), bear(st.az)), r = Math.max(0.6, 2.6 - 0.5 * (st.mag ?? 3)), d = dot(x, y, r);
+      const [x, y] = polar(altRadius(st.alt), bear(st.az)), m = st.mag ?? 3, r = inkDot ? (m <= 3.2 ? Math.max(2.2, 4.8 - 0.8 * m) : 1.3) : Math.max(0.6, 2.6 - 0.5 * m), d = dot(x, y, r);
       if ((st.mag ?? 9) <= 3.2) stars += d; else faint += d;
     }
-    const ink = paper();                                  // on paper a star is an ink dot, drawn darker than a point of light needs
     const g = starGain();
-    el('path', { d: faint, fill: C.starInk, opacity: ink ? 0.6 : Math.min(1, 0.32 * g) }, B);
-    el('path', { d: stars, fill: C.starInk, opacity: ink ? 0.9 : Math.min(1, 0.55 * g) }, B);
+    el('path', { d: faint, fill: C.starInk, opacity: inkDot ? 0.4 : Math.min(1, 0.32 * g) }, B);
+    el('path', { d: stars, fill: C.starInk, opacity: inkDot ? 1 : Math.min(1, 0.55 * g) }, B);
     for (const st of s.bright) if (st.alt > 0 && (st.mag ?? 9) < 1.2 && st.name) lab(altRadius(st.alt) + 9, bear(st.az), st.name, 'dl-star');
     // planets and the Moon: above the horizon at their altitude; below it on the inner track, hollow
     const body = (name: string, key: string, az: number, alt: number, rr: number, fill: string, cls = 'dl-body', halo = true) => {
@@ -271,8 +271,16 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
     el('path', { d: 'M-3 0h6M0 -3v6', stroke: C.ivory3, 'stroke-width': 0.6 }, G);
     if (sky.figures) el('path', { d: figurePath(s, sky.figures, at, false), fill: 'none', stroke: C.silver, 'stroke-width': 0.5, opacity: 0.5, 'data-figures': 'chart' }, G);
     let stars = '';
-    for (const st of s.bright) if (st.alt > 0) { const [x, y] = at(st.az, st.alt); stars += dot(x, y, Math.max(0.35, 1.7 - 0.3 * (st.mag ?? 3))); }
-    el('path', { d: stars, fill: C.starInk, opacity: paper() ? 0.92 : 0.7, 'data-chart-stars': '1' }, G);
+    // on paper a star needs a real mark (~1.5 px at the least on a phone) and the bright ones bold; the faint field lighter
+    const ink = paper(); let faint = '', mid = '';                 // on paper: three tiers, the faint field light, the bright stars bold
+    for (const st of s.bright) if (st.alt > 0) {
+      const [x, y] = at(st.az, st.alt), m = st.mag ?? 3;
+      if (!ink) stars += dot(x, y, Math.max(0.35, 1.7 - 0.3 * m));
+      else if (m > 4.5) faint += dot(x, y, 1.1); else if (m > 2.5) mid += dot(x, y, 1.7); else stars += dot(x, y, Math.max(2.4, 4.4 - 0.6 * m));
+    }
+    if (faint) el('path', { d: faint, fill: C.starInk, opacity: 0.3 }, G);
+    if (mid) el('path', { d: mid, fill: C.starInk, opacity: 0.8 }, G);
+    el('path', { d: stars, fill: C.starInk, opacity: ink ? 1 : 0.7, 'data-chart-stars': '1' }, G);
     const mark = (name: string, az: number, alt: number, r: number, fill: string, halo = false) => {
       if (alt <= 0) return; const [x, y] = at(az, alt);
       if (halo) el('circle', { cx: x, cy: y, r: r + 1.7, fill: 'none', stroke: fill, 'stroke-width': 0.5, opacity: 0.45 }, G);

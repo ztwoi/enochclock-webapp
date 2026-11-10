@@ -799,6 +799,7 @@ function mountSettings() {
 const THEME_TIP: Record<ThemeChoice, string> = {
   dark: 'The instrument on black: the default',
   light: 'The instrument printed on vellum, the sky a star atlas in ink: for daylight',
+  sepia: 'The printed instrument on toned paper, darker than Light: a warm page, less glare',
   contrast: 'Black, with every line and word at its brightest: for glare and low vision',
   red: 'Night vision: everything in red light, so your eyes stay used to the dark',
   auto: "Light when this device's appearance is light, Contrast when it asks for more contrast, otherwise Dark",
