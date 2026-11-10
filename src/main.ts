@@ -759,7 +759,7 @@ function bindTransport() {
     if (state.view === 'atlas') { if (e.key === '+' || e.key === '=') state.atlas?.zoomStep(1.25); if (e.key === '-') state.atlas?.zoomStep(0.8); if (e.key === '0') state.atlas?.home(); }
     const stage = state.view === 'sky' ? state.sky?.stage : state.view === 'day' ? state.day?.sky.stage : state.view === 'deep' ? state.deep?.stage : null;
     if (e.key === '+' || e.key === '=') stage?.zoomStep(1.25); if (e.key === '-') stage?.zoomStep(0.8);
-    if (e.key === '0') { const sky = state.view === 'sky' ? state.sky : state.view === 'day' ? state.day?.sky : null; if (sky) sky.stage.home(); else stage?.setZoom(null); }   // following the Sun, home is its 1×
+    if (e.key === '0') { const sky = state.view === 'sky' ? state.sky : state.view === 'day' ? state.day?.sky : null; if (sky) sky.stage.home(); else stage?.setZoom(null); if (state.view === 'day') state.day?.dialZoom.reset(); }   // following the Sun, home is its 1×; The Day's face whole again too
     const n = Number(e.key); if (n >= 1 && n <= ORDER.length && !e.metaKey && !e.ctrlKey && !e.altKey) setView(ORDER[n - 1]);
     if (e.key === 'Escape' && state.view === 'dial') { state.dial?.deselect(); update(); }
   });
