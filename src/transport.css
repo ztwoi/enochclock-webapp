@@ -18,3 +18,14 @@
   .tp { gap: 5px; }
   .tp-seg button { padding: 0 6px; } .tp-go button { width: 40px; } .tp-speed { width: 44px; min-width: 44px; padding: 0; }
 }
+/* 360-wide phones (most Androids): the row came out ~20px wider than the screen, cutting Day off at the left
+   and running 1× into ⋯. Narrower steps and speed (still 44px tall) bring it inside. */
+@media (max-width: 380px) {
+  .tp { gap: 4px; }
+  .tp-seg button { padding: 0 5px; font-size: 11px; } .tp-go button { width: 36px; min-width: 36px; } .tp-speed { width: 40px; min-width: 40px; }
+}
+/* The narrowest phones (320): Day | Degree shows the one selected, and a tap on it switches (transport.ts). */
+@media (max-width: 340px) {
+  .tp-go button { width: 34px; min-width: 34px; }
+  .tp-seg button[data-sel]:not(.on) { display: none; }
+}

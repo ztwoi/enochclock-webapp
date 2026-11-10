@@ -88,9 +88,12 @@ button.chip:hover, .btn:hover { border-color: var(--gold-dim); color: var(--gold
 .big small { font-size: 18px; color: var(--gold); }
 .sub { font-family: var(--serif); font-style: italic; font-size: 17px; color: var(--ivory2); margin-top: 4px; }
 .note { font-family: var(--serif); font-style: italic; font-size: 14.5px; color: var(--ivory2); line-height: 1.4; margin-top: 8px; }
-dl.read { display: grid; grid-template-columns: auto 1fr; gap: 7px 16px; margin-top: 12px; }
+/* A label keeps one line where it can (up to 45% of the row); a long value wraps at its spaces (" · ") inside
+   the panel, rather than widening the grid past it (which cut the values off at the right and squeezed the
+   labels to a word a line). */
+dl.read { display: grid; grid-template-columns: fit-content(45%) minmax(0, 1fr); gap: 7px 16px; margin-top: 12px; }
 dl.read dt { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ivory3); padding-top: 2px; }
-dl.read dd { font-family: var(--mono); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+dl.read dd { font-family: var(--mono); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: break-word; }
 dd.cal { color: var(--gold); } dd.txt { color: var(--bronze); } dd.der { color: var(--silver); }
 .verse { font-family: var(--serif); font-style: italic; font-size: 16.5px; line-height: 1.38; color: var(--bronze); margin-top: 10px; }
 .verse cite { display: block; font-style: normal; font-family: var(--mono); font-size: 10.5px; color: var(--bronze-dim); margin-top: 6px; letter-spacing: .06em; }
@@ -100,7 +103,7 @@ dd.cal { color: var(--gold); } dd.txt { color: var(--bronze); } dd.der { color: 
 #parts { width: 150px; height: 150px; flex: none; margin-top: 6px; }
 
 /* transport */
-.transport { grid-column: 1 / 3; border-top: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; padding: 8px 36px calc(8px + env(safe-area-inset-bottom)); gap: 28px; background: #070605; }
+.transport { grid-column: 1 / 3; border-top: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr);   /* the controls column is never narrower than its buttons: where the thirds are too tight (an iPad on its side) the playback moves left and the time shortens, instead of the buttons piling onto each other */ align-items: center; padding: 8px 36px calc(8px + env(safe-area-inset-bottom)); gap: 28px; background: #070605; }
 .when-wrap { display: grid; gap: 6px; min-width: 0; overflow: hidden; }
 .when { overflow: hidden; text-overflow: ellipsis; }
 .when { font-family: var(--mono); font-size: 12px; color: var(--ivory2); line-height: 1.6; white-space: nowrap; }
@@ -138,6 +141,8 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6p
   .transport { padding: 8px 24px calc(8px + env(safe-area-inset-bottom)); gap: 20px; }
 }
 @media (max-width: 1500px) { .mark span { display: none; } }
+@media (max-width: 1400px) { .transport { gap: 14px; } .transport .goto { width: 180px; } }   /* the wide bar on a laptop or an iPad on its side: room left for the time */
+@media (max-width: 1280px) { .transport .goto { width: 150px; } }
 #calc-status { display: inline-flex; align-items: center; padding: 5px 7px; position: relative; }
 #calc-status[data-mode=offline] { color: var(--gold-hi); border-color: var(--gold-dim); }
 #site-chip { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }   /* a long place name shortens, it never widens the bar */

@@ -102,7 +102,11 @@ export function createTransport(root: HTMLElement, opts: TransportOpts): Transpo
   };
   root.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button'); if (!b || b.disabled) return;
-    if (b.dataset.sel) t.select(b.dataset.sel as Mode);
+    if (b.dataset.sel) {
+      // The narrowest phones show only the selected unit (transport.css): a tap on it switches to the other.
+      const other = root.querySelector<HTMLButtonElement>('[data-sel]:not(.on):not([hidden])');
+      t.select(b.dataset.sel === sel() && other && other.offsetParent === null ? (other.dataset.sel as Mode) : (b.dataset.sel as Mode));
+    }
     else if (b.dataset.play) t.toggle(+b.dataset.play as Dir);
     else if (b.dataset.step) { t.pause(); opts.onStep(sel(), +b.dataset.step as Dir); }
     else if (b.dataset.speed !== undefined) t.cycleSpeed();
