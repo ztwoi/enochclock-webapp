@@ -8,6 +8,7 @@ import { hub } from '../compass/hub';
 import { decimalYear, declination } from '../compass/wmm';
 import { toRoman } from '../cycleui';
 import { civil, timeOf } from '../dates';
+import { clockText } from '../clock';
 import { annual } from '../model';
 import type { Star } from '../sky/catalogue';
 import type { Site, YearDoc } from '../types';
@@ -232,7 +233,7 @@ export function createDialView(host: HTMLElement, head: { title: HTMLElement; pr
       correction: ['The 294-day correction', '294 = 7 × 42 and 42 = 7 × 6: seven weeks of 42 days, each seven weeks of six. A hold opens every cycle (the silver triangle).',
         kv('Day', `${e.correction_day}/294`) + kv('Week of 42', `${e.correction_42}/7`) + kv('Week of 6', `${e.correction_6}/7 · day ${e.correction_day_of_6}/6`) + kv('Next hold', `${e.days_to_next_hold} days`) + kv('Holds this cycle', `${e.holds_done_in_cycle} done · ${e.holds_remaining_in_cycle} left`)],
       courses: ['The 24 priestly courses and the week', 'Sunday-to-Sabbath weeks in the Qumran order from Gamul, unbroken from the epoch; 24 weeks a rotation, 13 rotations in six years. Each course is one week: the seven inner cells are its days, the Sabbath darker; the Sun’s line crosses one a day, and the day changes at sunrise, not midnight.',
-        kv('Day', `${e.weekday}. ${e.weekday_name}`) + kv('Began', `${civil(r.sunrise_local)} ${timeOf(r.sunrise_local)}`) + kv('Course', `${e.course}. ${e.course_name}`) + kv('Chronicles', `${e.course_chronicles}${course?.kjv ? ` · KJV ${course.kjv}` : ''}`) + kv('Week', `${civil(e.course_week_start)} → ${civil(e.course_week_end)}`) + kv('Six-year', `${e.six_year_cycle}/49 · year ${e.six_year_year}/6 · week ${e.six_year_week}`)],
+        kv('Day', `${e.weekday}. ${e.weekday_name}`) + kv('Began', `${civil(r.sunrise_local)} ${clockText(timeOf(r.sunrise_local))}`) + kv('Course', `${e.course}. ${e.course_name}`) + kv('Chronicles', `${e.course_chronicles}${course?.kjv ? ` · KJV ${course.kjv}` : ''}`) + kv('Week', `${civil(e.course_week_start)} → ${civil(e.course_week_end)}`) + kv('Six-year', `${e.six_year_cycle}/49 · year ${e.six_year_year}/6 · week ${e.six_year_week}`)],
       parts: ['The 18 parts of the day', 'Equal parts from sunrise to the next sunrise, gliding clockwise. Gold: daylight as measured today; bronze: the text’s ratio for this month. Each part has 20 degrees, each degree 60 minutes, each minute 4 seconds: 86,400 a day.',
         kv('Time', `${t.part}:${t.deg}:${t.min}:${t.sec}`) + kv('Unit', `${t.units.toLocaleString('en-US')} / 86,400`) + kv('Daylight', `${s.dayParts.toFixed(2)} parts (text ${s.textParts})`)],
       compass: [st.sky.centre === 'off' ? 'Compass and portals' : 'The sky overhead', `${st.sky.centre === 'up' ? '' : 'The six portals east (sunrise) and west (sunset) on true bearings; gold tick today’s sunrise, silver today’s sunset. '}${st.sky.centre === 'off' ? '' : 'The centre chart: the whole sky above the horizon in a stereographic projection (shapes kept), zenith in the middle, 30° and 60° dotted. '}${st.sky.centre === 'above' ? 'Seen from above, on the compass’s bearings: figures mirrored.' : st.sky.centre === 'up' ? 'Looking up: east on the left, figures as seen.' : ''}`,

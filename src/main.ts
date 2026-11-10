@@ -24,8 +24,10 @@ import type { DeepDoc, Site, YearDoc } from './types';
 import { loadCatalogue } from './sky/catalogue';
 import { jdOfPart } from './sky/instrument';
 import { createTransport } from './transport';
+import { PER_SECOND, stepUnits } from './transport-speed';
 import { createSheet } from './sheet';
 import { keepPhrasesTogether } from './readwrap';
+import { clockFormat, clockText, setClockFormat, type ClockFormat } from './clock';
 import { guaranteeTaps } from './taps';
 import { createSky, followable, sameBody, type Catalogue, type Followed, type Side, type Sky } from './skyview';
 import { createSkyCompass } from './sky/compassmode';
@@ -73,17 +75,14 @@ const state = {
 };
 /** Any move of the reader's own (a step, play, a jump, a pick) leaves the present. */
 const manual = () => { state.live = false; };
-const DAYS_PER_SECOND = 2;                      // at 1×, two days a second (day playback only; degrees unchanged)
-const YEARS_PER_SECOND = 1;                     // Deep Time at 1×: a year a second
 /** Year playback (Deep Time): the year in play, gliding (NaN when not playing by year). The marker moves with it every
  *  frame; the app loads the year it has reached as fast as the calculator answers, and the exact one on pause. */
 let playYear = NaN, yearLoading = false;
 /** The year Deep Time marks: the one in play, else the loaded one. */
 const deepYear = () => (isFinite(playYear) ? Math.round(playYear) : firstYear());
-const DEGREES_PER_SECOND = 15;                  // at 1×: 1° = 1/360 of sunrise to sunrise = 1/20 of a part
 let crossing = false;                            // waiting for the neighbouring Enoch year while playing across the boundary
 const tp = createTransport($('tp'), {
-  onStep: (m, dir) => { manual(); if (m === 'year') stepYear(dir); else if (m === 'day') step(dir); else stepDegree(dir); },
+  onStep: (m, k) => { manual(); if (m === 'year') stepYear(k); else if (m === 'day') step(k); else stepDegree(k); },   // k: the unit times the speed
   onChange: () => {
     if (tp.mode === 'year') { if (!isFinite(playYear) && state.doc) playYear = firstYear(); }
     else if (isFinite(playYear)) {                                  // year playback stopped: settle on the year it reached
@@ -108,8 +107,8 @@ async function load(by: { date: string } | { enochYear: number } | { year: numbe
   if (!quiet) { status.className = 'status'; status.textContent = 'Calculating the year…'; status.hidden = false; }
   $('stage').setAttribute('aria-busy', 'true'); setCalcBusy(true);
   try {
-    const pre = 'enochYear' in by && state.next && sameSite(state.next) && state.next.calculation.enoch_year === by.enochYear ? state.next : null;   // the Dial's prefetched next year
-    const doc = pre ?? ('date' in by ? await fetchYearContaining(state.site, by.date) : 'year' in by ? await fetchGregorianYear(state.site, by.year) : await fetchEnochYear(state.site, by.enochYear));
+    const pre = 'enochYear' in by ? ahead.get(aheadKey(by.enochYear)) : undefined;   // calculated ahead (playback, the Dial's next year)
+    const doc = pre ? await pre : ('date' in by ? await fetchYearContaining(state.site, by.date) : 'year' in by ? await fetchGregorianYear(state.site, by.year) : await fetchEnochYear(state.site, by.enochYear));
     if (seq !== loadSeq) return;
     state.doc = doc;
     $('stage').classList.remove('calculation-failed');
@@ -237,7 +236,7 @@ function momentText(m: Pick<Moment, 'place' | 'at'>): string[] {
   if (m.at) {
     const at = m.place ?? state.site, lmt = Math.round(at.lon * 4), o = `${lmt < 0 ? '-' : '+'}${fmt.pad(Math.floor(Math.abs(lmt) / 60))}:${fmt.pad(Math.abs(lmt) % 60)}`;   // beyond the zone's records: local mean time
     const g = localParts(jdAt(m.at), at.tz, o);
-    out.push(`${yearLabel(g.y)} ${MON[g.m - 1]} ${g.d} · ${g.time.slice(0, 5)}`);
+    out.push(`${yearLabel(g.y)} ${MON[g.m - 1]} ${g.d} · ${clockText(g.time, false)}`);
   } else out.push('any time');
   return out;
 }
@@ -317,13 +316,24 @@ async function chooseSite(site: Site) {
   if (!state.doc && had) { state.atlas?.refuse('The calculator refused a year at this site: some day of it has no sunrise. Back to the site before.'); await changeSite(before); }
 }
 const sameSite = (d: YearDoc) => d.calculation.latitude === state.site.lat && d.calculation.longitude_east === state.site.lon && d.calculation.elevation_m === state.site.elev && d.calculation.timezone === state.site.tz;
-let nextLoading = false;
-/** The next Enoch year, fetched near the year's end: the Dial glides into it without waiting. */
+/** Enoch years calculated ahead, at the site on show: the one playback runs into (either way), and the next as the Dial nears
+ *  the year's end. Loading one of them (load) takes it from here, so playing across a new year does not stop to wait. */
+const ahead = new Map<string, Promise<YearDoc>>(), AHEAD_KEEP = 6;
+const aheadKey = (y: number) => `${state.site.lat}|${state.site.lon}|${state.site.elev}|${state.site.tz}|${y}`;
+function yearAhead(y: number): Promise<YearDoc> {
+  const k = aheadKey(y); let p = ahead.get(k);
+  if (!p) {
+    p = fetchEnochYear(state.site, y); ahead.set(k, p);
+    p.catch(() => ahead.delete(k));                                // a refusal is asked again (and reported) when the year is loaded
+    while (ahead.size > AHEAD_KEEP) ahead.delete(ahead.keys().next().value!);
+  }
+  return p;
+}
+/** The next Enoch year, near the year's end: the Dial glides into it without waiting. */
 function prefetchNext() {
   const doc = state.doc!, y = doc.calculation.enoch_year + 1;
-  if (nextLoading || (state.next && sameSite(state.next) && state.next.calculation.enoch_year === y)) return;
-  nextLoading = true;
-  fetchEnochYear(state.site, y).then((d) => { if (state.doc === doc) state.next = d; }).catch(() => undefined).finally(() => { nextLoading = false; });
+  if (state.next && sameSite(state.next) && state.next.calculation.enoch_year === y) return;
+  yearAhead(y).then((d) => { if (state.doc === doc) state.next = d; }).catch(() => undefined);
 }
 /** The Dial at the app's instant: day i at the part of the day, gliding toward tomorrow while playing by days. */
 function renderDial() {
@@ -408,7 +418,7 @@ function clock() {
   const jd = state.live ? jdFromMs(Date.now()) : jdOfPart(doc.rows[i].sunrise_jd_ut, doc.rows[i + 1].sunrise_jd_ut, timed(state.view) ? state.part : 0);
   const k = state.live ? dayIndexAt(doc, jd) : i; if (k < 0) return;
   const t = enochTime(partOfDay(doc, k, jd)), g = localDateTime(jd, doc.calculation.timezone, fmt.offset(doc.rows[k].sunrise_local));
-  el.innerHTML = `<span class="et" data-k="enoch-time">${t.part}:${t.deg}:${t.min}:${t.sec}</span> · <span data-k="greg-time">${g.date} ${g.time}</span><span class="gw"> Gregorian</span>`;
+  el.innerHTML = `<span class="et" data-k="enoch-time">${t.part}:${t.deg}:${t.min}:${t.sec}</span> · <span data-k="greg-time">${g.date} ${clockText(g.time)}</span><span class="gw"> Gregorian</span>`;
 }
 
 /** Follow the present: today's Enoch day (its year loaded when needed) and, in Sky, the present part of the day. */
@@ -682,7 +692,7 @@ function frame(t: number) {
   if (tp.mode === 'year') {
     if (doc && isFinite(playYear)) {
       const was = Math.round(playYear);
-      playYear = Math.max(YEAR_MIN, Math.min(YEAR_MAX, playYear + dt * YEARS_PER_SECOND * v));
+      playYear = Math.max(YEAR_MIN, Math.min(YEAR_MAX, playYear + dt * PER_SECOND.year * v));
       const y = Math.round(playYear);
       if (y !== was) state.deep?.setYear(y);
       if (y !== firstYear() && !yearLoading) { yearLoading = true; load({ year: y }, 'start', true).finally(() => { yearLoading = false; }); }
@@ -690,9 +700,10 @@ function frame(t: number) {
     }
   } else if (v && doc && !crossing) {
     const n = annual(doc).length;
-    if (tp.mode === 'day') state.cursor += dt * DAYS_PER_SECOND * v;
+    yearAhead(doc.calculation.enoch_year + Math.sign(v)).catch(() => undefined);   // the year it plays into, calculated ahead: the crossing need not wait for it
+    if (tp.mode === 'day') state.cursor += dt * PER_SECOND.day * v;
     else if (timed(state.view)) {
-      state.part += (dt * DEGREES_PER_SECOND * v) / 20;
+      state.part += (dt * PER_SECOND.degree * v) / 20;
       while (state.part >= 18) { state.part -= 18; state.cursor = Math.round(state.cursor) + 1; }
       while (state.part < 0) { state.part += 18; state.cursor = Math.round(state.cursor) - 1; }
     }
@@ -704,14 +715,17 @@ function frame(t: number) {
 }
 /** One Enoch year back or forward (Deep Time's step). */
 function stepYear(k: number) { const doc = state.doc; if (doc) load({ enochYear: doc.calculation.enoch_year + k }, 'start', true); }
-function step(k: number) {
+/** k days on (or back), past either end of the year into the neighbouring one by as many days as are left over. */
+async function step(k: number) {
   const doc = state.doc; if (!doc) return;
   const n = annual(doc).length, c = Math.round(state.cursor) + k;
-  if (c < 0) return void load({ enochYear: doc.calculation.enoch_year - 1 }, 'end', true);
-  if (c > n - 1) return void load({ enochYear: doc.calculation.enoch_year + 1 }, 'start', true);
-  setCursor(c);
+  if (c >= 0 && c <= n - 1) return setCursor(c);
+  const fwd = c > n - 1;
+  await load({ enochYear: doc.calculation.enoch_year + (fwd ? 1 : -1) }, fwd ? 'start' : 'end', true);
+  const d = state.doc; if (!d || d === doc) return;
+  const m = annual(d).length; setCursor(Math.max(0, Math.min(m - 1, fwd ? c - n : m + c)));
 }
-/** One degree of the day (1/20 of a part), crossing sunrise into the neighbouring day. */
+/** k degrees of the day (a degree is 1/20 of a part), crossing sunrise into the neighbouring day. */
 function stepDegree(k: number) {
   let part = state.part + k / 20, day = 0;
   while (part >= 18) { part -= 18; day++; }
@@ -734,8 +748,8 @@ function bindTransport() {
   window.addEventListener('keydown', (e) => {
     if ((e.target as HTMLElement).closest('input, select, dialog')) return;
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      e.preventDefault(); manual(); tp.pause(); const k = e.key === 'ArrowLeft' ? -1 : 1;
-      if (e.shiftKey && timed(state.view)) stepDegree(k); else if (state.view === 'deep') stepYear(k); else step(k);
+      e.preventDefault(); manual(); tp.pause(); const k = e.key === 'ArrowLeft' ? -1 : 1, by = (u: 'day' | 'degree' | 'year') => k * stepUnits(tp.speed(u));   // as ◀◀ ▶▶: the unit times its speed
+      if (e.shiftKey && timed(state.view)) stepDegree(by('degree')); else if (state.view === 'deep') stepYear(by('year')); else step(by('day'));
     }
     if (e.key === ' ') { e.preventDefault(); tp.toggle(); }
     if (e.key === 'd' || e.key === 'D') tp.select(tp.selected === 'day' ? 'degree' : 'day');
@@ -751,6 +765,23 @@ function bindTransport() {
   });
   requestAnimationFrame((t) => { last = t; frame(t); });
   setInterval(tick, 1000);
+}
+/** Settings: the reader's preferences, kept on the device, in a quiet section at the foot of the details (above Offline).
+ *  For now one: how clock times read, 12-hour (the default) or 24-hour. */
+function mountSettings() {
+  const sec = document.createElement('div'); sec.className = 'section settings'; sec.id = 'settings';
+  sec.innerHTML = `<div class="eyebrow">Settings</div>
+   <div class="set-row"><span class="set-l" id="set-clock-l">Clock</span><div class="seg" role="group" aria-labelledby="set-clock-l">${(['12', '24'] as ClockFormat[]).map((f) => `<button type="button" class="btn" data-clock="${f}" title="Clock times ${f === '12' ? 'with AM and PM: 7:41 PM' : 'from 00:00 to 23:59: 19:41'}">${f}-hour</button>`).join('')}</div></div>
+   <p class="set-note">Kept on this device.</p>`;
+  const paint = () => sec.querySelectorAll<HTMLButtonElement>('[data-clock]').forEach((b) => { const on = b.dataset.clock === clockFormat(); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  sec.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-clock]'); if (!b) return;
+    setClockFormat(b.dataset.clock as ClockFormat); paint();
+    shown.i = -1; update();                                        // every time on show again, in the new format
+    atlasDetails.setMoments(moments);                              // and the saved moments' times
+  });
+  paint();
+  $('insp').after(sec);
 }
 /** Open the Enoch year containing a civil date (any year in range), at that morning. */
 async function goDate(iso: string) {
@@ -869,6 +900,7 @@ async function start() {
   if (await verifyInstalled()) pruneStaleVersions().catch(() => undefined);   // a pack the browser has evicted is offered for install again; old versions' caches go
   mountOffline({ after: $('insp'), stage: $('stage'), chip: $('calc-status'), more: $('more'), disposeCalculator, openDetails: () => sheet.open(), });
   mountLegal($('offline'));
+  mountSettings();
   mountFeedback($('legal'), () => ({ mode: VIEWS[state.view].name, page: state.doc ? `Enoch year ${state.doc.calculation.enoch_year}` : '' }));
   onCalculatorProgress(calculatorNote);
   bindTransport(); bindSite(); bindOptions(); bindAtlas(); navShow = bindNavScroll();

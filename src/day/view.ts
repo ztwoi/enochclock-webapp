@@ -6,6 +6,7 @@
 // recorded.
 import './day.css';
 import { localDateTime, offsetOf } from '../dates';
+import { clockText, clockVersion } from '../clock';
 import { createDial, type SkyLayers } from '../dial/render';
 import { BRIGHT_MAG, dayState, dialState, type DayState } from '../dial/state';
 import type { SkyPrefs } from '../dial/view';
@@ -70,7 +71,8 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
   let dayI = -1, day: DayState | null = null, events: DayEvent[] = [], rising: ReturnType<typeof risingWithSun> = [];
   let lastJd = NaN, lastPart = 0, summaryOn = false, captionsOn = true, shownCaps = '';
   const W = opts.captionParts ?? 1.5;
-  const hm = (jd: number) => localDateTime(jd, doc.calculation.timezone, offsetOf(doc.rows[Math.max(0, dayI)].sunrise_local)).time.slice(0, 5);
+  const hm = (jd: number) => clockText(localDateTime(jd, doc.calculation.timezone, offsetOf(doc.rows[Math.max(0, dayI)].sunrise_local)).time, false);
+  let builtClock = clockVersion();                                  // the clock format the bar's labels were built in
   function newDay(i: number) {
     dayI = i; day = dayState(doc, i); events = dayEvents(doc, i); rising = risingWithSun(doc, i, events);
     buildBar();
@@ -138,7 +140,7 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
   // ---- the instant
   function draw(jd: number) {
     const i = dayIndexAt(doc, jd); if (i < 0 || i + 1 >= doc.rows.length) return;
-    if (i !== dayI) newDay(i);
+    if (i !== dayI || builtClock !== clockVersion()) { builtClock = clockVersion(); newDay(i); }   // a new day, or the clock setting changed: the bar's labels again
     lastJd = jd;
     sky.setInstant(jd);
     const sun = sky.info()!.sun;
@@ -175,7 +177,7 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
 
 /** The details panel for a day: its events in order with their times, and what rose with the Sun. */
 export function dayPanel(doc: YearDoc, i: number, events: DayEvent[], rising: ReturnType<typeof risingWithSun>) {
-  const e = doc.extended[i], off = offsetOf(doc.rows[i].sunrise_local), hm = (jd: number) => localDateTime(jd, doc.calculation.timezone, off).time.slice(0, 5);
+  const e = doc.extended[i], off = offsetOf(doc.rows[i].sunrise_local), hm = (jd: number) => clockText(localDateTime(jd, doc.calculation.timezone, off).time, false);
   const light = Math.round((e.sunset_jd_ut - doc.rows[i].sunrise_jd_ut) * 1440);
   const name = (v: DayEvent) => (v.body === 'Sun' ? { rise: 'Sunrise', set: 'Sunset', noon: 'Midday', midnight: 'Midnight' }[v.kind] : `${v.body} ${v.kind === 'rise' ? 'rises' : 'sets'}`);
   const rows = events.map((v) => `<dt style="color:${v.color}">${name(v)}</dt><dd>${hm(v.jd)} <small>· part ${v.part.toFixed(2)}</small></dd>`).join('');

@@ -9,6 +9,7 @@
 // For a script: window.studio = { ready, frames, fps, seek(frame) }; seek resolves once the frame is painted.
 import '../theme.css';
 import '../fonts.css';
+import { clockText } from '../clock';
 import '../dial/face.css';
 import './studio.css';
 import { FALLBACK, PRESETS, fetchYearContaining } from '../api';
@@ -83,7 +84,7 @@ async function start() {
     const jd = jdAt(f), t = localDateTime(jd, site.tz, offset);
     view.setSummary(f >= intro + dayFrames);
     view.draw(jd);
-    $('clock').textContent = t.time.slice(0, 5);
+    $('clock').textContent = clockText(t.time, false);
     $('dates').innerHTML = `<b>${enochText(doc.rows[i].enoch_date)}</b> · ${t.date}`;
     $('daypart').textContent = `PART ${p2(enochTime(partOfDay(doc, i, jd)).part)} / 18`;
     await paint();

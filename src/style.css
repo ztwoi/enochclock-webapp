@@ -235,3 +235,9 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6p
   .view-head { top: 6px; } .view-head h1 { font-size: 20px; } .opts { margin-top: 6px; }   /* the Dial's title, reading and options stack here: keep them from eating the face */
   .sheet { max-height: calc(100dvh - var(--foot-h, 44px) - 40px); }
 }
+/* Settings: a quiet section at the foot of the details, above Offline (main.ts mountSettings) */
+.settings { border-top: 1px solid var(--rule); border-bottom: 0; margin-top: 18px; padding: 18px 0 4px; display: grid; gap: 10px; }   /* Offline, under it, draws the rule between them */
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.set-l { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ivory3); }
+.settings .seg { display: flex; } .settings .seg .btn { min-height: 36px; } .settings .seg .btn + .btn { margin-left: -1px; } .settings .seg .btn.on { position: relative; background: rgba(214,178,106,.10); }
+.set-note { font-family: var(--mono); font-size: 10.5px; color: var(--ivory3); }

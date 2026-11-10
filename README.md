@@ -47,13 +47,16 @@ Five views share one time cursor:
 | ![The Day: the Sky and the Dial joined by a thread through the Sun, with the day's risings and settings](docs/img/day.png) | ![Deep Time: thirty thousand years of Day 1 against the March equinox](docs/img/deep-time.png) | <img src="docs/img/dial-phone.png" alt="The Dial on a phone" width="200"> |
 
 **Playback** is one bar on every view: step or play by the Day or by the Degree (1° is 1/360 of sunrise to sunrise), at
-0.5× to 16×, forwards or in reverse. Playing past the end of an Enoch year carries on into the next one. **Now** follows the
-present.
+0.5× to 16× (1× is 30 days a second by the Day, a new day each frame; 15° a second by the Degree), forwards or in reverse.
+◀◀ ▶▶ step the unit times the speed: 16 days at 16×, 4° at 4× (never less than one). Playing past the end of an Enoch year
+carries on into the next one, calculated ahead so the crossing does not wait. **Now** follows the present.
+
+**Settings**, at the foot of the details: clock times in 12-hour (the default) or 24-hour, kept on the device.
 
 | Key | Action |
 |---|---|
 | Space | play / pause |
-| ← → | step a day (Shift: a degree; in Deep Time, a year) |
+| ← → | step as ◀◀ ▶▶ do: days × the speed (Shift: degrees; in Deep Time, years) |
 | D · S | switch Day / Degree · change speed |
 | N · F | follow now · fold away the top bar |
 | 1 2 3 4 | Sky · The Dial · The Day · Deep Time |

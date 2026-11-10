@@ -7,6 +7,7 @@ import { type CompassStatus, type Reading } from '../compass/compass';
 import { hub } from '../compass/hub';
 import { decimalYear, declination } from '../compass/wmm';
 import { jdFromMs } from '../model';
+import { clockText } from '../clock';
 import { skyFrame } from './astronomy';
 import { aberrated, moon, refracted } from './instrument';
 import { failMessage, locate, type FailKind } from '../geo/location';
@@ -155,7 +156,7 @@ export function createSkyCompass(onHeading: (trueHeading: number) => void, onCha
       const name = drawn.name.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
       // A.5: say so when the sky drawn is not the sky around you, now
       const away = here ? km(here, drawn) : 0, late = Math.abs(drawn.jd - jdFromMs(Date.now())) * 1440, era = Math.abs(drawn.year - new Date().getUTCFullYear());
-      const at = new Intl.DateTimeFormat('en-GB', { timeZone: drawn.tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date((drawn.jd - 2440587.5) * 86400000));
+      const at = clockText(new Intl.DateTimeFormat('en-GB', { timeZone: drawn.tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date((drawn.jd - 2440587.5) * 86400000)), false);
       const not = [
         here && away > NEAR_KM ? `for ${name}, ${away < 1000 ? away.toFixed(0) : Math.round(away).toLocaleString('en-US')} km from you` : '',
         late > NOW_MIN ? `for ${drawn.date} at ${at}, not now (the sky turns 15° an hour; Now draws this moment)` : '',

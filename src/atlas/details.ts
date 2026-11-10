@@ -6,6 +6,7 @@
 import { createDayBar } from '../day/bar';
 import { dayEvents, type DayEvent } from '../day/events';
 import { localParts, yearLabel } from '../dates';
+import { clockText, clockVersion } from '../clock';
 import { annual, fmt } from '../model';
 import { enochTime } from '../dial/state';
 import type { Site, YearDoc } from '../types';
@@ -58,7 +59,8 @@ const esc = (t: string) => t.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 const coord = (x: number, pos: string, neg: string) => `${Math.abs(x).toFixed(4)}° ${x >= 0 ? pos : neg}`;
 /** A zone this browser can keep time in. */
 const zoneOk = (tz: string) => { try { new Intl.DateTimeFormat('en', { timeZone: tz }); return true; } catch { return false; } };
-const hm = (t: string) => t.slice(0, 5);
+const hm = (t: string) => t.slice(0, 5);                          // "hh:mm": the time field's value and onLocal's
+const shownHm = (t: string) => clockText(t, false);               // the same for the page: 12- or 24-hour (Settings)
 
 export function createAtlasDetails(opts: AtlasDetailsOptions): AtlasDetails {
   const el = document.createElement('div'); el.className = 'atlas-details';
@@ -114,7 +116,7 @@ export function createAtlasDetails(opts: AtlasDetailsOptions): AtlasDetails {
   const time = q<HTMLInputElement>('[data-w=time]'), read = q('[data-w=read]'), evs = q('[data-w=events]'), rows = q('[data-w=rows]');
   let cal: Cal = 'greg', tm: 'clock' | 'part' = 'clock', tab: AtlasTab = 'where', allEvents = false;
   let cur: { doc: YearDoc; i: number; part: number; jd: number; g: ReturnType<typeof localParts>; e: { y: number; m: number; d: number } } | null = null;
-  let dayOf: { doc: YearDoc; i: number; events: DayEvent[] } | null = null;
+  let dayOf: { doc: YearDoc; i: number; events: DayEvent[]; clock: number } | null = null;
   let site: Site | null = null;
   const tags = new Set<string>();
 
@@ -243,7 +245,7 @@ export function createAtlasDetails(opts: AtlasDetailsOptions): AtlasDetails {
   function events() {
     if (!cur || !dayOf) return;
     const main = (e: DayEvent) => e.body === 'Sun' || e.body === 'Moon', list = allEvents ? dayOf.events : dayOf.events.filter(main), more = dayOf.events.length - dayOf.events.filter(main).length;
-    const clock = (jd: number) => hm(localParts(jd, cur!.doc.calculation.timezone, fmt.offset(cur!.doc.rows[cur!.i].sunrise_local)).time);
+    const clock = (jd: number) => shownHm(localParts(jd, cur!.doc.calculation.timezone, fmt.offset(cur!.doc.rows[cur!.i].sunrise_local)).time);
     const html = list.map((e) => `<button type="button" class="ev${Math.abs(e.jd - cur!.jd) * 1440 < 1.5 ? ' cur' : e.jd < cur!.jd ? ' past' : ''}" data-part="${e.part}" style="--c:${e.color}"><i class="${e.kind === 'set' ? 'set' : ''}"></i>${eventName(e)} <b>${clock(e.jd)}</b></button>`).join('')
       + (more ? `<button type="button" class="ev ev-all" data-more>${allEvents ? 'Sun and Moon only' : `+ ${more} planet risings and settings`}</button>` : '');
     if (evs.dataset.h !== html) { evs.innerHTML = html; evs.dataset.h = html; }
@@ -275,16 +277,16 @@ export function createAtlasDetails(opts: AtlasDetailsOptions): AtlasDetails {
       const tz = doc.calculation.timezone, off = fmt.offset(doc.rows[i].sunrise_local), g = localParts(jd, tz, off);
       const [ey, em, ed] = annual(doc)[i].enoch_date.split(/(?<=\d)-/).map(Number);
       cur = { doc, i, part, jd, g, e: { y: ey, m: em, d: ed } };
-      if (!dayOf || dayOf.doc !== doc || dayOf.i !== i) {
-        dayOf = { doc, i, events: dayEvents(doc, i) };
-        bar.build(doc, i, dayOf.events, (x) => hm(localParts(x, tz, off).time));
+      if (!dayOf || dayOf.doc !== doc || dayOf.i !== i || dayOf.clock !== clockVersion()) {
+        dayOf = { doc, i, events: dayEvents(doc, i), clock: clockVersion() };
+        bar.build(doc, i, dayOf.events, (x) => shownHm(localParts(x, tz, off).time));
       }
       bar.place(part);
       fill(); fillTime(); events();
       const t = enochTime(part), among = amongEvents(dayOf.events, jd);
-      read.innerHTML = `${hm(g.time)} · part <em>${part.toFixed(2)}</em>${among ? ` · ${among}` : ''}`;
+      read.innerHTML = `${shownHm(g.time)} · part <em>${part.toFixed(2)}</em>${among ? ` · ${among}` : ''}`;
       const ut = new Date((jd - 2440587.5) * 86400000);
-      const rh = `<dt>Gregorian</dt><dd class="cal">${yearLabel(g.y)} · ${MONTHS[g.m - 1].slice(0, 3)} ${g.d} · ${hm(g.time)} (UTC${off})</dd>`
+      const rh = `<dt>Gregorian</dt><dd class="cal">${yearLabel(g.y)} · ${MONTHS[g.m - 1].slice(0, 3)} ${g.d} · ${shownHm(g.time)} (UTC${off})</dd>`
         + `<dt>Enoch</dt><dd class="cal">${annual(doc)[i].enoch_date.replace(/^-/, '−')} · ${t.part}:${t.deg}:${t.min}:${t.sec}</dd>`
         + `<dt>UT · JD</dt><dd>${p2(ut.getUTCHours())}:${p2(ut.getUTCMinutes())} · ${jd.toFixed(4)}</dd>`;
       if (rows.dataset.h !== rh) { rows.innerHTML = rh; rows.dataset.h = rh; }

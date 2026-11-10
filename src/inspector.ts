@@ -1,6 +1,7 @@
 // Inspector panels, one per view. Every number comes from the calculator; text is quoted
 // from the book's text (Charles 1912).
 import { correctionSection, courseSection } from './cycleui';
+import { clockText } from './clock';
 import { civil } from './dates';
 import { annual, fmt, GEEZ, ROMAN } from './model';
 import { declinationOfDate, horizonAzimuth, lastPassage, litPortals, passageRun, portalAt } from './sky/instrument';
@@ -113,8 +114,13 @@ const formatter = (key: string, tz: string, o: Intl.DateTimeFormatOptions) => {
   if (!f) formats.set(`${key}|${tz}`, f = new Intl.DateTimeFormat('en-GB', { timeZone: tz, ...o }));
   return f;
 };
-const localAt = (doc: YearDoc, jd: number) => formatter('at', doc.calculation.timezone, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })
-  .format(new Date((jd - 2440587.5) * 86400000));
+/** An instant's wall-clock fields at the site, the hour 0–23 (clockText writes it 12- or 24-hour). */
+const zoneParts = (key: string, tz: string, o: Intl.DateTimeFormatOptions, jd: number) =>
+  Object.fromEntries(formatter(key, tz, { ...o, hourCycle: 'h23' }).formatToParts(new Date((jd - 2440587.5) * 86400000)).map((q) => [q.type, q.value]));
+const localAt = (doc: YearDoc, jd: number) => {
+  const q = zoneParts('at', doc.calculation.timezone, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }, jd);
+  return `${q.day} ${q.month}, ${clockText(`${q.hour}:${q.minute}`, false)}`;
+};
 const hoursAgo = (h: number) => (h < 1 ? `${Math.round(h * 60)} min ago` : `${Math.floor(h)} h ${Math.round((h % 1) * 60)} min ago`);
 
 /** The selected Moon: where it is, its light, its own day from the conjunction, and the portal it last rose in (the silver tick on the horizon). */
@@ -134,8 +140,8 @@ function moonSection(doc: YearDoc, sky: SkyInfo) {
 export function skyPanel(doc: YearDoc, i: number, part: number, sky: SkyInfo | null) {
   const days = annual(doc), r = days[i], next = doc.rows[i + 1];
   if (!sky) return `<div class="section"><div class="eyebrow">Sky</div><p class="note">Loading the stars…</p></div>`;
-  const local = formatter('clock', doc.calculation.timezone, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZoneName: 'short' })
-    .format(new Date((sky.jd - 2440587.5) * 86400000));
+  const lq = zoneParts('clock', doc.calculation.timezone, { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' }, sky.jd);
+  const local = `${clockText(`${lq.hour}:${lq.minute}:${lq.second}`)} ${lq.timeZoneName}`;
   let sel = '';
   const S = sky.selection;
   if (S?.kind === 'star' && sky.selected) {
@@ -171,7 +177,7 @@ export function skyPanel(doc: YearDoc, i: number, part: number, sky: SkyInfo | n
   return `
   <div class="section"><div class="eyebrow">Instant · all around</div>
    <div class="big" data-k="part">${part.toFixed(2)}<small> / 18</small></div>
-   <div class="sub">part of Enoch ${r.enoch_date} · sunrise ${fmt.time(r.sunrise_local)} to next sunrise ${fmt.time(next.sunrise_local)}</div>
+   <div class="sub">part of Enoch ${r.enoch_date} · sunrise ${clockText(fmt.time(r.sunrise_local))} to next sunrise ${clockText(fmt.time(next.sunrise_local))}</div>
    <dl class="read"><dt>Local</dt><dd>${local}</dd>
    <dt>JD</dt><dd data-k="sky-jd">${sky.jd.toFixed(6)} UT</dd>
    <dt>Sun</dt><dd>az ${sky.sun.az.toFixed(4)}° · alt ${sgn(sky.sun.alt, 3)}°</dd>
