@@ -6,7 +6,7 @@
 #dl-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: pointer; user-select: none; -webkit-user-select: none; }
 #dl-svg.zoomed { cursor: grab; }
 .dl-face { pointer-events: none; z-index: 1; }
-.dl-sun { position: absolute; left: 0; bottom: 14px; font-family: var(--mono); font-size: 12px; color: var(--gold-hi); line-height: 1.6; pointer-events: none; text-shadow: 0 0 4px #050504; }
+.dl-sun { position: absolute; left: 0; bottom: 14px; font-family: var(--mono); font-size: 12px; color: var(--gold-hi); line-height: 1.6; pointer-events: none; text-shadow: 0 0 4px var(--shade); }
 .dl-sun .rev { color: var(--silver); }
 .stage[data-view=dial] .foot { display: none; }
 /* the title block on the Dial: the weekday and course, then the date and the Sun */
@@ -14,23 +14,23 @@
 #vh-prim[hidden] { display: none; } #vh-prim small { font-size: 12px; color: var(--gold); }
 .dl-wd { color: var(--ivory); } .dl-crs { color: var(--gold-hi); }
 /* the counts: label over value, columns aligned */
-.dl-ledger { position: relative; z-index: 1; pointer-events: none; transition: opacity .25s; text-shadow: 0 0 4px #050504, 0 0 8px #050504; align-self: start; margin: calc(var(--head-h, 140px) + 4px) 24px 0 40px; display: grid; grid-template-columns: max-content; gap: 12px; }
-.dl-ledger dt { font-family: var(--cond); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ivory3); }
+.dl-ledger { position: relative; z-index: 1; pointer-events: none; transition: opacity .25s; text-shadow: 0 0 4px var(--shade), 0 0 8px var(--shade); align-self: start; margin: calc(var(--head-h, 140px) + 4px) 24px 0 40px; display: grid; grid-template-columns: max-content; gap: 12px; }
+.dl-ledger dt { font-family: var(--cond); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--label); }
 .dl-ledger dd { font-family: var(--mono); font-size: 12px; color: var(--ivory2); white-space: nowrap; font-variant-numeric: tabular-nums; margin: 1px 0 0; }
 .dl-ledger dd small { color: var(--gold); font-size: 11px; }
-.dl-ledger .en { color: var(--sage, #8fb08a); } .dl-ledger .hold dd { color: var(--silver); }
+.dl-ledger .en { color: var(--dl-sage); } .dl-ledger .hold dd { color: var(--silver); }
 #dl-svg.zoomed ~ .dl-ledger { opacity: .6; }   /* zoomed in, the counts step back from the face under them */
 /* the details panel */
 .dl-side .section { margin-bottom: 18px; }
 .dl-side .section { margin-bottom: 18px; } .dl-side .section.first { margin-top: 0; }
 .dl-side .read { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-family: var(--mono); font-size: 11.5px; margin-top: 8px; }
-.dl-side .read dt { color: var(--ivory3); } .dl-side .read dd { color: var(--ivory); margin: 0; }
+.dl-side .read dt { color: var(--label); } .dl-side .read dd { color: var(--ivory); margin: 0; }
 .dl-side .read dt.down, .dl-side .read dt.down + dd { opacity: .5; }
 .dl-side .read dt.hit, .dl-side .read dt.hit + dd { color: var(--gold-hi); }
 .dl-side .note { font-size: 12px; line-height: 1.55; color: var(--ivory2); margin-top: 6px; }
-.dl-sel { border: 1px solid var(--gold-dim); padding: 12px 14px; background: rgba(214,178,106,.04); }
+.dl-sel { border: 1px solid var(--gold-dim); padding: 12px 14px; background: rgba(var(--gold-rgb),.04); }
 .dl-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; } .dl-links a.btn { text-decoration: none; }
-.dl-links input { width: 70px; font-family: var(--mono); background: #0b0a08; color: var(--ivory); border: 1px solid var(--rule2); padding: 6px; }
+.dl-links input { width: 70px; font-family: var(--mono); background: var(--field); color: var(--ivory); border: 1px solid var(--rule2); padding: 6px; }
 .dl-explore { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .dl-skyopts dd { display: flex; flex-wrap: wrap; gap: 5px; } .dl-skyopts dt { align-self: center; }
 /* SVG typography (viewBox units) */
@@ -40,20 +40,20 @@
 .dl-body { font-family: var(--mono); font-size: 10px; fill: var(--ivory2); }
 .dl-moon { font-family: var(--mono); font-size: 11px; fill: var(--ivory); }
 .dl-below { opacity: .45; }
-.dl-um { font-family: var(--mono); font-size: 13px; fill: #4d6149; } .dl-um.dl-on { fill: #b9d4b2; font-weight: 500; }
-.dl-month { font-family: var(--mono); font-size: 19px; fill: #c9a08f; } .dl-month.dl-on { fill: #fff3e6; }
-.dl-geez { font-family: var(--geez); font-size: 11px; fill: #a77f6c; }
+.dl-um { font-family: var(--mono); font-size: 13px; fill: var(--dl-sage-dim); } .dl-um.dl-on { fill: var(--dl-sage-hi); font-weight: 500; }
+.dl-month { font-family: var(--mono); font-size: 19px; fill: var(--dl-month); } .dl-month.dl-on { fill: var(--dl-month-on); }
+.dl-geez { font-family: var(--geez); font-size: 11px; fill: var(--dl-geez); }
 .dl-cor { font-family: var(--mono); font-size: 10px; fill: var(--silver-dim); } .dl-cor.dl-on { fill: var(--silver); }
 .dl-course { font-family: var(--cond); font-size: 11.5px; fill: var(--gold); letter-spacing: .02em; }
 .dl-num { font-family: var(--mono); font-size: 8.5px; fill: var(--gold-dim); }
-.dl-on-dark { fill: #120e08 !important; font-weight: 600; }
+.dl-on-dark { fill: var(--on-gold) !important; font-weight: 600; }
 .dl-part { font-family: var(--mono); font-size: 14px; fill: var(--ivory2); } .dl-part.dl-on { fill: var(--gold-hi); font-weight: 500; }
 .dl-chart-lbl { font-family: var(--mono); font-size: 5.5px; fill: var(--ivory2); letter-spacing: .04em; }
 .dl-chart-card { font-family: var(--serif); font-size: 9px; fill: var(--ivory2); font-weight: 600; }
 .dl-centre-above .dl-portal { fill-opacity: .4; } .dl-centre-above .dl-cmp { opacity: .55; }
 .dl-centre-up { display: none; }
 .dl-geez-s { font-family: var(--geez); font-size: 10px; fill: var(--bronze); }
-.dl-cmp { font-family: var(--serif); font-size: 20px; fill: var(--ivory2); font-weight: 600; } .dl-north { fill: #d9614f; }
+.dl-cmp { font-family: var(--serif); font-size: 20px; fill: var(--ivory2); font-weight: 600; } .dl-north { fill: var(--vermilion); }
 .dl-trace { width: 100%; height: 170px; display: block; margin-top: 8px; }
 @media (max-width: 1100px), (max-aspect-ratio: 1/1) {
   #view-dial { padding-top: var(--head-h, 140px); grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--face-h, minmax(0, 1fr)) auto minmax(0, 1fr); }

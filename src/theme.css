@@ -1,9 +1,48 @@
-/* Shared by the app and the films: palette and scene-label typography (no fonts here). */
+/* Shared by the app and the films: palette and scene-label typography (no fonts here).
+
+   The palette. Every colour the app draws comes from here: the stylesheets by var(), the drawing code
+   (SVG built in TypeScript, WebGL, canvas) through src/palette.ts, which reads these same properties.
+   A theme is one block that sets them again. Rules for a theme block:
+   - colours are hex (#rrggbb): palette.ts derives see-through tints from them;
+   - each --x-rgb is the same colour as --x as "r,g,b" (for rgba(var(--x-rgb), a) in CSS);
+   - the dark values below are mirrored in palette.ts DARK (for code run without a page, the tests);
+   tests/palette.test.ts holds all three. */
 :root {
-  --bg: #090807; --rule: rgba(236,227,207,.09); --rule2: rgba(236,227,207,.16);
-  --ivory: #ece3cf; --ivory2: #a39a86; --ivory3: #635d51;
-  --gold: #d6b26a; --gold-hi: #f4dc9f; --gold-dim: #7d6a43;
-  --bronze: #a8875a; --bronze-dim: #5e4c33; --silver: #8fb3bd; --silver-dim: #4b6268;
+  /* ground and rules */
+  --bg: #090807; --bg-rgb: 9,8,7; --rule: rgba(var(--ivory-rgb),.09); --rule2: rgba(var(--ivory-rgb),.16);
+  /* the four layers: ivory computed · gold calendar · bronze textual · silver derived, each with its lit and dim tiers */
+  --ivory: #ece3cf; --ivory2: #a39a86; --ivory3: #635d51; --ivory-rgb: 236,227,207; --ivory2-rgb: 163,154,134;
+  --gold: #d6b26a; --gold-hi: #f4dc9f; --gold-dim: #7d6a43; --gold-rgb: 214,178,106; --gold-hi-rgb: 244,220,159;
+  --bronze: #a8875a; --bronze-dim: #5e4c33; --silver: #8fb3bd; --silver-dim: #4b6268; --silver-rgb: 143,179,189;
+  /* the dim tier for text in the interface (labels, the views not shown, options off); --ivory3 stays the drawings' faint engraving */
+  --label: #635d51;
+  /* surfaces */
+  --bg-glow: #14110d;                                         /* the centre of the app's glow */
+  --bar: #070605;                                             /* the transport */
+  --panel: #110f0c;                                           /* dialogs */
+  --sheet: #0a0908;                                           /* the sheet; the details sliding over a drawing */
+  --field: #0b0a08;                                           /* inputs and selects; the Dial's compass disc */
+  --ink: #0c0b09;                                             /* halos under labels on a drawing; Atlas's tabs */
+  --box: #0d0c0a;                                             /* Deep Time's hover box */
+  --insp-top: rgba(17,15,12,.92); --insp-bot: rgba(12,11,9,.96);   /* the details column */
+  --on-gold: #120e08;                                         /* text and marks on a gold fill */
+  --shade: #050504; --shade-hard: #000;                       /* text-shadows that lift text off a drawing */
+  --scrim: rgba(0,0,0,.6); --shadow: rgba(0,0,0,.6);          /* under a dialog; under a sliding panel */
+  /* states */
+  --warn: #e3a07a; --warn-soft: #d98c6a;                      /* out of bounds, failed, refused */
+  --alarm: #d46a5a; --alarm-rgb: 212,106,90;                  /* Atlas: the polar circles, a place's warning */
+  --vermilion: #d9614f;                                       /* north; the way the device faces */
+  /* the bodies */
+  --sun: #f4dc9f; --sun-core: #fff3d0; --glow-core: #fff6dc;
+  --moon: #d8d2c4; --moon-glow: #b9c6d8; --moon-dark: #1a1814;
+  --mercury: #c4a98a; --venus: #f6e6b0; --mars: #c76b4a; --jupiter: #e0b878; --saturn: #d8b45e; --uranus: #9cc7c9; --neptune: #7c95c9;
+  /* Sky */
+  --sky-ground: #050403; --sky-day: #3a2c17;
+  /* the Dial: the month ring (ox-blood, the month lit red), the uncorrected ring (sage), the portals and the course cells */
+  --dl-ox: #3b1513; --dl-ox2: #4a1a17; --dl-red: #b4291f; --dl-ox-edge: #1a0b0a;
+  --dl-month: #c9a08f; --dl-month-on: #fff3e6; --dl-geez: #a77f6c;
+  --dl-sage: #8fb08a; --dl-sage-dim: #4d6149; --dl-sage-hi: #b9d4b2;
+  --dl-portal: #2a2318; --dl-portal2: #1f1a12; --dl-cell: #15130f; --dl-cell2: #1b1814; --dl-day: #1d1a15; --dl-sabbath: #3a2f1c;
   --serif: "Cormorant", "Ethiopic", serif; --mono: "Plex Mono", ui-monospace, monospace; --cond: "Plex Cond", sans-serif; --geez: "Ethiopic", serif;
 }
 
@@ -12,14 +51,14 @@
 .lbl-cond { font-family: var(--cond); fill: var(--ivory3); font-size: 10.5px; letter-spacing: .24em; }
 .serif-it { font-family: var(--serif); font-style: italic; }
 .geez { font-family: var(--geez); }
-.halo { stroke: #0c0b09; stroke-width: 4px; paint-order: stroke; }
+.halo { stroke: var(--ink); stroke-width: 4px; paint-order: stroke; }
 .silver-dim { fill: var(--silver-dim); }
 [data-month].active, text[data-portal].active { fill: var(--gold-hi); }
 .card-big { font-family: var(--mono); font-weight: 300; font-size: 32px; fill: var(--gold-hi); }
 .pick { cursor: crosshair; } .pick-days { cursor: ns-resize; }
 #part { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: ew-resize; }
 .mini { font-family: var(--mono); font-size: 11px; color: var(--ivory2); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-.mini select { font: inherit; background: #0b0a08; color: var(--ivory); border: 1px solid var(--rule2); padding: 3px 4px; }
+.mini select { font: inherit; background: var(--field); color: var(--ivory); border: 1px solid var(--rule2); padding: 3px 4px; }
 .inspector a { color: var(--bronze); text-decoration-color: var(--bronze-dim); }
 .inspector a:hover { color: var(--gold-hi); }
 .dim { fill: var(--ivory3); } .ivory2 { fill: var(--ivory2); } .gold { fill: var(--gold); }

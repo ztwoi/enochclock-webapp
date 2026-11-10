@@ -8,8 +8,7 @@ import { declinationOfDate, horizonAzimuth, lastPassage, litPortals, passageRun,
 import { AstroTime } from 'astronomy-engine';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { PCOL } from './dial/state';
-import { MOON_COLOR } from './day/events';
-import { C } from './stage';
+import { C } from './palette';
 import { followable, positionOf, sameBody, type Followed, type SkyInfo } from './skyview';
 import type { DeepDoc, YearDoc } from './types';
 
@@ -94,7 +93,7 @@ export function skyReading(doc: YearDoc, sky: SkyInfo | null, followed: Followed
     html = part(name('Sun', C.goldHi)) + az + alt + part(lit ? `rose in portal ${ROMAN[lit]} today` : 'rose outside a portal today', true);
   } else if (b!.kind === 'moon') {
     const d = sky.moonDay, r = sky.moonrise, p = r?.portal;
-    html = part(name('Moon', MOON_COLOR)) + (d ? part(`day ${d.day}`) : '') + part(`${(sky.moon.fraction * 14).toFixed(2)}/14`) + az + alt
+    html = part(name('Moon', C.moon)) + (d ? part(`day ${d.day}`) : '') + part(`${(sky.moon.fraction * 14).toFixed(2)}/14`) + az + alt
       + (p ? part(p.where === 'within' ? `rose in portal ${ROMAN[p.portal!]}` : p.where === 'seam' ? 'rose in a seam' : 'rose outside the portals', true) : '');
   } else if (b!.kind === 'planet') {
     const q = sky.planets.find((x) => x.name === (b as { name: string }).name);

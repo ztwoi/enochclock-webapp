@@ -2,7 +2,7 @@
 // (from the year document). Lookups only; no calendar arithmetic here.
 import { civil, yearLabel, yearOf } from './dates';
 import { annual } from './model';
-import { C } from './stage';
+import { alpha, C } from './palette';
 import type { Cycle, Hold, YearDoc } from './types';
 
 export function toRoman(n: number) {
@@ -43,7 +43,7 @@ export function cycleStrip(svg: SVGSVGElement, doc: YearDoc, i: number) {
   for (const h of c.holds) ticks += `M${x(h.daycount).toFixed(2)} 3V9`;
   el('path', { d: ticks, stroke: C.gold, 'stroke-width': 0.5, opacity: 0.55, 'vector-effect': 'non-scaling-stroke' });
   const days = annual(doc), a = x(Math.max(c.start_daycount, days[0].daycount)), b = x(Math.min(c.end_daycount, days[days.length - 1].daycount));
-  el('rect', { x: a, y: 2, width: Math.max(1, b - a), height: 8, fill: 'rgba(214,178,106,.28)' });
+  el('rect', { x: a, y: 2, width: Math.max(1, b - a), height: 8, fill: alpha('gold', 0.28) });
   const now = x(days[i].daycount);
   el('line', { x1: now, x2: now, y1: 0, y2: 12, stroke: C.goldHi, 'stroke-width': 1.4, 'vector-effect': 'non-scaling-stroke' });
   el('text', { x: 10, y: 21, 'font-family': 'Plex Mono', 'font-size': 8.5, fill: C.ivory3 }, `CYCLE ${toRoman(c.ordinal)} · ${civil(c.start_date)}`);

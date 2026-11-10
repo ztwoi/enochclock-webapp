@@ -13,12 +13,12 @@ import * as THREE from 'three';
 import { skyFrame, starVector } from './sky/astronomy';
 import type { Star } from './sky/catalogue';
 import { aberrated, aberration, bodyDirection, createMoonClock, declinationOfDate, ecliptic, horizonAzimuth, litPortals, moon, passageRun, planet, portalAt, refracted, type MoonDay, type Moonrise } from './sky/instrument';
-import { MOON_COLOR } from './day/events';
 import { PCOL, PLANETS } from './dial/state';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { easeHeading, mod360, wrap180 } from './sky/heading';
 import { dayIndexAt, GEEZ, H, PORTAL_ALT, pillars, W } from './model';
-import { C, createStage, hatchMaterial, headClearance, layoutRead, setLinePoints, sprite, svgEl, UNTILED, type Pt } from './stage';
+import { C } from './palette';
+import { createStage, hatchMaterial, headClearance, layoutRead, setLinePoints, sprite, svgEl, UNTILED, type Pt } from './stage';
 import type { Portal, YearDoc } from './types';
 
 /** The side whose six portals the home view centres: where the Sun rises (east) or sets (west). */
@@ -142,7 +142,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   function drawAround() {
     litArches = []; marks = []; marksKey = '';
     const far0 = SL.x0 - TURN, far1 = SL.x0 + 2 * TURN, once = <T extends THREE.Object3D>(o: T) => { o.layers.set(UNTILED); return o; };
-    const g = new THREE.Mesh(new THREE.PlaneGeometry(far1 - far0, bottom() - SL.horizon + 30), new THREE.MeshBasicMaterial({ color: '#050403', transparent: true, opacity: ground(), side: THREE.DoubleSide, depthWrite: false }));
+    const g = new THREE.Mesh(new THREE.PlaneGeometry(far1 - far0, bottom() - SL.horizon + 30), new THREE.MeshBasicMaterial({ color: C.skyGround, transparent: true, opacity: ground(), side: THREE.DoubleSide, depthWrite: false }));
     g.position.set((far0 + far1) / 2, (SL.horizon + bottom() + 30) / 2, 1.5); fixed.add(once(g));
     for (let a = belowOn ? -80 : 10; a <= 80; a += 10) if (a) fixed.add(once(lineObj([[far0, skyY(a)], [far1, skyY(a)]], C.ivory, 0.5, 0.06)));
     for (let a = 0; a < 360; a += 5) {
@@ -188,7 +188,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   });
 
   // ---- moving layers
-  const daylight = rect(SL.x0 - 20, SL.top - 20, SL.x1 - SL.x0 + 40, SL.horizon - SL.top + 20, new THREE.MeshBasicMaterial({ color: '#3a2c17', transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }), -2);
+  const daylight = rect(SL.x0 - 20, SL.top - 20, SL.x1 - SL.x0 + 40, SL.horizon - SL.top + 20, new THREE.MeshBasicMaterial({ color: C.skyDay, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }), -2);
   function placeDaylight() {    // once over three turns
     const x0 = SL.x0 - TURN, w = 3 * TURN;
     daylight.scale.x = w / (SL.x1 - SL.x0 + 40); daylight.position.x = x0 + w / 2;
@@ -197,10 +197,10 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   const eclLine = line([[0, 0], [1, 0]], C.gold, 0.9, 0.55, [4, 4]);
   const figGeom = new THREE.BufferGeometry(); const figures = new THREE.LineSegments(figGeom, new THREE.LineBasicMaterial({ color: C.ivory, transparent: true, opacity: 0.2 })); figures.position.z = 0.2; figures.frustumCulled = false; scene.add(figures);
   const starGeom = new THREE.BufferGeometry(); const points = new THREE.Points(starGeom, starMaterial()); points.position.z = 0.5; points.frustumCulled = false; scene.add(points);
-  const sunHalo = sprite(90, 0.85), sunCore = new THREE.Mesh(new THREE.CircleGeometry(7, 40), new THREE.MeshBasicMaterial({ color: '#fff3d0', side: THREE.DoubleSide, transparent: true }));
+  const sunHalo = sprite(90, 0.85), sunCore = new THREE.Mesh(new THREE.CircleGeometry(7, 40), new THREE.MeshBasicMaterial({ color: C.sunCore, side: THREE.DoubleSide, transparent: true }));
   scene.add(sunHalo); scene.add(sunCore);
   // the Moon's glow, cooler and smaller than the Sun's, brighter toward full; a faint ring of it even at new moon, so it is found beside the Sun
-  const moonHalo = sprite(64, 0.5); (moonHalo.material as THREE.SpriteMaterial).color.set('#b9c6d8'); scene.add(moonHalo);
+  const moonHalo = sprite(64, 0.5); (moonHalo.material as THREE.SpriteMaterial).color.set(C.moonGlow); scene.add(moonHalo);
   const dyn = svgEl('g', { style: 'pointer-events:none' }, layer);     // labels and glyphs: taps fall through to the pick area
   /** x of `az` beside the design point x0 (the shorter way, so a chord or a run may cross the seam). */
   const beside = (x0: number, az0: number, az: number) => x0 + wrap180(az - az0) * K;
@@ -210,7 +210,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   const PATH_STEPS = 12;                                          // samples per part
   const pathPast = line([[0, 0], [1, 0]], C.goldHi, 1.6, 0.85, undefined, 2.8), pathAhead = line([[0, 0], [1, 0]], C.gold, 1, 0.55, [3, 5], 2.8);
   const planetTracks = PLANETS.map(([, name]) => line([[0, 0], [1, 0]], PCOL[name], 0.7, 0.3, undefined, 2.6));
-  const moonTrack = line([[0, 0], [1, 0]], MOON_COLOR, 0.8, 0.35, undefined, 2.6);
+  const moonTrack = line([[0, 0], [1, 0]], C.moon, 0.8, 0.35, undefined, 2.6);
   // the followed body's path (the Moon or a planet), drawn as the Sun's in its own colour; its faint track gives way to it
   const followPast = line([[0, 0], [1, 0]], C.ivory, 1.5, 0.85, undefined, 2.7), followAhead = line([[0, 0], [1, 0]], C.ivory, 1, 0.55, [3, 5], 2.7);
   const pathDots = svgEl('g', { style: 'pointer-events:none' }, layer);
@@ -256,7 +256,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     splitAt(sunTrack, sunDirs, at, sun, pathPast, pathAhead);
     const ft = fb ? bodyTracks.get(fb) : undefined;
     if (fb && ft && at0) {
-      const c = fb === 'Moon' ? MOON_COLOR : star ? C.ivory : PCOL[fb];
+      const c = fb === 'Moon' ? C.moon : star ? C.ivory : PCOL[fb];
       for (const l of [followPast, followAhead]) l.material.color.set(c);
       splitAt(ft.pts, ft.dirs, at, at0, followPast, followAhead);
     }
@@ -386,8 +386,8 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     const mr = moonClock.lastRise(jd), moonrise = mr ? { ...mr, portal: portalAt(mr.az, doc.portals) } : null;
     if (moonrise) {
       const x = skyX(moonrise.az);
-      svgEl('path', { d: `M${x} ${SL.horizon} v-13`, stroke: MOON_COLOR, 'stroke-width': 1.6, opacity: 0.95, 'data-k': 'moonrise' }, dyn);
-      svgEl('circle', { cx: x, cy: SL.horizon - 15.5, r: 2.6, fill: MOON_COLOR }, dyn);
+      svgEl('path', { d: `M${x} ${SL.horizon} v-13`, stroke: C.moon, 'stroke-width': 1.6, opacity: 0.95, 'data-k': 'moonrise' }, dyn);
+      svgEl('circle', { cx: x, cy: SL.horizon - 15.5, r: 2.6, fill: C.moon }, dyn);
     }
     const selId = selection?.kind === 'star' ? selection.star.id : '';
     for (let k = 0; k < nShown; k++) { const s = field.stars[shownIdx[k]]; if (s.name && s.mag_v <= 1.6 && s.id !== selId) { taken.push([shownX[k] - 6, shownY[k] - 20, shownX[k] + 12 + s.name.length * 6, shownY[k] + 6]); text(shownX[k] + 7, shownY[k] - 6, s.name, 'serif-it ivory2 halo', { 'font-size': 12 }, dyn); } }
@@ -430,12 +430,12 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   /** The Moon as it is lit (its bright limb toward the Sun), ringed in its colour, and labelled as the Sun is: where it is, and its light in fourteenths. */
   function moonGlyph(x: number, y: number, mo: { az: number; alt: number; fraction: number }, toSun: number) {
     const f = mo.fraction, r = 9, up = mo.alt >= 0, g = svgEl('g', { transform: `translate(${x} ${y}) rotate(${(toSun * 180) / Math.PI})`, opacity: up ? 1 : 0.55 }, dyn);
-    svgEl('circle', { r: r + 3.5, fill: 'none', stroke: MOON_COLOR, 'stroke-width': 0.8, opacity: 0.45 }, g);
-    svgEl('circle', { r, fill: '#1a1814', stroke: C.ivory3, 'stroke-width': 0.6 }, g);
+    svgEl('circle', { r: r + 3.5, fill: 'none', stroke: C.moon, 'stroke-width': 0.8, opacity: 0.45 }, g);
+    svgEl('circle', { r, fill: C.moonDark, stroke: C.ivory3, 'stroke-width': 0.6 }, g);
     // lit side faces +x (toward the Sun); terminator ellipse with semi-axis r·|1−2f|
     const rx = r * Math.abs(1 - 2 * f), sweep = f > 0.5 ? 1 : 0;
     svgEl('path', { d: `M0 ${-r} A${r} ${r} 0 0 1 0 ${r} A${rx} ${r} 0 0 ${sweep} 0 ${-r}Z`, fill: C.ivory, opacity: 0.92 }, g);
-    text(x + 16, y - 9, `MOON ${mo.az.toFixed(3)}° · ${mo.alt.toFixed(3)}° · ${(f * 14).toFixed(2)}/14`, 'lbl-mono halo', { 'font-size': 10, style: `fill:${MOON_COLOR}`, opacity: up ? 1 : 0.7 }, dyn);
+    text(x + 16, y - 9, `MOON ${mo.az.toFixed(3)}° · ${mo.alt.toFixed(3)}° · ${(f * 14).toFixed(2)}/14`, 'lbl-mono halo', { 'font-size': 10, style: `fill:${C.moon}`, opacity: up ? 1 : 0.7 }, dyn);
   }
 
   // ---- picking: every star within 12 design units; the brightest wins, Sun/Moon/planets first

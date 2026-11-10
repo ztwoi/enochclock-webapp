@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { AstroTime, Body, GeoVector, Rotation_EQJ_EQD, SiderealTime } from 'astronomy-engine';
 import type { Catalogue } from '../skyview';
-import { PCOL } from '../dial/state';
+import { C, type PaletteKey } from '../palette';
 import { band, bearingWord, dot, eqjToEarth, frameAt, latLon, nearest, norm180, obliquity, polarLimit, preview, vec, type V3 } from './geo';
 import { coastSegments, landMask, loadLand } from './land';
 import { places } from './places';
@@ -46,9 +46,8 @@ export interface AtlasInfo {
 }
 
 const J2000 = 2451545, STAR_R = 5000, DIST = 8, FILL = 0.86, MAX_ZOOM = 14, MAG_LIMIT = 5.5, D = Math.PI / 180;
-const SUN = '#f4dc9f', MOON = '#d8d2c4';
-const BODIES: [Body, string, string][] = [[Body.Sun, 'Sun', SUN], [Body.Moon, 'Moon', MOON],
-  ...(['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn'] as const).map((n): [Body, string, string] => [Body[n], n, PCOL[n]])];
+const BODIES: [Body, string, PaletteKey][] = [[Body.Sun, 'Sun', 'sun'], [Body.Moon, 'Moon', 'moon'],
+  ...(['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn'] as const).map((n): [Body, string, PaletteKey] => [Body[n], n, n.toLowerCase() as PaletteKey])];
 
 const globeShader = (land: THREE.Texture) => new THREE.ShaderMaterial({
   uniforms: { land: { value: land }, sun: { value: new THREE.Vector3(1, 0, 0) }, lit: { value: 1 }, polarOn: { value: 1 }, polarLim: { value: 66 * D }, px: { value: 1 } },
@@ -101,16 +100,16 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
   const globeMat = globeShader(maskTex), globeGeo = new THREE.SphereGeometry(1, 192, 96).rotateX(Math.PI / 2);   // the sphere's poles on z
   scene.add(new THREE.Mesh(globeGeo, globeMat));
 
-  const coastMat = new THREE.LineBasicMaterial({ color: '#d6b26a', transparent: true, opacity: 0.55 });
+  const coastMat = new THREE.LineBasicMaterial({ color: C.gold, transparent: true, opacity: 0.55 });
   const coast = new THREE.LineSegments(new THREE.BufferGeometry(), coastMat); scene.add(coast);
-  const gridMat = new THREE.LineBasicMaterial({ color: '#ece3cf', transparent: true, opacity: 0.07 });
+  const gridMat = new THREE.LineBasicMaterial({ color: C.ivory, transparent: true, opacity: 0.07 });
   const grid = new THREE.Group();
   for (let la = -75; la <= 75; la += 15) if (la) grid.add(lineOf(parallel(la), gridMat));
-  for (let lo = -180; lo < 180; lo += 15) grid.add(lineOf(meridian(lo), lo === 0 ? new THREE.LineBasicMaterial({ color: '#ece3cf', transparent: true, opacity: 0.16 }) : gridMat));
-  grid.add(lineOf(parallel(0), new THREE.LineBasicMaterial({ color: '#ece3cf', transparent: true, opacity: 0.2 })));
+  for (let lo = -180; lo < 180; lo += 15) grid.add(lineOf(meridian(lo), lo === 0 ? new THREE.LineBasicMaterial({ color: C.ivory, transparent: true, opacity: 0.16 }) : gridMat));
+  grid.add(lineOf(parallel(0), new THREE.LineBasicMaterial({ color: C.ivory, transparent: true, opacity: 0.2 })));
   scene.add(grid);
-  const tropicMat = new THREE.LineDashedMaterial({ color: '#8fb3bd', transparent: true, opacity: 0.6, dashSize: 0.03, gapSize: 0.022 });
-  const polarMat = new THREE.LineDashedMaterial({ color: '#d46a5a', transparent: true, opacity: 0.75, dashSize: 0.012, gapSize: 0.016 });
+  const tropicMat = new THREE.LineDashedMaterial({ color: C.silver, transparent: true, opacity: 0.6, dashSize: 0.03, gapSize: 0.022 });
+  const polarMat = new THREE.LineDashedMaterial({ color: C.alarm, transparent: true, opacity: 0.75, dashSize: 0.012, gapSize: 0.016 });
   const circles = new THREE.Group(); scene.add(circles);
   let circlesAt = { eps: NaN, lim: NaN };
   function setCircles(eps: number, lim: number) {
@@ -203,7 +202,7 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
     const toE = earthMatrix(rot, gast), eps = obliquity(jd), lim = polarLimit(jd);
     setCircles(eps, lim); setStars(jd);
     stars.matrix.copy(toE); stars.matrixWorldNeedsUpdate = true;
-    const dirs = BODIES.map(([body, name, color]) => { const g = GeoVector(body, time, true), v = new THREE.Vector3(g.x, g.y, g.z).applyMatrix4(toE).normalize(); return { name, color, v }; });
+    const dirs = BODIES.map(([body, name, key]) => { const color = C[key]; const g = GeoVector(body, time, true), v = new THREE.Vector3(g.x, g.y, g.z).applyMatrix4(toE).normalize(); return { name, color, v }; });
     const sun = dirs[0].v; globeMat.uniforms.sun.value.copy(sun); globeMat.uniforms.polarLim.value = lim * D;
     const centre = cam === 'site' ? { lat: site.lat, lon: site.lon } : { lat: site.lat, lon: norm180(starLon - gast) };
     aim(centre.lat, centre.lon);
@@ -224,10 +223,10 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
     }
     if (layers.bodies) for (const b of dirs.slice(0, 2)) {                     // overhead points on the globe
       const v: V3 = [b.v.x * 1.001, b.v.y * 1.001, b.v.z * 1.001]; if (!facing(v)) continue;
-      const p = project(new THREE.Vector3(...v)), label = b.name === 'Sun' ? 'SUN OVERHEAD' : 'MOON OVERHEAD', col = b.name === 'Sun' ? SUN : MOON;
+      const p = project(new THREE.Vector3(...v)), label = b.name === 'Sun' ? 'SUN OVERHEAD' : 'MOON OVERHEAD', col = b.name === 'Sun' ? C.sun : C.moon;
       s.push(b.name === 'Sun'
-        ? `<circle cx="${ff(p.x)}" cy="${ff(p.y)}" r="5" fill="${SUN}"/>` + Array.from({ length: 8 }, (_, k) => { const a = k * Math.PI / 4; return `<line x1="${ff(p.x + Math.cos(a) * 8)}" y1="${ff(p.y + Math.sin(a) * 8)}" x2="${ff(p.x + Math.cos(a) * 12)}" y2="${ff(p.y + Math.sin(a) * 12)}" stroke="${SUN}" stroke-width="1.2"/>`; }).join('')
-        : `<circle cx="${ff(p.x)}" cy="${ff(p.y)}" r="6" fill="none" stroke="${MOON}" stroke-width="1.2"/><circle cx="${ff(p.x)}" cy="${ff(p.y)}" r="2" fill="${MOON}"/>`);
+        ? `<circle cx="${ff(p.x)}" cy="${ff(p.y)}" r="5" fill="${C.sun}"/>` + Array.from({ length: 8 }, (_, k) => { const a = k * Math.PI / 4; return `<line x1="${ff(p.x + Math.cos(a) * 8)}" y1="${ff(p.y + Math.sin(a) * 8)}" x2="${ff(p.x + Math.cos(a) * 12)}" y2="${ff(p.y + Math.sin(a) * 12)}" stroke="${C.sun}" stroke-width="1.2"/>`; }).join('')
+        : `<circle cx="${ff(p.x)}" cy="${ff(p.y)}" r="6" fill="none" stroke="${C.moon}" stroke-width="1.2"/><circle cx="${ff(p.x)}" cy="${ff(p.y)}" r="2" fill="${C.moon}"/>`);
       boxes.push([p.x - 13, p.y - 13, p.x + 13, p.y + 13]);
       const right = p.x + 15 + label.length * 5.8 < w - 8;
       word(right ? p.x + 15 : p.x - 15, p.y + 16, label, 'at-mark', 5.8, right ? 'start' : 'end', col);
@@ -252,7 +251,7 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
       word(p.x + 6, p.y - 5, st.name, 'at-star', 6);
     }
     overlay.setAttribute('viewBox', `0 0 ${w} ${h}`);
-    overlay.innerHTML = `<defs><radialGradient id="at-glow"><stop offset="0" stop-color="${SUN}" stop-opacity=".95"/><stop offset=".2" stop-color="${SUN}" stop-opacity=".35"/><stop offset="1" stop-color="${SUN}" stop-opacity="0"/></radialGradient></defs>${s.join('')}`;
+    overlay.innerHTML = `<defs><radialGradient id="at-glow"><stop offset="0" stop-color="${C.sun}" stop-opacity=".95"/><stop offset=".2" stop-color="${C.sun}" stop-opacity=".35"/><stop offset="1" stop-color="${C.sun}" stop-opacity="0"/></radialGradient></defs>${s.join('')}`;
     tag.hidden = !sp;
     if (sp) {
       const nb = nearest(site, places), here = nb && nb.km < 2 ? nb.place.name : choosing && nb ? `${Math.round(nb.km)} km ${bearingWord(nb.place, site)} of ${nb.place.name}` : site.name;

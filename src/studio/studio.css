@@ -14,8 +14,8 @@ body:not(.capture) .st-holder { max-width: calc(100vw - 24px); }   /* nor before
 
 /* the title: the place, the weekday and course, the clock; the Enoch and civil dates, the part of the day */
 .st-head { position: absolute; left: 0; right: 0; top: 0; padding: 18px 22px 0; z-index: 4; pointer-events: none;
-  background: linear-gradient(to bottom, var(--bg) 70%, rgba(9, 8, 7, 0)); height: 124px; }
-.st-mark { display: flex; justify-content: space-between; font-family: var(--cond); font-size: 10px; letter-spacing: .28em; color: var(--ivory3); text-transform: uppercase; }
+  background: linear-gradient(to bottom, var(--bg) 70%, rgba(var(--bg-rgb),0)); height: 124px; }
+.st-mark { display: flex; justify-content: space-between; font-family: var(--cond); font-size: 10px; letter-spacing: .28em; color: var(--label); text-transform: uppercase; }
 .st-mark b { color: var(--gold); font-weight: 500; letter-spacing: .44em; }
 .st-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .st-head h1 { font-family: var(--serif); font-weight: 500; font-size: 30px; line-height: 1.2; margin-top: 8px; color: var(--ivory); white-space: nowrap; }
@@ -27,11 +27,11 @@ body:not(.capture) .st-holder { max-width: calc(100vw - 24px); }   /* nor before
 #daypart { color: var(--gold); }
 
 .st-status { position: absolute; left: 0; right: 0; top: 46%; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--ivory2); z-index: 5; }
-.st-status.error { color: #d9614f; padding: 0 30px; }
+.st-status.error { color: var(--vermilion); padding: 0 30px; }
 .st-status[hidden] { display: none; }
 
 /* the preview's controls (not in the recording): as wide as the frame on screen, never wider than the window */
 .st-controls { display: flex; align-items: center; gap: 10px; width: calc(540px * var(--s, 1)); max-width: calc(100vw - 24px); font-family: var(--mono); font-size: 12px; color: var(--ivory2); }
-.st-controls button { flex: none; font: inherit; width: 40px; height: 34px; background: #0b0a08; color: var(--gold-hi); border: 1px solid var(--rule2); cursor: pointer; }
-.st-controls input { flex: 1; min-width: 0; accent-color: #d6b26a; }
+.st-controls button { flex: none; font: inherit; width: 40px; height: 34px; background: var(--field); color: var(--gold-hi); border: 1px solid var(--rule2); cursor: pointer; }
+.st-controls input { flex: 1; min-width: 0; accent-color: var(--gold); }
 #readout { flex: none; font-variant-numeric: tabular-nums; }

@@ -15,6 +15,7 @@ import type { Site, YearDoc } from '../types';
 import { createDial, hitBand, type Centre, type RingKey, type RingReport, type SkyLayers } from './render';
 import { BRIGHT_MAG, dayState, dialState, facing, jdAtPart, wrap, type DayState, type DialState, type Framing } from './state';
 import { attachZoom } from './zoom';
+import { alpha, C } from '../palette';
 import './face.css';
 
 const FKEY = 'enoch.dial.framing.v1', SKEY = 'enoch.dial.sky.v1', IKEY = 'enoch.dial.info.v1';
@@ -305,15 +306,15 @@ export function createDialView(host: HTMLElement, head: { title: HTMLElement; pr
     const maxRate = Math.max(...s.trace.filter((p) => p.alt > 0).map((p) => Math.abs(p.rate)));
     const rate = s.trace.map((p) => `${x(p.t).toFixed(1)},${(TH - 14 - (Math.min(Math.abs(p.rate), maxRate) / maxRate) * 40).toFixed(1)}`).join(' ');
     $('dl-trace').innerHTML = `
-      <rect x="${x(0)}" y="8" width="${x(dp) - x(0)}" height="${TH - 22}" fill="rgba(214,178,106,.08)"/>
-      ${Array.from({ length: (hi - lo) / 90 + 1 }, (_, k) => lo + 90 * k).map((a) => `<line x1="8" x2="${TW - 8}" y1="${y(a)}" y2="${y(a)}" stroke="rgba(236,227,207,.08)"/><text x="${TW - 6}" y="${y(a) - 2}" text-anchor="end" font-family="Plex Mono" font-size="8" fill="#635d51">${wrap(a)}°</text>`).join('')}
-      <polyline points="${rate}" fill="none" stroke="#8fb3bd" stroke-width="1" opacity=".7"/>
-      <polyline points="${pts}" fill="none" stroke="#f4dc9f" stroke-width="1.4"/>
-      ${s.reversals.map((p) => `<line x1="${x(p)}" x2="${x(p)}" y1="8" y2="${TH - 14}" stroke="#8fb3bd" stroke-dasharray="2 3"/>`).join('')}
-      <line id="dl-cursor" x1="${x(s.part)}" x2="${x(s.part)}" y1="8" y2="${TH - 14}" stroke="#f4dc9f"/>
-      <text x="8" y="${TH - 2}" font-family="Plex Mono" font-size="8" fill="#635d51">SUNRISE · part 0</text>
-      <text x="${x(dp)}" y="${TH - 2}" text-anchor="middle" font-family="Plex Mono" font-size="8" fill="#8fb3bd">SUNSET ${dp.toFixed(2)}</text>
-      <text x="${TW - 8}" y="${TH - 2}" text-anchor="end" font-family="Plex Mono" font-size="8" fill="#635d51">18</text>`;
+      <rect x="${x(0)}" y="8" width="${x(dp) - x(0)}" height="${TH - 22}" fill="${alpha('gold', 0.08)}"/>
+      ${Array.from({ length: (hi - lo) / 90 + 1 }, (_, k) => lo + 90 * k).map((a) => `<line x1="8" x2="${TW - 8}" y1="${y(a)}" y2="${y(a)}" stroke="${alpha('ivory', 0.08)}"/><text x="${TW - 6}" y="${y(a) - 2}" text-anchor="end" font-family="Plex Mono" font-size="8" fill="${C.ivory3}">${wrap(a)}°</text>`).join('')}
+      <polyline points="${rate}" fill="none" stroke="${C.silver}" stroke-width="1" opacity=".7"/>
+      <polyline points="${pts}" fill="none" stroke="${C.goldHi}" stroke-width="1.4"/>
+      ${s.reversals.map((p) => `<line x1="${x(p)}" x2="${x(p)}" y1="8" y2="${TH - 14}" stroke="${C.silver}" stroke-dasharray="2 3"/>`).join('')}
+      <line id="dl-cursor" x1="${x(s.part)}" x2="${x(s.part)}" y1="8" y2="${TH - 14}" stroke="${C.goldHi}"/>
+      <text x="8" y="${TH - 2}" font-family="Plex Mono" font-size="8" fill="${C.ivory3}">SUNRISE · part 0</text>
+      <text x="${x(dp)}" y="${TH - 2}" text-anchor="middle" font-family="Plex Mono" font-size="8" fill="${C.silver}">SUNSET ${dp.toFixed(2)}</text>
+      <text x="${TW - 8}" y="${TH - 2}" text-anchor="end" font-family="Plex Mono" font-size="8" fill="${C.ivory3}">18</text>`;
     $('dl-maxrate').textContent = maxRate.toFixed(2);
   }
 

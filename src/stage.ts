@@ -7,11 +7,8 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { H, W } from './model';
+import { alpha, C } from './palette';
 
-export const C = {
-  ivory: '#ece3cf', ivory2: '#a39a86', ivory3: '#635d51', gold: '#d6b26a', goldHi: '#f4dc9f', goldDim: '#7d6a43',
-  bronze: '#a8875a', bronzeDim: '#5e4c33', silver: '#8fb3bd', silverDim: '#4b6268',
-};
 const SVG = 'http://www.w3.org/2000/svg';
 export type Pt = [number, number];
 
@@ -28,8 +25,8 @@ function glowTexture() {
   if (glow) return glow;
   const c = document.createElement('canvas'); c.width = c.height = 256;
   const g = c.getContext('2d')!, r = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-  r.addColorStop(0, 'rgba(255,246,220,1)'); r.addColorStop(0.18, 'rgba(244,220,159,.75)');
-  r.addColorStop(0.5, 'rgba(214,178,106,.18)'); r.addColorStop(1, 'rgba(214,178,106,0)');
+  r.addColorStop(0, alpha('glowCore', 1)); r.addColorStop(0.18, alpha('goldHi', 0.75));
+  r.addColorStop(0.5, alpha('gold', 0.18)); r.addColorStop(1, alpha('gold', 0));
   g.fillStyle = r; g.fillRect(0, 0, 256, 256);
   glow = new THREE.CanvasTexture(c); glow.colorSpace = THREE.SRGBColorSpace; return glow;
 }

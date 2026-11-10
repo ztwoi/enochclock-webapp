@@ -7,7 +7,7 @@ html, body { height: 100%; background: var(--bg); color: var(--ivory); }
 body { font-family: var(--cond); font-size: 13px; letter-spacing: .02em; -webkit-font-smoothing: antialiased; overflow: hidden; }
 button { font: inherit; color: inherit; background: none; cursor: pointer; }
 .app { position: relative; width: 100vw; height: 100vh; height: 100dvh; padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); display: grid; grid-template-columns: minmax(0, 1fr) 440px; grid-template-rows: 68px minmax(0, 1fr) auto;
-  background: radial-gradient(1200px 800px at 38% 42%, #14110d 0%, var(--bg) 70%); }
+  background: radial-gradient(1200px 800px at 38% 42%, var(--bg-glow) 0%, var(--bg) 70%); }
 
 /* An installed (home-screen) app: iOS can report a viewport shorter than the screen, so pin the app to the screen's edges rather than trusting 100dvh. */
 @media (display-mode: standalone) { .app { position: fixed; inset: 0; width: auto; height: auto; } }
@@ -16,10 +16,10 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
 .mark b { font-family: var(--serif); font-weight: 500; font-size: 25px; letter-spacing: .32em; }
 .mark span { font-family: var(--geez); font-size: 15px; color: var(--gold); }
 .nav { display: flex; gap: 2px; margin-left: 22px; }
-.nav a { text-decoration: none; font-size: 12.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--ivory3); padding: 9px 14px; border: 1px solid transparent; white-space: nowrap; }
-.nav a.on { color: var(--gold-hi); border-color: var(--rule2); background: rgba(214,178,106,.05); }
-.nav a[aria-disabled] { opacity: .4; cursor: default; } .nav a[aria-disabled]:hover { color: var(--ivory3); }
-.nav a i { font-style: normal; font-family: var(--mono); font-size: 10px; color: var(--ivory3); margin-right: 8px; letter-spacing: 0; }
+.nav a { text-decoration: none; font-size: 12.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--label); padding: 9px 14px; border: 1px solid transparent; white-space: nowrap; }
+.nav a.on { color: var(--gold-hi); border-color: var(--rule2); background: rgba(var(--gold-rgb),.05); }
+.nav a[aria-disabled] { opacity: .4; cursor: default; } .nav a[aria-disabled]:hover { color: var(--label); }
+.nav a i { font-style: normal; font-family: var(--mono); font-size: 10px; color: var(--label); margin-right: 8px; letter-spacing: 0; }
 .spacer { flex: 1; }
 .chip { font-family: var(--mono); font-size: 11px; color: var(--ivory2); border: 1px solid var(--rule2); padding: 6px 10px; white-space: nowrap; }
 .chip b { color: var(--ivory); font-weight: 400; }
@@ -46,20 +46,20 @@ button.chip:hover, .btn:hover { border-color: var(--gold-dim); color: var(--gold
 /* the view's own options, a row under its title (Sky, the Dial): one tap, the drawing changes in view */
 .opts { pointer-events: auto; display: flex; align-items: center; gap: 8px; margin-top: 14px; max-width: calc(100vw - 32px); overflow-x: auto; scrollbar-width: none; }
 .opts[hidden] { display: none; } .opts::-webkit-scrollbar { display: none; }
-.opts .btn { flex: none; min-height: 32px; padding: 0 11px; font-size: 11px; background: rgba(9,8,7,.7); }
-.opts .btn:not(.on) { color: var(--ivory3); } .opts .btn.on { background: rgba(214,178,106,.12); }   /* on: gold, lit; off: dim */
+.opts .btn { flex: none; min-height: 32px; padding: 0 11px; font-size: 11px; background: rgba(var(--bg-rgb),.7); }
+.opts .btn:not(.on) { color: var(--label); } .opts .btn.on { background: rgba(var(--gold-rgb),.12); }   /* on: gold, lit; off: dim */
 /* Sky and The Day have no title: their options open the head, clear of the full-screen button */
 .stage:is([data-view=sky], [data-view=day]) .view-head { right: 72px; } .stage[data-view=sky] #sky-controls, .stage[data-view=day] #day-controls { margin-top: 0; max-width: 100%; }
 /* wide screens: Sky's row wraps rather than scroll its last options out of sight (tablets scroll it; phones keep the layers in the sheet) */
 @media (min-width: 1101px) and (min-aspect-ratio: 1/1) { .stage[data-view=sky] #sky-controls { flex-wrap: wrap; overflow: visible; } }
 .sheet-opts { flex-wrap: wrap; overflow: visible; max-width: none; }
 .opts .seg { display: flex; flex: none; } .opts .seg .btn + .btn { margin-left: -1px; } .opts .seg .btn.on { position: relative; }  /* shared edges; the chosen one's on top */
-.opts .opt-sel { flex: none; display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 4px 0 10px; border: 1px solid var(--rule2); background: rgba(9,8,7,.7); font-family: var(--mono); font-size: 11px; color: var(--ivory2); white-space: nowrap; }
+.opts .opt-sel { flex: none; display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 4px 0 10px; border: 1px solid var(--rule2); background: rgba(var(--bg-rgb),.7); font-family: var(--mono); font-size: 11px; color: var(--ivory2); white-space: nowrap; }
 .opts select { font: inherit; color: var(--gold-hi); background: transparent; border: 0; padding: 4px 2px; }
 .status { pointer-events: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--mono); font-size: 12px; color: var(--ivory2); letter-spacing: .08em; }
-.sky-note { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; pointer-events: none; width: max-content; max-width: min(520px, calc(100% - 48px)); text-align: center; font-family: var(--mono); font-size: 12px; line-height: 1.6; letter-spacing: .04em; color: var(--ivory2); background: rgba(9,8,7,.86); border: 1px solid var(--rule2); padding: 12px 16px; }
+.sky-note { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; pointer-events: none; width: max-content; max-width: min(520px, calc(100% - 48px)); text-align: center; font-family: var(--mono); font-size: 12px; line-height: 1.6; letter-spacing: .04em; color: var(--ivory2); background: rgba(var(--bg-rgb),.86); border: 1px solid var(--rule2); padding: 12px 16px; }
 /* Sky's reading under its options: the selection (or the body followed) in a line, ending in Follow; the text lets taps through to the sky */
-.sky-read { pointer-events: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 10px; font-family: var(--mono); font-size: 12px; letter-spacing: .04em; color: var(--ivory2); text-shadow: 0 0 6px #000, 0 0 2px #000; }
+.sky-read { pointer-events: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 10px; font-family: var(--mono); font-size: 12px; letter-spacing: .04em; color: var(--ivory2); text-shadow: 0 0 6px var(--shade-hard), 0 0 2px var(--shade-hard); }
 .sky-read[hidden] { display: none; } .sky-read b { font-weight: 500; letter-spacing: .08em; }
 /* Follow: a word in the line, underlined (gold while following); its tap area reaches a finger's 44 px without taking room in the line */
 .sky-read .follow { pointer-events: auto; position: relative; border: 0; padding: 0; background: none; font: inherit; letter-spacing: inherit; color: var(--ivory); text-decoration: underline; text-decoration-color: var(--ivory3); text-underline-offset: 3px; cursor: pointer; }
@@ -67,20 +67,20 @@ button.chip:hover, .btn:hover { border-color: var(--gold-dim); color: var(--gold
 .sky-read .follow:hover { color: var(--gold-hi); text-decoration-color: var(--gold-dim); }
 .sky-read .follow.on { color: var(--gold-hi); text-decoration-color: var(--gold); }
 @media (max-width: 700px) { .sky-read .w { display: none; } .sky-read { gap: 4px 10px; font-size: 11.5px; } }
-.sky-cal { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; width: min(440px, calc(100% - 32px)); background: rgba(9,8,7,.94); border: 1px solid var(--rule2); padding: 16px 18px 18px; touch-action: manipulation; }
+.sky-cal { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; width: min(440px, calc(100% - 32px)); background: rgba(var(--bg-rgb),.94); border: 1px solid var(--rule2); padding: 16px 18px 18px; touch-action: manipulation; }
 .sky-cal > p:not([class]) { font-family: var(--serif); font-size: 15.5px; line-height: 1.45; color: var(--ivory); margin-top: 10px; }
 .sky-cal .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 .sky-cal .row .btn { min-height: 44px; display: flex; flex-direction: column; justify-content: center; gap: 3px; text-align: left; }
-.sky-cal .btn small { font-size: 10px; letter-spacing: .04em; color: var(--ivory3); }
-.sky-cal .btn:disabled, .sky-cal .btn:disabled:hover { color: var(--ivory3); border-style: dashed; border-color: var(--rule2); background: none; cursor: default; }   /* not offered: dashed, still legible */
-.sky-cal .warn { font-family: var(--mono); font-size: 12px; line-height: 1.5; color: #e3a07a; margin-top: 12px; }
+.sky-cal .btn small { font-size: 10px; letter-spacing: .04em; color: var(--label); }
+.sky-cal .btn:disabled, .sky-cal .btn:disabled:hover { color: var(--label); border-style: dashed; border-color: var(--rule2); background: none; cursor: default; }   /* not offered: dashed, still legible */
+.sky-cal .warn { font-family: var(--mono); font-size: 12px; line-height: 1.5; color: var(--warn); margin-top: 12px; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-.status.error { color: #e3a07a; max-width: 560px; text-align: center; line-height: 1.6; }
-.foot { position: absolute; left: 36px; bottom: 14px; right: 36px; font-family: var(--mono); font-size: 10.5px; color: var(--ivory3); display: flex; justify-content: space-between; gap: 24px; z-index: 2; }
+.status.error { color: var(--warn); max-width: 560px; text-align: center; line-height: 1.6; }
+.foot { position: absolute; left: 36px; bottom: 14px; right: 36px; font-family: var(--mono); font-size: 10.5px; color: var(--label); display: flex; justify-content: space-between; gap: 24px; z-index: 2; }
 
 /* inspector */
-.inspector { border-left: 1px solid var(--rule); background: linear-gradient(180deg, rgba(17,15,12,.92), rgba(12,11,9,.96)); padding: 30px 32px; overflow-y: auto; min-height: 0; }
-.eyebrow { font-family: var(--cond); font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--ivory3); }
+.inspector { border-left: 1px solid var(--rule); background: linear-gradient(180deg, var(--insp-top), var(--insp-bot)); padding: 30px 32px; overflow-y: auto; min-height: 0; }
+.eyebrow { font-family: var(--cond); font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--label); }
 .section { padding: 18px 0; border-bottom: 1px solid var(--rule); }
 .section:first-child { padding-top: 0; }
 .section:last-child { border: 0; }
@@ -92,7 +92,7 @@ button.chip:hover, .btn:hover { border-color: var(--gold-dim); color: var(--gold
    the panel, rather than widening the grid past it (which cut the values off at the right and squeezed the
    labels to a word a line). */
 dl.read { display: grid; grid-template-columns: fit-content(45%) minmax(0, 1fr); gap: 7px 16px; margin-top: 12px; }
-dl.read dt { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ivory3); padding-top: 2px; }
+dl.read dt { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--label); padding-top: 2px; }
 dl.read dd { font-family: var(--mono); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: break-word; }
 dd.cal { color: var(--gold); } dd.txt { color: var(--bronze); } dd.der { color: var(--silver); }
 .verse { font-family: var(--serif); font-style: italic; font-size: 16.5px; line-height: 1.38; color: var(--bronze); margin-top: 10px; }
@@ -103,7 +103,7 @@ dd.cal { color: var(--gold); } dd.txt { color: var(--bronze); } dd.der { color: 
 #parts { width: 150px; height: 150px; flex: none; margin-top: 6px; }
 
 /* transport */
-.transport { grid-column: 1 / 3; border-top: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr);   /* the controls column is never narrower than its buttons: where the thirds are too tight (an iPad on its side) the playback moves left and the time shortens, instead of the buttons piling onto each other */ align-items: center; padding: 8px 36px calc(8px + env(safe-area-inset-bottom)); gap: 28px; background: #070605; }
+.transport { grid-column: 1 / 3; border-top: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr);   /* the controls column is never narrower than its buttons: where the thirds are too tight (an iPad on its side) the playback moves left and the time shortens, instead of the buttons piling onto each other */ align-items: center; padding: 8px 36px calc(8px + env(safe-area-inset-bottom)); gap: 28px; background: var(--bar); }
 .when-wrap { display: grid; gap: 6px; min-width: 0; overflow: hidden; }
 .when { overflow: hidden; text-overflow: ellipsis; }
 .when { font-family: var(--mono); font-size: 12px; color: var(--ivory2); line-height: 1.6; white-space: nowrap; }
@@ -120,12 +120,12 @@ dd.cal { color: var(--gold); } dd.txt { color: var(--bronze); } dd.der { color: 
 :focus-visible { outline: 1px solid var(--gold-hi); outline-offset: 2px; }
 
 /* dialogs (the moment editor, src/atlas/editor.ts) */
-dialog { margin: auto; background: #110f0c; color: var(--ivory); border: 1px solid var(--rule2); padding: 28px 30px; width: 420px; }
-dialog::backdrop { background: rgba(0,0,0,.6); }
+dialog { margin: auto; background: var(--panel); color: var(--ivory); border: 1px solid var(--rule2); padding: 28px 30px; width: 420px; }
+dialog::backdrop { background: var(--scrim); }
 dialog h2 { font-family: var(--serif); font-weight: 500; font-size: 26px; }
 dialog form { display: grid; gap: 12px; }
-dialog label { display: grid; gap: 4px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ivory3); }
-dialog input { font-family: var(--mono); font-size: 13px; background: #0b0a08; color: var(--ivory); border: 1px solid var(--rule2); padding: 8px 10px; }
+dialog label { display: grid; gap: 4px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--label); }
+dialog input { font-family: var(--mono); font-size: 13px; background: var(--field); color: var(--ivory); border: 1px solid var(--rule2); padding: 8px 10px; }
 dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 
 @media (max-width: 1680px) {
@@ -151,14 +151,14 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6p
 #site-chip .pin { width: 100%; height: 100%; display: block; overflow: visible; fill: none; stroke: var(--ivory3); stroke-width: 1.2; }
 #site-chip .pin .slash { display: none; }
 #site-chip[data-geo=here] .pin { fill: var(--gold-hi); stroke: var(--gold-hi); }
-#site-chip[data-geo=here] .pin circle { fill: #0b0a08; stroke: none; }
+#site-chip[data-geo=here] .pin circle { fill: var(--field); stroke: none; }
 #site-chip[data-geo=chosen] .pin { stroke: var(--ivory2); }
 #site-chip[data-geo=locating] .pin { stroke: var(--gold); animation: pin-ask 1.1s ease-in-out infinite; }
 #site-chip[data-geo=default] .pin { stroke: var(--gold-dim); stroke-dasharray: 2 1.6; }
-#site-chip[data-geo=blocked] .pin { stroke: #e3a07a; } #site-chip[data-geo=blocked] .pin .slash { display: block; stroke: #e3a07a; stroke-width: 1.4; }
+#site-chip[data-geo=blocked] .pin { stroke: var(--warn); } #site-chip[data-geo=blocked] .pin .slash { display: block; stroke: var(--warn); stroke-width: 1.4; }
 @keyframes pin-ask { 50% { opacity: .3; } }
 @media (prefers-reduced-motion: reduce) { #site-chip[data-geo=locating] .pin { animation: none; } }
-#geo-note[data-state=fail] { color: #e3a07a; } #geo-note[data-state=busy] { color: var(--gold); }
+#geo-note[data-state=fail] { color: var(--warn); } #geo-note[data-state=busy] { color: var(--gold); }
 #geo-note { font-size: 15px; line-height: 1.35; }
 @media (max-width: 1600px) { #time-chip { display: none; } }   /* the bar (nav, Watch, Primer, site, calculator status) fills a 1440 screen */
 @media (max-width: 1280px) { .nav a { padding: 9px 7px; letter-spacing: .08em; } #time-chip { display: none; } .top { gap: 12px; } }
@@ -193,23 +193,23 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6p
 /* focus: the top bar folds away (Sky, the Dial, The Day); the button stays at the stage's top right */
 .app.focus { grid-template-rows: 0 minmax(0, 1fr) auto; padding-top: env(safe-area-inset-top); }
 .focus > .top { visibility: hidden; overflow: hidden; padding-top: 0; padding-bottom: 0; border: 0; }
-.focus-btn { position: absolute; z-index: 4; right: 24px; top: 24px; width: 36px; height: 36px; padding: 0; display: grid; place-items: center; background: rgba(9,8,7,.7); color: var(--ivory3); }
+.focus-btn { position: absolute; z-index: 4; right: 24px; top: 24px; width: 36px; height: 36px; padding: 0; display: grid; place-items: center; background: rgba(var(--bg-rgb),.7); color: var(--label); }
 .focus-btn[hidden] { display: none; } .focus-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.4; }
 .focus-btn[aria-pressed=true] { color: var(--gold-hi); border-color: var(--gold-dim); }
 @media (max-width: 1100px), (max-aspect-ratio: 1/1) { .focus-btn { right: 12px; top: 10px; width: 34px; height: 34px; } }   /* within the title's row, clear of the options under it */
 /* accuracy */
 .acc summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
 .acc summary::-webkit-details-marker { display: none; }
-.acc summary::before { content: '▸'; color: var(--ivory3); font-size: 10px; } .acc[open] summary::before { content: '▾'; }
-.acc-state { font-family: var(--mono); font-size: 11px; color: var(--silver); } .acc.out .acc-state { color: #e3a07a; }
-.acc-sum { font-family: var(--mono); font-size: 11px; color: var(--ivory3); }
-.acc.out { border-left: 2px solid #e3a07a; padding-left: 12px; }
-.acc dd small { color: var(--ivory3); font-size: 10px; }
-.acc .acc-bad { color: #e3a07a; }
+.acc summary::before { content: '▸'; color: var(--label); font-size: 10px; } .acc[open] summary::before { content: '▾'; }
+.acc-state { font-family: var(--mono); font-size: 11px; color: var(--silver); } .acc.out .acc-state { color: var(--warn); }
+.acc-sum { font-family: var(--mono); font-size: 11px; color: var(--label); }
+.acc.out { border-left: 2px solid var(--warn); padding-left: 12px; }
+.acc dd small { color: var(--label); font-size: 10px; }
+.acc .acc-bad { color: var(--warn); }
 .acc-why { font-size: 13.5px; } .acc-why b { font-style: normal; color: var(--ivory); font-weight: 500; }
-.acc-flag { font-family: var(--mono); font-size: 10.5px; color: #e3a07a; margin-left: 8px; white-space: nowrap; }
-.goto { font-family: var(--mono); font-size: 12px; background: #0b0a08; color: var(--ivory); border: 1px solid var(--rule2); padding: 0 10px; min-height: 44px; width: 240px; }
-.goto.bad, #dl-date.bad { border-color: #e3a07a; }
+.acc-flag { font-family: var(--mono); font-size: 10.5px; color: var(--warn); margin-left: 8px; white-space: nowrap; }
+.goto { font-family: var(--mono); font-size: 12px; background: var(--field); color: var(--ivory); border: 1px solid var(--rule2); padding: 0 10px; min-height: 44px; width: 240px; }
+.goto.bad, #dl-date.bad { border-color: var(--warn); }
 @media (max-width: 700px) { .acc-flag .acc-w { display: none; } .acc-flag { margin-left: 4px; } }
 @media (max-width: 420px) { .when .gw { display: none; } }   /* the smallest phones: the time keeps its seconds */
 /* iOS Safari zooms the page when a text/number field under 16px takes focus, and doesn't zoom back out on blur (the fixed layout is then stuck zoomed). 16px on touch screens avoids the zoom. */
@@ -238,9 +238,9 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6p
 /* Settings: a quiet section at the foot of the details, above Offline (main.ts mountSettings) */
 .settings { border-top: 1px solid var(--rule); border-bottom: 0; margin-top: 18px; padding: 18px 0 4px; display: grid; gap: 10px; }   /* Offline, under it, draws the rule between them */
 .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.set-l { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ivory3); }
-.settings .seg { display: flex; } .settings .seg .btn { min-height: 36px; } .settings .seg .btn + .btn { margin-left: -1px; } .settings .seg .btn.on { position: relative; background: rgba(214,178,106,.10); }
-.set-note { font-family: var(--mono); font-size: 10.5px; color: var(--ivory3); }
+.set-l { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--label); }
+.settings .seg { display: flex; } .settings .seg .btn { min-height: 36px; } .settings .seg .btn + .btn { margin-left: -1px; } .settings .seg .btn.on { position: relative; background: rgba(var(--gold-rgb),.10); }
+.set-note { font-family: var(--mono); font-size: 10.5px; color: var(--label); }
 /* Focus on a wide screen (an iPad on its side, a laptop): the details column folds away with the top bar, so the drawing has the
    whole width; ⋯ joins the bar and slides the details in over the drawing (✕, ⋯ or Escape closes them). Narrow screens already
    keep the details in a sheet; Atlas keeps its column (.keep-details: its details are where you choose). Not narrow = the
@@ -248,12 +248,12 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6p
 @media (min-width: 1101px) and (min-aspect-ratio: 1001/1000) {
   .app.focus:not(.keep-details) { grid-template-columns: minmax(0, 1fr) 0; }
   .app.focus:not(.keep-details) .inspector { position: fixed; z-index: 6; top: env(safe-area-inset-top); right: 0; bottom: var(--foot-h, 60px); width: 440px; padding-top: 0;
-    border-left: 1px solid var(--gold-dim); background: #0a0908; box-shadow: -12px 0 30px rgba(0,0,0,.6);
+    border-left: 1px solid var(--gold-dim); background: var(--sheet); box-shadow: -12px 0 30px var(--shadow);
     transform: translateX(100%); visibility: hidden; transition: transform .25s ease, visibility 0s .25s; }
   .side-open .app.focus:not(.keep-details) .inspector { transform: none; visibility: visible; transition: transform .25s ease; }
-  .app.focus:not(.keep-details) .sheet-bar { display: flex; align-items: center; position: sticky; top: 0; z-index: 1; background: #0a0908; margin: 0 -32px 18px; padding: 0 6px 0 32px; height: 48px; border-bottom: 1px solid var(--rule); }
+  .app.focus:not(.keep-details) .sheet-bar { display: flex; align-items: center; position: sticky; top: 0; z-index: 1; background: var(--sheet); margin: 0 -32px 18px; padding: 0 6px 0 32px; height: 48px; border-bottom: 1px solid var(--rule); }
   .app.focus:not(.keep-details) .sheet-bar .grab { display: none; }
-  .app.focus:not(.keep-details) .sheet-t { font-family: var(--cond); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ivory3); }
+  .app.focus:not(.keep-details) .sheet-t { font-family: var(--cond); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--label); }
   .app.focus:not(.keep-details) .sheet-x { margin-left: auto; width: 44px; height: 44px; font-size: 16px; color: var(--ivory2); }
   .app.focus:not(.keep-details) .transport { grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr) auto; }
   .app.focus:not(.keep-details) .more { display: inline-block; margin-left: 0; }

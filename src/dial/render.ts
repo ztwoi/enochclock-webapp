@@ -7,6 +7,7 @@ import { GEEZ, pillars } from '../model';
 import { archPath, seamPath, within } from './portals';
 import type { YearDoc } from '../types';
 import { PCOL, ringRotation, type DialState } from './state';
+import { alpha, C } from '../palette';
 
 const NS = 'http://www.w3.org/2000/svg';
 export const DR = {
@@ -24,8 +25,6 @@ const BANDS: { key: RingKey; r0: number; r1: number }[] = [
 const ALT_MIN = -12, K = (DR.band1 - DR.horizon) / 90;
 const altRadius = (alt: number) => DR.horizon + Math.max(ALT_MIN, alt) * K;
 const MS = [1, 31, 61, 92, 122, 152, 183, 213, 243, 274, 304, 334, 365];
-const C = { ivory: '#ece3cf', ivory2: '#a39a86', ivory3: '#635d51', gold: '#d6b26a', goldHi: '#f4dc9f', goldDim: '#7d6a43', bronze: '#a8875a',
-  silver: '#8fb3bd', silverDim: '#4b6268', ox: '#3b1513', ox2: '#4a1a17', red: '#b4291f', sage: '#8fb08a', sageDim: '#4d6149', ink: '#0c0b09' };
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
 const polar = (r: number, th: number): [number, number] => [r * Math.sin(rad(th)), -r * Math.cos(rad(th))];
@@ -83,7 +82,7 @@ interface Ring { name: string; layer: Layer; units: number; dir: 1 | -1; cur: (s
 export function createDial(svg: SVGSVGElement) {
   svg.replaceChildren();
   const defs = el('defs', {}, svg), grad = el('radialGradient', { id: 'dl-glow' }, defs);
-  el('stop', { offset: '0', 'stop-color': '#f4dc9f', 'stop-opacity': 0.8 }, grad); el('stop', { offset: '1', 'stop-color': '#d6b26a', 'stop-opacity': 0 }, grad);
+  el('stop', { offset: '0', 'stop-color': C.goldHi, 'stop-opacity': 0.8 }, grad); el('stop', { offset: '1', 'stop-color': C.gold, 'stop-opacity': 0 }, grad);
   const hw = 5 / Math.SQRT2, hatch = el('pattern', { id: 'dl-hatch', width: hw, height: hw, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
   el('rect', { x: (0.12 * hw - 0.283).toFixed(3), y: 0, width: 0.566, height: hw, fill: C.silver }, hatch);
   const lit = el('filter', { id: 'dl-lit', x: '-60%', y: '-60%', width: '220%', height: '220%' }, defs);
@@ -122,17 +121,17 @@ export function createDial(svg: SVGSVGElement) {
       for (const [lo, hi] of pillars(PP)) el('path', { d: seamPath(lo, hi, altRadius), fill: 'url(#dl-hatch)', 'fill-opacity': 0.7, class: 'dl-seam', 'pointer-events': 'none' }, W);
       for (const p of PP) {
         const on = within(p, bearing);
-        el('path', { d: archPath(p, altRadius), fill: on ? 'rgba(244,220,159,.1)' : 'none', stroke: on ? C.goldHi : C.bronze, 'stroke-width': on ? 1.6 : 1, 'stroke-opacity': on ? 1 : 0.9,
+        el('path', { d: archPath(p, altRadius), fill: on ? alpha('goldHi', 0.1) : 'none', stroke: on ? C.goldHi : C.bronze, 'stroke-width': on ? 1.6 : 1, 'stroke-opacity': on ? 1 : 0.9,
           'stroke-linejoin': 'round', filter: on ? 'url(#dl-lit)' : undefined, class: on ? 'dl-arch dl-arch-on' : 'dl-arch', 'data-portal': p.portal, 'pointer-events': 'none' }, W);
       }
     }
     // centre: the disc, the optional sky chart (redrawn per instant, screen angles), then on top the
     // compass, the six portals east and west, today's sunrise and sunset bearings (true bearings)
-    el('circle', { r: DR.cmp, fill: '#0b0a08', stroke: C.ivory3, 'stroke-width': 0.8 }, W);
+    el('circle', { r: DR.cmp, fill: C.field, stroke: C.ivory3, 'stroke-width': 0.8 }, W);
     chart = el('g', { class: 'dl-chart' }, root) as SVGGElement;
     centre = new Layer(root, 'dl-centre'); const Z = centre.g;
     for (const PP of [doc.portals, doc.portals_west]) for (const p of PP) {
-      el('path', { d: sectorPath(104, 122, p.common[0], p.common[1]), fill: p.portal % 2 ? '#2a2318' : '#1f1a12', stroke: C.bronze, 'stroke-width': 0.6, class: 'dl-portal' }, Z);
+      el('path', { d: sectorPath(104, 122, p.common[0], p.common[1]), fill: p.portal % 2 ? C.dlPortal : C.dlPortal2, stroke: C.bronze, 'stroke-width': 0.6, class: 'dl-portal' }, Z);
       centre.label(113, (p.common[0] + p.common[1]) / 2, GEEZ[p.portal], { class: 'dl-geez-s' });
     }
     for (const [b, col] of [[s.row.azimuth_deg, C.goldHi], [e.sunset_azimuth_deg, C.silver]] as const) el('path', { d: `M${P(98, b)}L${P(128, b)}`, stroke: col, 'stroke-width': 1.6 }, Z);
@@ -144,15 +143,15 @@ export function createDial(svg: SVGSVGElement) {
     // ------------------------------------------------ calendar rings (all continuous: the gear train in state.ts)
     // R6 uncorrected month (the paper's 364-day count, no correction), anticlockwise
     { const { g, at, layer } = ring('uncorrected', 364, -1, (x) => x.phases.uncorrected, (DR.um0 + DR.um1) / 2);
-      el('circle', { r: DR.um0, fill: 'none', stroke: C.sageDim, 'stroke-width': 0.6 }, g);
+      el('circle', { r: DR.um0, fill: 'none', stroke: C.dlSageDim, 'stroke-width': 0.6 }, g);
       let t = ''; for (let m = 1; m <= 12; m++) { const a0 = at(MS[m - 1] - 1), a1 = at(MS[m] - 1); t += `M${P(DR.um0, a0)}L${P(DR.um1, a0)}`;
         layer.label((DR.um0 + DR.um1) / 2, (a0 + a1) / 2, String(m), { class: m === e.uncorrected_month ? 'dl-um dl-on' : 'dl-um' }); }
-      el('path', { d: t, stroke: C.sageDim, 'stroke-width': 0.8 }, g); }
+      el('path', { d: t, stroke: C.dlSageDim, 'stroke-width': 0.8 }, g); }
     // R5 months and the 364 positions (corrected), anticlockwise; hold marks; the quarter leaders
     { const { g, at, layer } = ring('position', 364, -1, (x) => x.phases.position, (DR.mo0 + DR.mo1) / 2);
       for (let m = 1; m <= 12; m++) {
         const a0 = at(MS[m] - 1), a1 = at(MS[m - 1] - 1), on = m === s.row.month;
-        el('path', { d: sectorPath(DR.mo0, DR.mo1, a0, a1), fill: on ? C.red : m % 2 ? C.ox2 : C.ox, stroke: '#1a0b0a', 'stroke-width': 1.4 }, g);
+        el('path', { d: sectorPath(DR.mo0, DR.mo1, a0, a1), fill: on ? C.dlRed : m % 2 ? C.dlOx2 : C.dlOx, stroke: C.dlOxEdge, 'stroke-width': 1.4 }, g);
         layer.label((DR.mo0 + DR.mo1) / 2 + 3, (a0 + a1) / 2, String(m), { class: on ? 'dl-month dl-on' : 'dl-month' });
         layer.label((DR.mo0 + DR.mo1) / 2 - 11, (a0 + a1) / 2, GEEZ[m], { class: 'dl-geez' });
       }
@@ -179,13 +178,13 @@ export function createDial(svg: SVGSVGElement) {
     { const { g, at, layer } = ring('courses', 24, -1, (x) => x.phases.courses, (DR.crs0 + DR.crs1) / 2);
       doc.priests.courses.forEach((c, k) => {
         const a0 = at(k + 1), a1 = at(k), on = c.n === e.course;
-        el('path', { d: sectorPath(DR.dy1 + 1, DR.crs1, Math.min(a0, a1) + 0.4, Math.max(a0, a1) - 0.4), fill: on ? C.gold : k % 2 ? '#15130f' : '#1b1814' }, g);
+        el('path', { d: sectorPath(DR.dy1 + 1, DR.crs1, Math.min(a0, a1) + 0.4, Math.max(a0, a1) - 0.4), fill: on ? C.gold : k % 2 ? C.dlCell : C.dlCell2 }, g);
         layer.label(DR.crs1 - 13, (a0 + a1) / 2, c.name, { class: on ? 'dl-course dl-on-dark' : 'dl-course' });
         layer.label(DR.dy1 + 11, (a0 + a1) / 2, String(c.n), { class: on ? 'dl-num dl-on-dark' : 'dl-num' });
         for (let d = 0; d < 7; d++) {
           const b0 = at(k + (d + 1) / 7), b1 = at(k + d / 7), today = on && d + 1 === e.weekday;
           el('path', { d: sectorPath(DR.dy0, DR.dy1, Math.min(b0, b1) + 0.15, Math.max(b0, b1) - 0.15), 'data-day': today ? 'on' : undefined,
-            fill: today ? C.goldHi : d === 6 ? (on ? C.bronze : '#3a2f1c') : on ? C.goldDim : '#1d1a15' }, g);
+            fill: today ? C.goldHi : d === 6 ? (on ? C.bronze : C.dlSabbath) : on ? C.goldDim : C.dlDay }, g);
         }
       }); }
     // R1 the 18 parts of the day, clockwise, gliding: daylight from the measured sunrise to sunset
@@ -250,9 +249,9 @@ export function createDial(svg: SVGSVGElement) {
       lab(r + rr + 10, bear(az), name, up ? cls : `${cls} dl-below`);
     };
     for (const p of s.planets) body(p.name.toUpperCase(), p.name.toLowerCase(), p.az, p.alt, p.name === 'Uranus' || p.name === 'Neptune' ? 3.2 : 4.4, PCOL[p.name]);
-    body(`MOON ${(s.moon.fraction * 100).toFixed(0)}%`, 'moon', s.moon.az, s.moon.alt, 6, '#d8d2c4', 'dl-moon', false);
+    body(`MOON ${(s.moon.fraction * 100).toFixed(0)}%`, 'moon', s.moon.az, s.moon.alt, 6, C.moon, 'dl-moon', false);
     // compass mode: the direction faced is the top of the screen
-    if (s.framing === 'compass') el('path', { d: `M0 ${-DR.band1 - 1}l-7 -12h14z`, fill: '#d9614f', 'data-facing': '1' }, B);
+    if (s.framing === 'compass') el('path', { d: `M0 ${-DR.band1 - 1}l-7 -12h14z`, fill: C.vermilion, 'data-facing': '1' }, B);
   }
 
   /** The centre as an all-sky chart (stereographic, zenith in the middle), on screen angles. */
@@ -274,8 +273,8 @@ export function createDial(svg: SVGSVGElement) {
       el('text', { x: x.toFixed(2), y: (y - r - 3).toFixed(2), 'text-anchor': 'middle', class: 'dl-chart-lbl' }, G, name);
     };
     for (const p of s.planets) mark(p.name, p.az, p.alt, p.name === 'Uranus' || p.name === 'Neptune' ? 2 : 2.5, PCOL[p.name], true);
-    mark('Moon', s.moon.az, s.moon.alt, 3, '#d8d2c4');
-    mark('Sun', s.sun.az, s.sun.alt, 3.5, '#fff3d0');
+    mark('Moon', s.moon.az, s.moon.alt, 3, C.moon);
+    mark('Sun', s.sun.az, s.sun.alt, 3.5, C.sunCore);
     if (sky.centre === 'up') {                     // its own cardinals: east on the left, as overhead
       for (const [b, t] of [[0, 'N'], [90, 'E'], [180, 'S'], [270, 'W']] as const) {
         const [x, y] = polar(CHART_R + 6, th(b)); el('text', { x: x.toFixed(2), y: y.toFixed(2), 'text-anchor': 'middle', 'dominant-baseline': 'central', class: b === 0 ? 'dl-chart-card dl-north' : 'dl-chart-card' }, G, t);
@@ -297,7 +296,7 @@ export function createDial(svg: SVGSVGElement) {
       tri(R, a1, len > 0 ? 'l-5 -4v8z' : 'l5 -4v8z', C.goldHi, G);
     }
     el('circle', { cx: sx, cy: sy, r: 22, fill: 'url(#dl-glow)' }, G);
-    el('circle', { cx: sx, cy: sy, r: 8, fill: up ? '#fff3d0' : 'none', stroke: '#fff3d0', 'stroke-width': 1.5, 'data-body': 'sun' }, G);
+    el('circle', { cx: sx, cy: sy, r: 8, fill: up ? C.sunCore : 'none', stroke: C.sunCore, 'stroke-width': 1.5, 'data-body': 'sun' }, G);
     el('circle', { r: 4, fill: C.goldHi }, G);
   }
 

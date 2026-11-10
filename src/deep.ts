@@ -16,7 +16,8 @@ import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeome
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import type { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import { C, createStage, headClearance, sprite, svgEl, type Pt } from './stage';
+import { alpha, C } from './palette';
+import { createStage, headClearance, sprite, svgEl, type Pt } from './stage';
 import { AXIS, binsIn, binWidth, clampDays, clampRange, clipX, DAYS, dayText, dayTicks, yearTicks, yearText, zoomDays, zoomRange, type Bin, type DeepSeries, type Key } from './deepplot';
 import type { DeepDoc } from './types';
 
@@ -170,7 +171,7 @@ function build(host: HTMLElement, L: DeepLayout, deep: DeepDoc, series: DeepSeri
   const hLine = svgEl('line', { y1: cy + 6, y2: bot, stroke: C.ivory2, 'stroke-width': 0.6, 'stroke-dasharray': '1 3' }, hover);
   const hBox = svgEl('g', {}, hover);
   const boxW = Math.min(300, L.PX1 - L.PX0 - 8);
-  svgEl('rect', { width: boxW, height: 78, fill: '#0d0c0a', stroke: 'rgba(236,227,207,.16)' }, hBox);
+  svgEl('rect', { width: boxW, height: 78, fill: C.box, stroke: alpha('ivory', 0.16) }, hBox);
   const hT = [0, 1, 2, 3].map((k) => svgEl('text', { x: 12, y: 20 + k * 17, class: k === 0 ? 'lbl-mono' : k === 1 ? 'lbl-mono gold' : 'lbl-mono silver' }, hBox));
 
   const valueOf = (k: Key, yr: number) => { const i = yr - series.first_year; return i >= 0 && i < series.enoch.length ? series[k][i] : null; };
