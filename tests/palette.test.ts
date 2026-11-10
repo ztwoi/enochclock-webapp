@@ -11,7 +11,7 @@ const css = readFileSync('src/theme.css', 'utf8');
 const blocks = [...css.matchAll(/([^{}]*)\{([^{}]*)\}/g)]
   .map(([, sel, body]) => ({ sel: sel.replace(/\/\*[\s\S]*?\*\//g, '').trim(), vars: new Map([...body.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map(([, k, v]) => [k, v.trim()])) }))
   .filter((b) => b.vars.size);
-const root = blocks.find((b) => b.sel === ':root')!;
+const root = blocks.find((b) => b.sel.split(',').map((x) => x.trim()).includes(':root'))!;
 const rgbOf = (hex: string) => { const h = hex.slice(1), x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h; return [0, 2, 4].map((i) => parseInt(x.slice(i, i + 2), 16)).join(','); };
 
 test('the drawing palette (palette.ts DARK) is theme.css :root, colour for colour', () => {

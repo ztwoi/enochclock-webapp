@@ -11,7 +11,7 @@ const events = dayEvents(doc, i);
 
 test('the day runs sunrise to sunrise, in time order, each at its part', () => {
   const a = doc.rows[i].sunrise_jd_ut, b = doc.rows[i + 1].sunrise_jd_ut;
-  assert.deepEqual(events[0], { jd: a, part: 0, body: 'Sun', kind: 'rise', color: '#f4dc9f' });
+  assert.deepEqual(events[0], { jd: a, part: 0, body: 'Sun', kind: 'rise' });
   for (const [k, e] of events.entries()) {
     assert.ok(e.jd >= a && e.jd < b, `${e.body} ${e.kind} inside the day`);
     assert.ok(Math.abs(e.part - (18 * (e.jd - a)) / (b - a)) < 1e-9);

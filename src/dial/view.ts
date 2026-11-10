@@ -15,7 +15,7 @@ import type { Site, YearDoc } from '../types';
 import { createDial, hitBand, type Centre, type RingKey, type RingReport, type SkyLayers } from './render';
 import { BRIGHT_MAG, dayState, dialState, facing, jdAtPart, wrap, type DayState, type DialState, type Framing } from './state';
 import { attachZoom } from './zoom';
-import { alpha, C } from '../palette';
+import { alpha, C, paletteGeneration } from '../palette';
 import './face.css';
 
 const FKEY = 'enoch.dial.framing.v1', SKEY = 'enoch.dial.sky.v1', IKEY = 'enoch.dial.info.v1';
@@ -276,7 +276,7 @@ export function createDialView(host: HTMLElement, head: { title: HTMLElement; pr
   /** The panel is built once in the inspector; the Sun's trace is redrawn when the day changes; the readings are patched in place every frame. */
   function side(doc: YearDoc, s: DialState) {
     if (!h.details.querySelector('#dl-trace')) { buildSide(); sideKey = ''; }
-    const key = `${st.site ? siteKey(st.site) : ''}:${doc.calculation.enoch_year}:${s.i}`;
+    const key = `${st.site ? siteKey(st.site) : ''}:${doc.calculation.enoch_year}:${s.i}:${paletteGeneration()}`;   // and again in a new theme
     if (key !== sideKey) { sideKey = key; trace(s); }
     const x = traceX(s.part); $('dl-cursor')?.setAttribute('x1', String(x)); $('dl-cursor')?.setAttribute('x2', String(x));
     morph($('dl-bodies'), [['Sun', s.sun], ['Moon', s.moon], ...s.planets.map((p) => [p.name, p] as const)]

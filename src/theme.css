@@ -6,8 +6,12 @@
    - colours are hex (#rrggbb): palette.ts derives see-through tints from them;
    - each --x-rgb is the same colour as --x as "r,g,b" (for rgba(var(--x-rgb), a) in CSS);
    - the dark values below are mirrored in palette.ts DARK (for code run without a page, the tests);
-   tests/palette.test.ts holds all three. */
-:root {
+   tests/palette.test.ts holds all three.
+
+   Dark is the default (:root). It is also every night window's, in every theme: the stage while it shows Sky, The Day or the
+   Atlas globe (the sky is drawn as light added to black, and it is the night sky), and the film. Their drawing code uses
+   palette.ts DARK to match. Light (:root[data-theme=light], set by public/theme-boot.js and src/theme.ts) follows. */
+:root, .night, .film, .stage:is([data-view=sky], [data-view=day], [data-view=atlas]) {
   /* ground and rules */
   --bg: #090807; --bg-rgb: 9,8,7; --rule: rgba(var(--ivory-rgb),.09); --rule2: rgba(var(--ivory-rgb),.16);
   /* the four layers: ivory computed · gold calendar · bronze textual · silver derived, each with its lit and dim tiers */
@@ -45,6 +49,31 @@
   --dl-portal: #2a2318; --dl-portal2: #1f1a12; --dl-cell: #15130f; --dl-cell2: #1b1814; --dl-day: #1d1a15; --dl-sabbath: #3a2f1c;
   --serif: "Cormorant", "Ethiopic", serif; --mono: "Plex Mono", ui-monospace, monospace; --cond: "Plex Cond", sans-serif; --geez: "Ethiopic", serif;
 }
+
+/* Light · Vellum: the same instrument printed on vellum, for daylight. The ink is the ivory tier (darkest is strongest, so
+   the "hi" tiers are the deepest); gold is ochre, bronze sepia, silver slate; the month ring is rubricated. Text tokens
+   are 4.5:1 or more on --bg (labels 5.5:1); --ivory3 and the -dim tiers are engraving, not reading. */
+:root[data-theme=light] {
+  --bg: #f2ebdb; --bg-rgb: 242,235,219; --rule: rgba(var(--ivory-rgb),.13); --rule2: rgba(var(--ivory-rgb),.24);
+  --ivory: #1d1811; --ivory2: #4a4234; --ivory3: #8a7f6a; --ivory-rgb: 29,24,17; --ivory2-rgb: 74,66,52;
+  --gold: #7f5c12; --gold-hi: #5a3c00; --gold-dim: #a88d58; --gold-rgb: 127,92,18; --gold-hi-rgb: 90,60,0;
+  --bronze: #7a4a24; --bronze-dim: #8f7356; --silver: #285f6c; --silver-dim: #7b979e; --silver-rgb: 40,95,108;
+  --label: #675d4c;
+  --bg-glow: #f8f3e8; --bar: #ebe3d0; --panel: #f7f1e4; --sheet: #efe7d5; --field: #faf6ec; --ink: #f2ebdb; --box: #f7f1e4;
+  --insp-top: rgba(236,228,211,.92); --insp-bot: rgba(232,223,204,.96);
+  --on-gold: #fbf6ea; --shade: #f2ebdb; --shade-hard: #f2ebdb;
+  --scrim: rgba(40,32,20,.35); --shadow: rgba(60,45,20,.18);
+  --warn: #a8341a; --warn-soft: #a8341a; --alarm: #b03a2a; --alarm-rgb: 176,58,42; --vermilion: #b8321f;
+  --sun: #8a6410; --sun-core: #c98a12; --moon: #5d5a52; --moon-dark: #d9d0bd;
+  --mercury: #7d6248; --venus: #7b6117; --mars: #a0402a; --jupiter: #8c5f1c; --saturn: #6e6420; --uranus: #2f7478; --neptune: #3b5592;
+  --dl-ox: #a4382a; --dl-ox2: #943023; --dl-red: #cf4a2e; --dl-ox-edge: #f2ebdb;
+  --dl-month: #f6e2d6; --dl-month-on: #fffaf0; --dl-geez: #ecc9b8;
+  --dl-sage: #46703f; --dl-sage-dim: #7f9a78; --dl-sage-hi: #2f5a2a;
+  --dl-portal: #e3d6bb; --dl-portal2: #ebe0c8; --dl-cell: #e6dcc6; --dl-cell2: #ddd0b4; --dl-day: #e0d4bb; --dl-sabbath: #c9b48a;
+}
+/* A night window inside the light theme: its own ground and ink (in Dark they are the page's already). */
+[data-theme=light] :is(.night, .film, .stage:is([data-view=sky], [data-view=day], [data-view=atlas])) { color: var(--ivory); }
+[data-theme=light] .stage:is([data-view=sky], [data-view=day], [data-view=atlas]) { background: radial-gradient(1200px 800px at 38% 42%, var(--bg-glow) 0%, var(--bg) 70%); }
 
 /* overlay typography (SVG, design units) */
 .lbl-mono { font-family: var(--mono); fill: var(--ivory); font-size: 10.5px; }

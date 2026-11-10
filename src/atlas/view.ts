@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { AstroTime, Body, GeoVector, Rotation_EQJ_EQD, SiderealTime } from 'astronomy-engine';
 import type { Catalogue } from '../skyview';
-import { C, type PaletteKey } from '../palette';
+import { DARK as C, type PaletteKey } from '../palette';     // the globe is a night window in every theme
 import { band, bearingWord, dot, eqjToEarth, frameAt, latLon, nearest, norm180, obliquity, polarLimit, preview, vec, type V3 } from './geo';
 import { coastSegments, landMask, loadLand } from './land';
 import { places } from './places';

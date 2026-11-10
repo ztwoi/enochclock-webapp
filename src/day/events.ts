@@ -2,12 +2,12 @@
 // calculator's), its highest and lowest (solar noon and midnight), and every rising and setting of the planets and the Moon
 // (Astronomy Engine, the same positions the Sky draws). Pure: no page, so the tests run it.
 import { AstroTime, Body, Observer, SearchHourAngle, SearchRiseSet } from 'astronomy-engine';
-import { PCOL, PLANETS } from '../dial/state';
+import { PLANETS } from '../dial/state';
 import type { YearDoc } from '../types';
-import { C } from '../palette';
 
 export type EventKind = 'rise' | 'set' | 'noon' | 'midnight';
-export interface DayEvent { jd: number; part: number; body: string; kind: EventKind; color: string }
+/** A body's rising, setting, noon or midnight. Its colour is the drawing's to give (palette.ts bodyColor): the same event is drawn in The Day's night window and listed in the details. */
+export interface DayEvent { jd: number; part: number; body: string; kind: EventKind }
 
 const J2000 = 2451545;
 const timeOf = (jd: number) => new AstroTime(jd - J2000);
@@ -16,18 +16,18 @@ const timeOf = (jd: number) => new AstroTime(jd - J2000);
 export function dayEvents(doc: YearDoc, i: number): DayEvent[] {
   const c = doc.calculation, a = doc.rows[i].sunrise_jd_ut, b = doc.rows[i + 1].sunrise_jd_ut;
   const obs = new Observer(c.latitude, c.longitude_east, c.elevation_m), out: DayEvent[] = [];
-  const add = (jd: number, body: string, kind: EventKind, color: string) => { if (jd >= a && jd < b) out.push({ jd, part: (18 * (jd - a)) / (b - a), body, kind, color }); };
-  add(a, 'Sun', 'rise', C.sun);
-  add(doc.extended[i].sunset_jd_ut, 'Sun', 'set', C.sun);
-  add(SearchHourAngle(Body.Sun, obs, 0, timeOf(a)).time.ut + J2000, 'Sun', 'noon', C.sun);
-  add(SearchHourAngle(Body.Sun, obs, 12, timeOf(a)).time.ut + J2000, 'Sun', 'midnight', C.sun);
-  const bodies: [Body, string, string][] = [...PLANETS.map(([body, name]): [Body, string, string] => [body, name, PCOL[name]]), [Body.Moon, 'Moon', C.moon]];
-  for (const [body, name, color] of bodies) for (const dir of [1, -1]) {
+  const add = (jd: number, body: string, kind: EventKind) => { if (jd >= a && jd < b) out.push({ jd, part: (18 * (jd - a)) / (b - a), body, kind }); };
+  add(a, 'Sun', 'rise');
+  add(doc.extended[i].sunset_jd_ut, 'Sun', 'set');
+  add(SearchHourAngle(Body.Sun, obs, 0, timeOf(a)).time.ut + J2000, 'Sun', 'noon');
+  add(SearchHourAngle(Body.Sun, obs, 12, timeOf(a)).time.ut + J2000, 'Sun', 'midnight');
+  const bodies: [Body, string][] = [...PLANETS.map(([body, name]): [Body, string] => [body, name]), [Body.Moon, 'Moon']];
+  for (const [body, name] of bodies) for (const dir of [1, -1]) {
     // a body can rise (or set) twice in a day when its first one falls just after sunrise: keep searching to the day's end
     for (let from = a; from < b;) {
       const t = SearchRiseSet(body, obs, dir, timeOf(from), b - from);
       if (!t) break;
-      const jd = t.ut + J2000; add(jd, name, dir > 0 ? 'rise' : 'set', color); from = jd + 1 / 1440;
+      const jd = t.ut + J2000; add(jd, name, dir > 0 ? 'rise' : 'set'); from = jd + 1 / 1440;
     }
   }
   return out.sort((x, y) => x.jd - y.jd);

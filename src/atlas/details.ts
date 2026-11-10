@@ -15,6 +15,7 @@ import { atlasPanel, globePanel, placeSite, siteAt, snapTo } from './panel';
 import { places } from './places';
 import type { AtlasInfo } from './view';
 import { amongEvents, daysIn, ENOCH_MONTH_DAYS, eventName, fromEra, MONTHS, toEra } from './when';
+import { bodyColor } from '../palette';
 
 export type AtlasTab = 'where' | 'when' | 'moments';
 export type Cal = 'greg' | 'enoch';
@@ -246,7 +247,7 @@ export function createAtlasDetails(opts: AtlasDetailsOptions): AtlasDetails {
     if (!cur || !dayOf) return;
     const main = (e: DayEvent) => e.body === 'Sun' || e.body === 'Moon', list = allEvents ? dayOf.events : dayOf.events.filter(main), more = dayOf.events.length - dayOf.events.filter(main).length;
     const clock = (jd: number) => shownHm(localParts(jd, cur!.doc.calculation.timezone, fmt.offset(cur!.doc.rows[cur!.i].sunrise_local)).time);
-    const html = list.map((e) => `<button type="button" class="ev${Math.abs(e.jd - cur!.jd) * 1440 < 1.5 ? ' cur' : e.jd < cur!.jd ? ' past' : ''}" data-part="${e.part}" style="--c:${e.color}"><i class="${e.kind === 'set' ? 'set' : ''}"></i>${eventName(e)} <b>${clock(e.jd)}</b></button>`).join('')
+    const html = list.map((e) => `<button type="button" class="ev${Math.abs(e.jd - cur!.jd) * 1440 < 1.5 ? ' cur' : e.jd < cur!.jd ? ' past' : ''}" data-part="${e.part}" style="--c:${bodyColor(e.body)}"><i class="${e.kind === 'set' ? 'set' : ''}"></i>${eventName(e)} <b>${clock(e.jd)}</b></button>`).join('')
       + (more ? `<button type="button" class="ev ev-all" data-more>${allEvents ? 'Sun and Moon only' : `+ ${more} planet risings and settings`}</button>` : '');
     if (evs.dataset.h !== html) { evs.innerHTML = html; evs.dataset.h = html; }
   }

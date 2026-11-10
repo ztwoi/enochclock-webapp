@@ -53,7 +53,9 @@ Five views share one time cursor:
 ◀◀ ▶▶ step the unit times the speed: 16 days at 16×, 4° at 4× (never less than one). Playing past the end of an Enoch year
 carries on into the next one, calculated ahead so the crossing does not wait. **Now** follows the present.
 
-**Settings**, at the foot of the details: clock times in 12-hour (the default) or 24-hour, kept on the device.
+**Settings**, at the foot of the details: clock times in 12-hour (the default) or 24-hour; and the theme, Dark (the default),
+Light (the instrument on vellum, for daylight; Sky, The Day and the Atlas globe stay a night sky) or Auto (the device's
+appearance). Both are kept on the device.
 
 | Key | Action |
 |---|---|

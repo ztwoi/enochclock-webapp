@@ -6,8 +6,8 @@
 import { GEEZ, pillars } from '../model';
 import { archPath, seamPath, within } from './portals';
 import type { YearDoc } from '../types';
-import { PCOL, ringRotation, type DialState } from './state';
-import { alpha, C } from '../palette';
+import { ringRotation, type DialState } from './state';
+import { alpha, bodyColor, C as PAGE, paletteGeneration, type Palette } from '../palette';
 
 const NS = 'http://www.w3.org/2000/svg';
 export const DR = {
@@ -76,24 +76,29 @@ const NO_LAYERS: SkyLayers = { figures: null, centre: 'off' };
 const CHART_R = 128;
 const chartRadius = (alt: number) => CHART_R * Math.tan(rad((90 - alt) / 2));
 
+let dials = 0;
 export interface RingReport { name: string; rotation: number; current: number; units: number; dir: 1 | -1; centre: number }
 interface Ring { name: string; layer: Layer; units: number; dir: 1 | -1; cur: (s: DialState) => number; mark: Element; markR: number }
 
-export function createDial(svg: SVGSVGElement) {
+/** The Dial in `svg`, in palette C: the page's theme (the Dial tab), or DARK (The Day's night window). */
+export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
   svg.replaceChildren();
-  const defs = el('defs', {}, svg), grad = el('radialGradient', { id: 'dl-glow' }, defs);
-  el('stop', { offset: '0', 'stop-color': C.goldHi, 'stop-opacity': 0.8 }, grad); el('stop', { offset: '1', 'stop-color': C.gold, 'stop-opacity': 0 }, grad);
-  const hw = 5 / Math.SQRT2, hatch = el('pattern', { id: 'dl-hatch', width: hw, height: hw, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
-  el('rect', { x: (0.12 * hw - 0.283).toFixed(3), y: 0, width: 0.566, height: hw, fill: C.silver }, hatch);
-  const lit = el('filter', { id: 'dl-lit', x: '-60%', y: '-60%', width: '220%', height: '220%' }, defs);
+  const id = `dl${++dials}`;                                  // its defs' ids: the Dial tab and The Day each draw a Dial, in different palettes
+  const defs = el('defs', {}, svg), grad = el('radialGradient', { id: `${id}-glow` }, defs);
+  const glowStops = [el('stop', { offset: '0', 'stop-opacity': 0.8 }, grad), el('stop', { offset: '1', 'stop-opacity': 0 }, grad)];
+  const hw = 5 / Math.SQRT2, hatch = el('pattern', { id: `${id}-hatch`, width: hw, height: hw, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+  const hatchLine = el('rect', { x: (0.12 * hw - 0.283).toFixed(3), y: 0, width: 0.566, height: hw }, hatch);
+  /** The defs' colours, set again with the face when the theme changes. */
+  const paintDefs = () => { glowStops[0].setAttribute('stop-color', C.goldHi); glowStops[1].setAttribute('stop-color', C.gold); hatchLine.setAttribute('fill', C.silver); };
+  const lit = el('filter', { id: `${id}-lit`, x: '-60%', y: '-60%', width: '220%', height: '220%' }, defs);
   el('feGaussianBlur', { stdDeviation: 2.2, result: 'b' }, lit); const mg = el('feMerge', {}, lit); el('feMergeNode', { in: 'b' }, mg); el('feMergeNode', { in: 'SourceGraphic' }, mg);
   const root = el('g', { class: 'dl-root' }, svg);
   let rings: Ring[] = [], world: Layer | null = null, centre: Layer | null = null, chart: SVGGElement | null = null, bodies: SVGGElement | null = null, needle: SVGGElement | null = null, parts: Element[] = [], built = '';
-  const keyOf = (doc: YearDoc, s: DialState) => `${doc.calculation.enoch_year}:${s.i}:${doc.calculation.latitude}:${doc.calculation.longitude_east}`;
+  const keyOf = (doc: YearDoc, s: DialState) => `${doc.calculation.enoch_year}:${s.i}:${doc.calculation.latitude}:${doc.calculation.longitude_east}:${paletteGeneration()}`;   // a new theme draws the face again
 
   /** Rings and the world layer for day i, drawn at rotation 0 (ring-local angles). */
   function build(doc: YearDoc, s: DialState) {
-    root.replaceChildren(); rings = []; parts = [];
+    root.replaceChildren(); rings = []; parts = []; paintDefs();
     const e = s.ext;
     const ring = (name: string, units: number, dir: 1 | -1, cur: (s: DialState) => number, markR: number) => {
       const layer = new Layer(root, `dl-ring dl-ring-${name}`), at = (u: number) => (dir * u * 360) / units;
@@ -118,11 +123,11 @@ export function createDial(svg: SVGSVGElement) {
     // the portals, standing on the horizon as the Sky draws them: a hatched pillar over each seam, an arch over each portal's common span; the arches the Sun
     // rises and sets in today are lit (today's sunrise and sunset bearings, as the marks in the centre)
     for (const [PP, bearing] of [[doc.portals, s.row.azimuth_deg], [doc.portals_west, e.sunset_azimuth_deg]] as const) {
-      for (const [lo, hi] of pillars(PP)) el('path', { d: seamPath(lo, hi, altRadius), fill: 'url(#dl-hatch)', 'fill-opacity': 0.7, class: 'dl-seam', 'pointer-events': 'none' }, W);
+      for (const [lo, hi] of pillars(PP)) el('path', { d: seamPath(lo, hi, altRadius), fill: `url(#${id}-hatch)`, 'fill-opacity': 0.7, class: 'dl-seam', 'pointer-events': 'none' }, W);
       for (const p of PP) {
         const on = within(p, bearing);
-        el('path', { d: archPath(p, altRadius), fill: on ? alpha('goldHi', 0.1) : 'none', stroke: on ? C.goldHi : C.bronze, 'stroke-width': on ? 1.6 : 1, 'stroke-opacity': on ? 1 : 0.9,
-          'stroke-linejoin': 'round', filter: on ? 'url(#dl-lit)' : undefined, class: on ? 'dl-arch dl-arch-on' : 'dl-arch', 'data-portal': p.portal, 'pointer-events': 'none' }, W);
+        el('path', { d: archPath(p, altRadius), fill: on ? alpha('goldHi', 0.1, C) : 'none', stroke: on ? C.goldHi : C.bronze, 'stroke-width': on ? 1.6 : 1, 'stroke-opacity': on ? 1 : 0.9,
+          'stroke-linejoin': 'round', filter: on ? `url(#${id}-lit)` : undefined, class: on ? 'dl-arch dl-arch-on' : 'dl-arch', 'data-portal': p.portal, 'pointer-events': 'none' }, W);
       }
     }
     // centre: the disc, the optional sky chart (redrawn per instant, screen angles), then on top the
@@ -248,7 +253,7 @@ export function createDial(svg: SVGSVGElement) {
       el('circle', { cx: x, cy: y, r: rr, fill: up ? fill : 'none', stroke: fill, 'stroke-width': up ? 0 : 1, opacity: up ? 1 : 0.6, 'data-body': key }, B);
       lab(r + rr + 10, bear(az), name, up ? cls : `${cls} dl-below`);
     };
-    for (const p of s.planets) body(p.name.toUpperCase(), p.name.toLowerCase(), p.az, p.alt, p.name === 'Uranus' || p.name === 'Neptune' ? 3.2 : 4.4, PCOL[p.name]);
+    for (const p of s.planets) body(p.name.toUpperCase(), p.name.toLowerCase(), p.az, p.alt, p.name === 'Uranus' || p.name === 'Neptune' ? 3.2 : 4.4, bodyColor(p.name, C));
     body(`MOON ${(s.moon.fraction * 100).toFixed(0)}%`, 'moon', s.moon.az, s.moon.alt, 6, C.moon, 'dl-moon', false);
     // compass mode: the direction faced is the top of the screen
     if (s.framing === 'compass') el('path', { d: `M0 ${-DR.band1 - 1}l-7 -12h14z`, fill: C.vermilion, 'data-facing': '1' }, B);
@@ -272,7 +277,7 @@ export function createDial(svg: SVGSVGElement) {
       el('circle', { cx: x, cy: y, r, fill, 'data-chart-body': name.toLowerCase() }, G);
       el('text', { x: x.toFixed(2), y: (y - r - 3).toFixed(2), 'text-anchor': 'middle', class: 'dl-chart-lbl' }, G, name);
     };
-    for (const p of s.planets) mark(p.name, p.az, p.alt, p.name === 'Uranus' || p.name === 'Neptune' ? 2 : 2.5, PCOL[p.name], true);
+    for (const p of s.planets) mark(p.name, p.az, p.alt, p.name === 'Uranus' || p.name === 'Neptune' ? 2 : 2.5, bodyColor(p.name, C), true);
     mark('Moon', s.moon.az, s.moon.alt, 3, C.moon);
     mark('Sun', s.sun.az, s.sun.alt, 3.5, C.sunCore);
     if (sky.centre === 'up') {                     // its own cardinals: east on the left, as overhead
@@ -295,7 +300,7 @@ export function createDial(svg: SVGSVGElement) {
       el('path', { d: `M${P(R, N)}A${R} ${R} 0 0 ${len > 0 ? 1 : 0} ${ax.toFixed(2)} ${ay.toFixed(2)}`, fill: 'none', stroke: C.goldHi, 'stroke-width': 1.2, 'data-sun-rate': '1' }, G);
       tri(R, a1, len > 0 ? 'l-5 -4v8z' : 'l5 -4v8z', C.goldHi, G);
     }
-    el('circle', { cx: sx, cy: sy, r: 22, fill: 'url(#dl-glow)' }, G);
+    el('circle', { cx: sx, cy: sy, r: 22, fill: `url(#${id}-glow)` }, G);
     el('circle', { cx: sx, cy: sy, r: 8, fill: up ? C.sunCore : 'none', stroke: C.sunCore, 'stroke-width': 1.5, 'data-body': 'sun' }, G);
     el('circle', { r: 4, fill: C.goldHi }, G);
   }

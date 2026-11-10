@@ -2,7 +2,7 @@
 // below, a playhead; a hand on it gives the part of the day under it. Drawn by The Day (src/day/view.ts) and Atlas's When.
 import type { YearDoc } from '../types';
 import type { DayEvent } from './events';
-import { C } from '../palette';
+import { bodyColor, C as PAGE, type Palette } from '../palette';
 
 export interface DayBar {
   /** Draw day i of the year with its events; `hm` gives an instant's local clock time ("05:52"). */
@@ -12,7 +12,8 @@ export interface DayBar {
 }
 
 /** `width`: the bar's width when the SVG has none yet (laid out later). `onScrub`: a hand on the bar (none: it takes no hand). */
-export function createDayBar(svg: SVGSVGElement, opts: { width?: () => number; onScrub?(part: number): void } = {}): DayBar {
+export function createDayBar(svg: SVGSVGElement, opts: { width?: () => number; onScrub?(part: number): void; palette?: Palette } = {}): DayBar {
+  const C = opts.palette ?? PAGE;
   let barX = (p: number) => p, head: Element | null = null, lastPart = 0;
   const place = (part: number) => { lastPart = part; head?.setAttribute('transform', `translate(${barX(Math.min(18, part)).toFixed(2)} 0)`); };
   if (opts.onScrub) {
@@ -25,8 +26,8 @@ export function createDayBar(svg: SVGSVGElement, opts: { width?: () => number; o
     build(doc, i, events, hm) {
       const w = svg.clientWidth || opts.width?.() || 300, X = (barX = (p: number) => 4 + (p / 18) * (w - 8)), Y = 16, e = doc.extended[i], dp = e.day_parts;
       const marks = events.filter((v) => v.body !== 'Sun').map((v) => v.kind === 'rise'
-        ? `<circle cx="${X(v.part)}" cy="${Y - 7}" r="2.3" fill="${v.color}"/>`
-        : `<circle cx="${X(v.part)}" cy="${Y + 7}" r="2" fill="none" stroke="${v.color}" stroke-width="1"/>`).join('');
+        ? `<circle cx="${X(v.part)}" cy="${Y - 7}" r="2.3" fill="${bodyColor(v.body, C)}"/>`
+        : `<circle cx="${X(v.part)}" cy="${Y + 7}" r="2" fill="none" stroke="${bodyColor(v.body, C)}" stroke-width="1"/>`).join('');
       const ticks = Array.from({ length: 19 }, (_, p) => `<line x1="${X(p)}" x2="${X(p)}" y1="${Y - (p % 6 ? 2 : 4)}" y2="${Y + (p % 6 ? 2 : 4)}" stroke="${C.ivory3}" stroke-width="0.8"/>`).join('');
       svg.innerHTML = `<rect x="0" y="0" width="${w}" height="40" fill="transparent"/>
         <line x1="${X(0)}" x2="${X(18)}" y1="${Y}" y2="${Y}" stroke="${C.silverDim}" stroke-width="1.5"/>

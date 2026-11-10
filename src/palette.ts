@@ -2,6 +2,10 @@
 // colours live in src/theme.css (one block per theme); this reads the same custom properties off the
 // page, so the drawings and the stylesheets can never disagree. A key is the property's name in
 // camelCase: C.goldHi is --gold-hi, C.dlOx2 is --dl-ox2.
+//
+// Two palettes are in use: C, the page's theme (it changes when the theme does), and DARK, for what
+// stays a night window in every theme (Sky, The Day, the Atlas globe: the sky is drawn in light added
+// to black, and it is the night sky). theme.css gives those windows the dark values too.
 
 /** The dark theme's values: what C gives where there is no page to read (the Node tests), or before
  *  the stylesheet has loaded. tests/palette.test.ts holds them equal to src/theme.css's :root. */
@@ -21,11 +25,12 @@ export const DARK = {
   dlPortal: '#2a2318', dlPortal2: '#1f1a12', dlCell: '#15130f', dlCell2: '#1b1814', dlDay: '#1d1a15', dlSabbath: '#3a2f1c',
 };
 export type PaletteKey = keyof typeof DARK;
+export type Palette = Readonly<Record<PaletteKey, string>>;
 
 /** The custom property a key reads: goldHi → --gold-hi. */
 export const cssVar = (k: PaletteKey) => `--${k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
 
-let cache: Record<PaletteKey, string> | null = null;
+let cache: Record<PaletteKey, string> | null = null, generation = 0;
 function read(): Record<PaletteKey, string> {
   if (cache) return cache;
   if (typeof document === 'undefined' || typeof getComputedStyle === 'undefined') return DARK;
@@ -37,14 +42,19 @@ function read(): Record<PaletteKey, string> {
 }
 
 /** The colours of the theme in force, read when used (never at import). */
-export const C: Readonly<Record<PaletteKey, string>> = Object.defineProperties({} as Record<PaletteKey, string>,
+export const C: Palette = Object.defineProperties({} as Record<PaletteKey, string>,
   Object.fromEntries((Object.keys(DARK) as PaletteKey[]).map((k) => [k, { get: () => read()[k], enumerable: true }])));
 
 /** Forget the reading: the next use of C reads the page again (after the theme changes). */
-export function paletteChanged() { cache = null; }
+export function paletteChanged() { cache = null; generation++; }
+/** Counts the theme's changes: a drawing that keeps what it built can key it on this. */
+export const paletteGeneration = () => generation;
 
 /** A palette colour see-through: rgba(r,g,b,a) from its hex. */
-export function alpha(k: PaletteKey, a: number) {
-  const h = C[k].replace('#', ''), x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h;
+export function alpha(k: PaletteKey, a: number, P: Palette = C) {
+  const h = P[k].replace('#', ''), x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h;
   return `rgba(${parseInt(x.slice(0, 2), 16)},${parseInt(x.slice(2, 4), 16)},${parseInt(x.slice(4, 6), 16)},${a})`;
 }
+
+/** A body's colour: the Sun, the Moon or a planet, by its name. */
+export const bodyColor = (body: string, P: Palette = C) => P[body.toLowerCase() as PaletteKey] ?? P.ivory;

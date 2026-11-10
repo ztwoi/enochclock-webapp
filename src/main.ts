@@ -28,6 +28,7 @@ import { PER_SECOND, stepUnits } from './transport-speed';
 import { createSheet } from './sheet';
 import { keepPhrasesTogether } from './readwrap';
 import { clockFormat, clockText, setClockFormat, type ClockFormat } from './clock';
+import { initTheme, onThemeChange, setThemeChoice, THEME_CHOICES, themeChoice, type ThemeChoice } from './theme';
 import { guaranteeTaps } from './taps';
 import { createSky, followable, sameBody, type Catalogue, type Followed, type Side, type Sky } from './skyview';
 import { createSkyCompass } from './sky/compassmode';
@@ -774,15 +775,19 @@ function bindTransport() {
   requestAnimationFrame((t) => { last = t; frame(t); });
   setInterval(tick, 1000);
 }
-/** Settings: the reader's preferences, kept on the device, in a quiet section at the foot of the details (above Offline).
- *  For now one: how clock times read, 12-hour (the default) or 24-hour. */
+/** Settings: the reader's preferences, kept on the device, in a quiet section at the foot of the details (above Offline):
+ *  how clock times read, 12-hour (the default) or 24-hour; and the colour theme, Dark (the default), Light or Auto (src/theme.ts). */
 function mountSettings() {
   const sec = document.createElement('div'); sec.className = 'section settings'; sec.id = 'settings';
   sec.innerHTML = `<div class="eyebrow">Settings</div>
    <div class="set-row"><span class="set-l" id="set-clock-l">Clock</span><div class="seg" role="group" aria-labelledby="set-clock-l">${(['12', '24'] as ClockFormat[]).map((f) => `<button type="button" class="btn" data-clock="${f}" title="Clock times ${f === '12' ? 'with AM and PM: 7:41 PM' : 'from 00:00 to 23:59: 19:41'}">${f}-hour</button>`).join('')}</div></div>
+   <div class="set-row"><span class="set-l" id="set-theme-l">Theme</span><div class="seg" role="group" aria-labelledby="set-theme-l">${THEME_CHOICES.map((t) => `<button type="button" class="btn" data-theme-choice="${t}" title="${THEME_TIP[t]}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div></div>
    <p class="set-note">Kept on this device.</p>`;
-  const paint = () => sec.querySelectorAll<HTMLButtonElement>('[data-clock]').forEach((b) => { const on = b.dataset.clock === clockFormat(); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  const press = (sel: string, on: (b: HTMLButtonElement) => boolean) => sec.querySelectorAll<HTMLButtonElement>(sel).forEach((b) => { b.classList.toggle('on', on(b)); b.setAttribute('aria-pressed', String(on(b))); });
+  const paint = () => { press('[data-clock]', (b) => b.dataset.clock === clockFormat()); press('[data-theme-choice]', (b) => b.dataset.themeChoice === themeChoice()); };
   sec.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-theme-choice]');
+    if (t) { setThemeChoice(t.dataset.themeChoice as ThemeChoice); paint(); return; }
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-clock]'); if (!b) return;
     setClockFormat(b.dataset.clock as ClockFormat); paint();
     shown.i = -1; update();                                        // every time on show again, in the new format
@@ -791,6 +796,13 @@ function mountSettings() {
   paint();
   $('insp').after(sec);
 }
+const THEME_TIP: Record<ThemeChoice, string> = {
+  dark: 'The instrument on black: for the evening, and the default',
+  light: 'The instrument on vellum: for daylight. Sky, The Day and Atlas stay a night sky',
+  auto: "Light or dark as this device's appearance is",
+};
+/** A new theme: what keeps colours it was built with draws again (the Dial rebuilds its face by itself, on the palette's generation). */
+onThemeChange(() => { state.deep?.restyle(); shown.i = -1; update(); });
 /** Open the Enoch year containing a civil date (any year in range), at that morning. */
 async function goDate(iso: string) {
   await load({ date: iso }, 'start');
@@ -908,7 +920,7 @@ async function start() {
   if (await verifyInstalled()) pruneStaleVersions().catch(() => undefined);   // a pack the browser has evicted is offered for install again; old versions' caches go
   mountOffline({ after: $('insp'), stage: $('stage'), chip: $('calc-status'), more: $('more'), disposeCalculator, openDetails: () => sheet.open(), });
   mountLegal($('offline'));
-  mountSettings();
+  initTheme(); mountSettings();
   mountFeedback($('legal'), () => ({ mode: VIEWS[state.view].name, page: state.doc ? `Enoch year ${state.doc.calculation.enoch_year}` : '' }));
   onCalculatorProgress(calculatorNote);
   bindTransport(); bindSite(); bindOptions(); bindAtlas(); navShow = bindNavScroll();

@@ -13,11 +13,11 @@ import * as THREE from 'three';
 import { skyFrame, starVector } from './sky/astronomy';
 import type { Star } from './sky/catalogue';
 import { aberrated, aberration, bodyDirection, createMoonClock, declinationOfDate, ecliptic, horizonAzimuth, litPortals, moon, passageRun, planet, portalAt, refracted, type MoonDay, type Moonrise } from './sky/instrument';
-import { PCOL, PLANETS } from './dial/state';
+import { PLANETS } from './dial/state';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { easeHeading, mod360, wrap180 } from './sky/heading';
 import { dayIndexAt, GEEZ, H, PORTAL_ALT, pillars, W } from './model';
-import { C } from './palette';
+import { bodyColor, DARK as C } from './palette';           // Sky is a night window in every theme
 import { createStage, hatchMaterial, headClearance, layoutRead, setLinePoints, sprite, svgEl, UNTILED, type Pt } from './stage';
 import type { Portal, YearDoc } from './types';
 
@@ -209,7 +209,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   // ahead, a dot at every part; the Moon's and each planet's track a faint line in its colour, and the followed body's drawn as the Sun's. Computed once per day, as drawn (aberrated, refracted).
   const PATH_STEPS = 12;                                          // samples per part
   const pathPast = line([[0, 0], [1, 0]], C.goldHi, 1.6, 0.85, undefined, 2.8), pathAhead = line([[0, 0], [1, 0]], C.gold, 1, 0.55, [3, 5], 2.8);
-  const planetTracks = PLANETS.map(([, name]) => line([[0, 0], [1, 0]], PCOL[name], 0.7, 0.3, undefined, 2.6));
+  const planetTracks = PLANETS.map(([, name]) => line([[0, 0], [1, 0]], bodyColor(name, C), 0.7, 0.3, undefined, 2.6));
   const moonTrack = line([[0, 0], [1, 0]], C.moon, 0.8, 0.35, undefined, 2.6);
   // the followed body's path (the Moon or a planet), drawn as the Sun's in its own colour; its faint track gives way to it
   const followPast = line([[0, 0], [1, 0]], C.ivory, 1.5, 0.85, undefined, 2.7), followAhead = line([[0, 0], [1, 0]], C.ivory, 1, 0.55, [3, 5], 2.7);
@@ -256,7 +256,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     splitAt(sunTrack, sunDirs, at, sun, pathPast, pathAhead);
     const ft = fb ? bodyTracks.get(fb) : undefined;
     if (fb && ft && at0) {
-      const c = fb === 'Moon' ? C.moon : star ? C.ivory : PCOL[fb];
+      const c = fb === 'Moon' ? C.moon : star ? C.ivory : bodyColor(fb!, C);
       for (const l of [followPast, followAhead]) l.material.color.set(c);
       splitAt(ft.pts, ft.dirs, at, at0, followPast, followAhead);
     }
@@ -375,7 +375,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     if (sunIn) text(skyX(sun.az) + 14, skyY(sun.alt) - 12, `SUN ${sun.az.toFixed(3)}° · ${sun.alt.toFixed(3)}°`, 'lbl-mono gold-hi halo', { 'font-size': 10 }, dyn);
     // planets (computed positions, the Dial's colours; hollow below the horizon, as on the Dial)
     if (planetsOn) for (const p of planets) if (inFrame(p.az, p.alt)) {
-      const x = skyX(p.az), y = skyY(p.alt), up = p.alt > 0, c = PCOL[p.name], r = p.name === 'Uranus' || p.name === 'Neptune' ? 3.4 : 5;
+      const x = skyX(p.az), y = skyY(p.alt), up = p.alt > 0, c = bodyColor(p.name, C), r = p.name === 'Uranus' || p.name === 'Neptune' ? 3.4 : 5;
       svgEl('circle', { cx: x, cy: y, r: r + 2.5, fill: 'none', stroke: c, 'stroke-width': 0.8, opacity: up ? 0.4 : 0.25 }, dyn);
       svgEl('circle', { cx: x, cy: y, r, fill: up ? c : 'none', stroke: c, 'stroke-width': up ? 0 : 1, opacity: up ? 1 : 0.6, 'data-planet': p.name.toLowerCase() }, dyn);
       taken.push([x - 8, y - 20, x + 14 + p.name.length * 6.2, y + 8]);

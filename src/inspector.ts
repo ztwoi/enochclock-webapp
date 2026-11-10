@@ -8,7 +8,7 @@ import { declinationOfDate, horizonAzimuth, lastPassage, litPortals, passageRun,
 import { AstroTime } from 'astronomy-engine';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { PCOL } from './dial/state';
-import { C } from './palette';
+import { bodyColor, C, DARK } from './palette';
 import { followable, positionOf, sameBody, type Followed, type SkyInfo } from './skyview';
 import type { DeepDoc, YearDoc } from './types';
 
@@ -71,6 +71,7 @@ function portalSection(doc: YearDoc, S: { portal: number; side: 'east' | 'west' 
 /** The Sky's reading, under its options (as the Dial's under its title): the body or star selected, or else the one followed, in a line, with
  *  its Follow toggle; a portal selected, where the Sun last crossed in it. The `w` parts are a wide screen's: a phone keeps the line short. */
 export function skyReading(doc: YearDoc, sky: SkyInfo | null, followed: Followed | null) {
+  const C = DARK;                                                  // the line sits on Sky's night sky, in every theme
   const S = sky?.selection ?? null, b = followable(S) ?? followed;
   if (!sky || (!b && S?.kind !== 'portal')) return '';
   const c = doc.calculation, part = (html: string, wide = false) => `<span${wide ? ' class="w"' : ''}>${html}</span>`;
@@ -97,7 +98,7 @@ export function skyReading(doc: YearDoc, sky: SkyInfo | null, followed: Followed
       + (p ? part(p.where === 'within' ? `rose in portal ${ROMAN[p.portal!]}` : p.where === 'seam' ? 'rose in a seam' : 'rose outside the portals', true) : '');
   } else if (b!.kind === 'planet') {
     const q = sky.planets.find((x) => x.name === (b as { name: string }).name);
-    html = part(name(b!.name, PCOL[b!.name])) + az + alt + (q ? part(`mag ${q.mag.toFixed(1)}`, true) + part(crossing(q.dec), true) : '');
+    html = part(name(b!.name, bodyColor(b!.name, C))) + az + alt + (q ? part(`mag ${q.mag.toFixed(1)}`, true) + part(crossing(q.dec), true) : '');
   } else {
     const st = b!.star, dec = declinationOfDate(st, new AstroTime(sky.jd - 2451545));
     html = part(name(st.name ?? st.designation ?? st.id, C.ivory)) + (st.constellation ? part(CONSTELLATION_NAMES[st.constellation] ?? st.constellation, true) : '') + part(`mag ${st.mag_v.toFixed(1)}`, true) + az + alt + part(crossing(dec), true);

@@ -521,6 +521,8 @@ export function createDeep(view: HTMLElement, deep: DeepDoc, series: DeepSeries,
       fromScreen: (x: number, y: number) => c().stage.fromScreen(x, y),
       toScreen: (x: number, y: number) => c().stage.toScreen(x, y),
     },
+    /** Draw again in the theme now in force (keeping the range, day scale and year). */
+    restyle() { key = ''; fit(); },
     dispose() { ro.disconnect(); cur?.dispose(); body.remove(); },
   };
 }
