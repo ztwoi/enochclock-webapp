@@ -239,9 +239,9 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
     if (sky.figures) el('path', { d: figurePath(s, sky.figures, (az, alt) => polar(altRadius(alt), bear(az)), true), fill: 'none', stroke: C.silver, 'stroke-width': 0.6, opacity: 0.45, 'data-figures': 'band' }, B);
     // stars: the default set (V ≤ 3.2) brighter; fainter ones (a deeper limit, the figures' stars) dimmer
     let stars = '', faint = '';
-    const inkDot = paper();                               // ink needs a mark a light point does not: no star under ~1.5 px on a phone, the bright ones bold
+    const inkDot = paper();                               // ink needs a mark a light point does not: no star under ~1 px on a phone, the bright ones bold
     for (const st of s.bright) if (st.alt > 0) {
-      const [x, y] = polar(altRadius(st.alt), bear(st.az)), m = st.mag ?? 3, r = inkDot ? (m <= 3.2 ? Math.max(2.2, 4.8 - 0.8 * m) : 1.3) : Math.max(0.6, 2.6 - 0.5 * m), d = dot(x, y, r);
+      const [x, y] = polar(altRadius(st.alt), bear(st.az)), m = st.mag ?? 3, r = inkDot ? (m <= 3.2 ? Math.max(1.65, 3.6 - 0.6 * m) : 1.0) : Math.max(0.6, 2.6 - 0.5 * m), d = dot(x, y, r);
       if ((st.mag ?? 9) <= 3.2) stars += d; else faint += d;
     }
     const g = starGain();
@@ -271,12 +271,12 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
     el('path', { d: 'M-3 0h6M0 -3v6', stroke: C.ivory3, 'stroke-width': 0.6 }, G);
     if (sky.figures) el('path', { d: figurePath(s, sky.figures, at, false), fill: 'none', stroke: C.silver, 'stroke-width': 0.5, opacity: 0.5, 'data-figures': 'chart' }, G);
     let stars = '';
-    // on paper a star needs a real mark (~1.5 px at the least on a phone) and the bright ones bold; the faint field lighter
+    // on paper a star needs a real mark (~1 px at the least on a phone) and the bright ones bold; the faint field lighter
     const ink = paper(); let faint = '', mid = '';                 // on paper: three tiers, the faint field light, the bright stars bold
     for (const st of s.bright) if (st.alt > 0) {
       const [x, y] = at(st.az, st.alt), m = st.mag ?? 3;
       if (!ink) stars += dot(x, y, Math.max(0.35, 1.7 - 0.3 * m));
-      else if (m > 4.5) faint += dot(x, y, 1.1); else if (m > 2.5) mid += dot(x, y, 1.7); else stars += dot(x, y, Math.max(2.4, 4.4 - 0.6 * m));
+      else if (m > 4.5) faint += dot(x, y, 0.85); else if (m > 2.5) mid += dot(x, y, 1.3); else stars += dot(x, y, Math.max(1.8, 3.3 - 0.45 * m));
     }
     if (faint) el('path', { d: faint, fill: C.starInk, opacity: 0.3 }, G);
     if (mid) el('path', { d: mid, fill: C.starInk, opacity: 0.8 }, G);

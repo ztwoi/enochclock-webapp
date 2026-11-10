@@ -320,7 +320,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
       let a = base[i] * dim * (alt < 0 ? (belowOn ? 0.9 : 0.35) : 1), r = rgb[3 * i], g = rgb[3 * i + 1], bl = rgb[3 * i + 2];
       if (ink) { r = ir; g = ig; bl = ib; }                 // on paper every star is ink: bright ones bold, the faint field receding (depth by the square of its light)
       if (portalStarsOn && portalStar(i, () => proj.dec(), spans)) { r = pr; g = pg; bl = pb; a = Math.min(1, a * 1.5); }
-      pos[3 * k] = x; pos[3 * k + 1] = y; size[k] = ink ? Math.max(1.7, field.size[i] * 1.35) : field.size[i]; alpha[k] = ink ? Math.min(1, 0.12 + 1.5 * a * a) : Math.max(0.05, Math.min(1, a * gain));
+      pos[3 * k] = x; pos[3 * k + 1] = y; size[k] = ink ? Math.max(1.3, field.size[i] * 1.05) : field.size[i]; alpha[k] = ink ? Math.min(1, 0.12 + 1.5 * a * a) : Math.max(0.05, Math.min(1, a * gain));
       tint[3 * k] = r; tint[3 * k + 1] = g; tint[3 * k + 2] = bl;
       shownIdx[k] = i; shownX[k] = x; shownY[k] = y;
     }
