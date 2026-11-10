@@ -8,10 +8,17 @@
    - the dark values below are mirrored in palette.ts DARK (for code run without a page, the tests);
    tests/palette.test.ts holds all three.
 
-   Dark is the default (:root). It is also every night window's, in every theme: the stage while it shows Sky, The Day or the
-   Atlas globe (the sky is drawn as light added to black, and it is the night sky), and the film. Their drawing code uses
-   palette.ts DARK to match. Light (:root[data-theme=light], set by public/theme-boot.js and src/theme.ts) follows. */
-:root, .night, .film, .stage:is([data-view=sky], [data-view=day], [data-view=atlas]) {
+   The themes (data-theme on <html>, set by public/theme-boot.js before the page draws, then src/theme.ts):
+   - Dark (the default, :root): the engraved instrument on black.
+   - Light: the instrument printed on vellum, for daylight. Every view follows it: the sky becomes a printed star atlas
+     (ink stars, sized by brightness), the globe a printed globe. --paper: 1 tells the drawing code to draw in ink, not light.
+   - Contrast: Dark with every tier lifted (no text under 7:1, rules and borders stronger), for glare and low vision.
+   - Red: Contrast, the whole page (the sky, the WebGL, the film) seen through a red filter: the night-vision light astronomers
+     use, so the eyes stay dark-adapted. The filter is #night-red in index.html.
+   The film stays dark in every theme (.film): it is video. */
+:root, .film {
+  --paper: 0;                                                 /* the drawings: light on black (0), or ink on paper (1) */
+  --star-gain: 1;                                             /* the stars' brightness, over the catalogue's */
   /* ground and rules */
   --bg: #090807; --bg-rgb: 9,8,7; --rule: rgba(var(--ivory-rgb),.09); --rule2: rgba(var(--ivory-rgb),.16);
   /* the four layers: ivory computed · gold calendar · bronze textual · silver derived, each with its lit and dim tiers */
@@ -40,8 +47,10 @@
   --sun: #f4dc9f; --sun-core: #fff3d0; --glow-core: #fff6dc;
   --moon: #d8d2c4; --moon-glow: #b9c6d8; --moon-dark: #1a1814;
   --mercury: #c4a98a; --venus: #f6e6b0; --mars: #c76b4a; --jupiter: #e0b878; --saturn: #d8b45e; --uranus: #9cc7c9; --neptune: #7c95c9;
-  /* Sky */
-  --sky-ground: #050403; --sky-day: #3a2c17;
+  /* Sky: the stars' ink (paper; on black a star is its own colour), the ground below the horizon, the daylight wash */
+  --star-ink: #ece3cf; --sky-ground: #050403; --sky-day: #3a2c17;
+  /* Atlas's globe: the sea and the land, on the night side and the day side; the latitudes the calculator refuses */
+  --globe-sea: #0a0a0c; --globe-sea-day: #171511; --globe-land: #26231e; --globe-land-day: #705c3a; --globe-polar: #782622;
   /* the Dial: the month ring (ox-blood, the month lit red), the uncorrected ring (sage), the portals and the course cells */
   --dl-ox: #3b1513; --dl-ox2: #4a1a17; --dl-red: #b4291f; --dl-ox-edge: #1a0b0a;
   --dl-month: #c9a08f; --dl-month-on: #fff3e6; --dl-geez: #a77f6c;
@@ -50,30 +59,69 @@
   --serif: "Cormorant", "Ethiopic", serif; --mono: "Plex Mono", ui-monospace, monospace; --cond: "Plex Cond", sans-serif; --geez: "Ethiopic", serif;
 }
 
-/* Light · Vellum: the same instrument printed on vellum, for daylight. The ink is the ivory tier (darkest is strongest, so
-   the "hi" tiers are the deepest); gold is ochre, bronze sepia, silver slate; the month ring is rubricated. Text tokens
-   are 4.5:1 or more on --bg (labels 5.5:1); --ivory3 and the -dim tiers are engraving, not reading. */
+/* Light · Vellum: the instrument printed on vellum, for daylight. The ink is the ivory tier (darkest is strongest, so the
+   "hi" tiers are the deepest); gold is ochre, bronze sepia, silver slate; the month ring is rubricated. Reading text is
+   5.5:1 or more on --bg (body 10:1+, labels 7:1); in daylight even the engraving (--ivory3, the -dim tiers: the Dial's small
+   numerals) is 4:1 or more on the cells it is cut into. */
 :root[data-theme=light] {
-  --bg: #f2ebdb; --bg-rgb: 242,235,219; --rule: rgba(var(--ivory-rgb),.13); --rule2: rgba(var(--ivory-rgb),.24);
-  --ivory: #1d1811; --ivory2: #4a4234; --ivory3: #8a7f6a; --ivory-rgb: 29,24,17; --ivory2-rgb: 74,66,52;
-  --gold: #7f5c12; --gold-hi: #5a3c00; --gold-dim: #a88d58; --gold-rgb: 127,92,18; --gold-hi-rgb: 90,60,0;
-  --bronze: #7a4a24; --bronze-dim: #8f7356; --silver: #285f6c; --silver-dim: #7b979e; --silver-rgb: 40,95,108;
-  --label: #675d4c;
-  --bg-glow: #f8f3e8; --bar: #ebe3d0; --panel: #f7f1e4; --sheet: #efe7d5; --field: #faf6ec; --ink: #f2ebdb; --box: #f7f1e4;
-  --insp-top: rgba(236,228,211,.92); --insp-bot: rgba(232,223,204,.96);
-  --on-gold: #fbf6ea; --shade: #f2ebdb; --shade-hard: #f2ebdb;
-  --scrim: rgba(40,32,20,.35); --shadow: rgba(60,45,20,.18);
-  --warn: #a8341a; --warn-soft: #a8341a; --alarm: #b03a2a; --alarm-rgb: 176,58,42; --vermilion: #b8321f;
-  --sun: #8a6410; --sun-core: #c98a12; --moon: #5d5a52; --moon-dark: #d9d0bd;
-  --mercury: #7d6248; --venus: #7b6117; --mars: #a0402a; --jupiter: #8c5f1c; --saturn: #6e6420; --uranus: #2f7478; --neptune: #3b5592;
-  --dl-ox: #a4382a; --dl-ox2: #943023; --dl-red: #cf4a2e; --dl-ox-edge: #f2ebdb;
+  --paper: 1;
+  --bg: #f4eee1; --bg-rgb: 244,238,225; --rule: rgba(var(--ivory-rgb),.14); --rule2: rgba(var(--ivory-rgb),.28);
+  --ivory: #14110b; --ivory2: #3d3628; --ivory3: #695f4c; --ivory-rgb: 20,17,11; --ivory2-rgb: 61,54,40;
+  --gold: #6e4f0c; --gold-hi: #4a3100; --gold-dim: #715c2e; --gold-rgb: 110,79,12; --gold-hi-rgb: 74,49,0;
+  --bronze: #6b3f1c; --bronze-dim: #806546; --silver: #1f5562; --silver-dim: #4b6970; --silver-rgb: 31,85,98;
+  --label: #564d3e;
+  --bg-glow: #faf6ee; --bar: #ece5d4; --panel: #f9f5ec; --sheet: #f0e9da; --field: #fcf9f2; --ink: #f4eee1; --box: #f9f5ec;
+  --insp-top: rgba(239,232,217,.95); --insp-bot: rgba(235,227,210,.97);
+  --on-gold: #fdf9ef; --shade: #f4eee1; --shade-hard: #f4eee1;
+  --scrim: rgba(40,32,20,.35); --shadow: rgba(60,45,20,.2);
+  --warn: #9c2f16; --warn-soft: #9c2f16; --alarm: #a3331f; --alarm-rgb: 163,51,31; --vermilion: #ad2c1a;
+  --sun: #7a560a; --sun-core: #c98a12; --glow-core: #e9b23e;
+  --moon: #4f4c45; --moon-glow: #8b96a4; --moon-dark: #d8cfbb;
+  --mercury: #6e553d; --venus: #6c5412; --mars: #953a24; --jupiter: #7d5416; --saturn: #625819; --uranus: #24676b; --neptune: #334c88;
+  --star-ink: #14110b; --sky-ground: #ddd1b6; --sky-day: #b7ccd6;
+  --globe-sea: #c9c8bd; --globe-sea-day: #e3e6df; --globe-land: #ad9771; --globe-land-day: #d4bd8f; --globe-polar: #a4382a;
+  --dl-ox: #a4382a; --dl-ox2: #943023; --dl-red: #cf4a2e; --dl-ox-edge: #f4eee1;
   --dl-month: #f6e2d6; --dl-month-on: #fffaf0; --dl-geez: #ecc9b8;
-  --dl-sage: #46703f; --dl-sage-dim: #7f9a78; --dl-sage-hi: #2f5a2a;
+  --dl-sage: #3d6537; --dl-sage-dim: #56734f; --dl-sage-hi: #2a5225;
   --dl-portal: #e3d6bb; --dl-portal2: #ebe0c8; --dl-cell: #e6dcc6; --dl-cell2: #ddd0b4; --dl-day: #e0d4bb; --dl-sabbath: #c9b48a;
 }
-/* A night window inside the light theme: its own ground and ink (in Dark they are the page's already). */
-[data-theme=light] :is(.night, .film, .stage:is([data-view=sky], [data-view=day], [data-view=atlas])) { color: var(--ivory); }
-[data-theme=light] .stage:is([data-view=sky], [data-view=day], [data-view=atlas]) { background: radial-gradient(1200px 800px at 38% 42%, var(--bg-glow) 0%, var(--bg) 70%); }
+
+/* Contrast: Dark with every tier lifted, on pure black. Reading text 12:1 or more, labels 12:1, the faint engraving 7.9:1;
+   rules and borders stronger; the stars brighter. Red takes the same values under its filter: reduced to their light, Dark's
+   dim tiers would fall to black. */
+/* In daylight, nothing is left faint to read: labels over the globe get a vellum halo; a body below the horizon dims less. */
+[data-theme=light] .atlas-overlay text { stroke: var(--bg); stroke-width: 2px; stroke-opacity: .7; paint-order: stroke; }
+[data-theme=light] .dl-side .read dt.down, [data-theme=light] .dl-side .read dt.down + dd { opacity: .72; }
+[data-theme=light] .dl-num { fill: var(--gold); }                     /* the course numbers, cut small into the cells */
+
+:root[data-theme=contrast], :root[data-theme=red] {
+  --star-gain: 1.6;
+  --bg: #000000; --bg-rgb: 0,0,0; --rule: rgba(var(--ivory-rgb),.24); --rule2: rgba(var(--ivory-rgb),.45);
+  --ivory: #fffaf0; --ivory2: #e6dcc8; --ivory3: #a89e8a; --ivory-rgb: 255,250,240; --ivory2-rgb: 230,220,200;
+  --gold: #ffd27a; --gold-hi: #fff0c4; --gold-dim: #b8975a; --gold-rgb: 255,210,122; --gold-hi-rgb: 255,240,196;
+  --bronze: #eab97e; --bronze-dim: #b8956a; --silver: #a8e0ee; --silver-dim: #7fb0bc; --silver-rgb: 168,224,238;
+  --label: #cfc5b0;
+  --bg-glow: #000000; --bar: #000000; --panel: #0a0a0a; --sheet: #050505; --field: #000000; --ink: #000000; --box: #0a0a0a;
+  --insp-top: rgba(0,0,0,.96); --insp-bot: rgba(0,0,0,.98);
+  --on-gold: #000000; --shade: #000000; --shade-hard: #000000;
+  --scrim: rgba(0,0,0,.8); --shadow: rgba(0,0,0,.85);
+  --warn: #ffab85; --warn-soft: #ffab85; --alarm: #ff8a78; --alarm-rgb: 255,138,120; --vermilion: #ff6a50;
+  --sun: #fff0c4; --sun-core: #ffffff; --glow-core: #fff6dc;
+  --moon: #f0ece2; --moon-glow: #cfdbea; --moon-dark: #222222;
+  --mercury: #e2c8a8; --venus: #fff1c0; --mars: #ff8e6a; --jupiter: #ffd28e; --saturn: #f4d27a; --uranus: #b6eef0; --neptune: #a6bcf2;
+  --star-ink: #fffaf0; --sky-ground: #000000; --sky-day: #3a2c17;
+  --globe-sea: #000000; --globe-sea-day: #1c1a15; --globe-land: #3a352c; --globe-land-day: #8f774a; --globe-polar: #a03028;
+  --dl-ox: #5a1712; --dl-ox2: #6e1d16; --dl-red: #e0412e; --dl-ox-edge: #000000;
+  --dl-month: #ffd9c9; --dl-month-on: #ffffff; --dl-geez: #ffc4ae;
+  --dl-sage: #b6e0ae; --dl-sage-dim: #86a67e; --dl-sage-hi: #dcffd4;
+  --dl-portal: #3a3020; --dl-portal2: #2a2318; --dl-cell: #1a1814; --dl-cell2: #24201a; --dl-day: #26221b; --dl-sabbath: #5a4a2c;
+}
+
+/* Red: the Contrast palette through a red filter (index.html #night-red: the light of each pixel, in red alone, dimmed), over
+   everything the page shows at once. On the root element a filter keeps fixed-position elements on the viewport. */
+:root[data-theme=red] { filter: url(#night-red); }
+/* A modal dialog (the editors, the film) and a fullscreen element are drawn in the top layer, outside the root's filter: they take it themselves. */
+[data-theme=red] dialog, [data-theme=red] dialog::backdrop, [data-theme=red] :fullscreen { filter: url(#night-red); }
 
 /* overlay typography (SVG, design units) */
 .lbl-mono { font-family: var(--mono); fill: var(--ivory); font-size: 10.5px; }

@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { AstroTime, Body, GeoVector, Rotation_EQJ_EQD, SiderealTime } from 'astronomy-engine';
 import type { Catalogue } from '../skyview';
-import { DARK as C, type PaletteKey } from '../palette';     // the globe is a night window in every theme
+import { C, paper, starGain, type PaletteKey } from '../palette';
 import { band, bearingWord, dot, eqjToEarth, frameAt, latLon, nearest, norm180, obliquity, polarLimit, preview, vec, type V3 } from './geo';
 import { coastSegments, landMask, loadLand } from './land';
 import { places } from './places';
@@ -49,23 +49,27 @@ const J2000 = 2451545, STAR_R = 5000, DIST = 8, FILL = 0.86, MAX_ZOOM = 14, MAG_
 const BODIES: [Body, string, PaletteKey][] = [[Body.Sun, 'Sun', 'sun'], [Body.Moon, 'Moon', 'moon'],
   ...(['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn'] as const).map((n): [Body, string, PaletteKey] => [Body[n], n, n.toLowerCase() as PaletteKey])];
 
+/** A palette colour as the shaders take it (0–1 per channel, no colour-space change). */
+const rgb = (hex: string) => new THREE.Vector3(...[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255));
+/** The globe, in the theme in force (built again when it changes): the sea and the land by night and by day, the refused latitudes, the terminator. */
 const globeShader = (land: THREE.Texture) => new THREE.ShaderMaterial({
-  uniforms: { land: { value: land }, sun: { value: new THREE.Vector3(1, 0, 0) }, lit: { value: 1 }, polarOn: { value: 1 }, polarLim: { value: 66 * D }, px: { value: 1 } },
+  uniforms: { land: { value: land }, sun: { value: new THREE.Vector3(1, 0, 0) }, lit: { value: 1 }, polarOn: { value: 1 }, polarLim: { value: 66 * D }, px: { value: 1 },
+    seaN: { value: rgb(C.globeSea) }, seaD: { value: rgb(C.globeSeaDay) }, landN: { value: rgb(C.globeLand) }, landD: { value: rgb(C.globeLandDay) }, polar: { value: rgb(C.globePolar) }, term: { value: rgb(C.goldHi) } },
   vertexShader: `varying vec3 vPos; void main(){ vPos = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
   fragmentShader: `
-    uniform sampler2D land; uniform vec3 sun; uniform float lit, polarOn, polarLim, px; varying vec3 vPos;
+    uniform sampler2D land; uniform vec3 sun, seaN, seaD, landN, landD, polar, term; uniform float lit, polarOn, polarLim, px; varying vec3 vPos;
     const float PI = 3.141592653589793;
     void main(){
       vec3 n = normalize(vPos);
       float lat = asin(clamp(n.z, -1., 1.)), lon = atan(n.y, n.x);
       float L = texture2D(land, vec2((lon + PI) / (2. * PI), (lat + .5 * PI) / PI)).a;
       float sd = dot(n, sun), f = lit > .5 ? smoothstep(-.31, .1, sd) : .8;           // night → astronomical twilight → day
-      vec3 col = mix(mix(vec3(10., 10., 12.), vec3(23., 21., 17.), f), mix(vec3(38., 35., 30.), vec3(112., 92., 58.), f), L) / 255.;
+      vec3 col = mix(mix(seaN, seaD, f), mix(landN, landD, f), L);
       if (polarOn > .5 && abs(lat) > polarLim) {                                      // refused by the calculator in this era: hatched
         float h = mod(gl_FragCoord.x + gl_FragCoord.y, 7. * px) < px ? .55 : .28;
-        col = mix(col, vec3(120., 38., 34.) / 255., h);
+        col = mix(col, polar, h);
       }
-      if (lit > .5) col = mix(col, vec3(244., 220., 159.) / 255., (1. - smoothstep(0., fwidth(sd) * 1.4, abs(sd))) * .5);   // the terminator
+      if (lit > .5) col = mix(col, term, (1. - smoothstep(0., fwidth(sd) * 1.4, abs(sd))) * .5);   // the terminator
       float limb = .62 + .38 * max(dot(n, normalize(cameraPosition - vPos)), 0.);
       gl_FragColor = vec4(col * limb, 1.);
     }`,
@@ -95,6 +99,7 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
   const tag = document.createElement('div'); tag.className = 'atlas-tag'; host.append(tag);
   const note = document.createElement('p'); note.className = 'atlas-note'; note.setAttribute('role', 'status'); note.hidden = true; host.append(note);
 
+  const ink = paper(), gain = starGain();                               // the Light theme: a printed globe and ink stars; Contrast and Red: brighter stars
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(20, 1, 0.01, STAR_R * 2);
   const maskTex = new THREE.Texture(); maskTex.minFilter = THREE.LinearFilter; maskTex.generateMipmaps = false;   // no mipmaps: the longitude wraps per fragment
   const globeMat = globeShader(maskTex), globeGeo = new THREE.SphereGeometry(1, 192, 96).rotateX(Math.PI / 2);   // the sphere's poles on z
@@ -123,10 +128,10 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
   // the stars: catalogue directions (J2000, moved by their proper motion to the era) on a far sphere, turned with the sky
   const stars = new THREE.Points(new THREE.BufferGeometry(), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false,
-    uniforms: { px: { value: 1 } },
+    uniforms: { px: { value: 1 }, ink: { value: rgb(C.starInk) } },
     vertexShader: `attribute float size; attribute float alpha; varying float vA; uniform float px;
       void main(){ vA = alpha; gl_PointSize = size * px; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
-    fragmentShader: `varying float vA; void main(){ float r = length(gl_PointCoord - .5); if (r > .5) discard; gl_FragColor = vec4(.925, .89, .81, vA * smoothstep(.5, .2, r)); }`,
+    fragmentShader: `varying float vA; uniform vec3 ink; void main(){ float r = length(gl_PointCoord - .5); if (r > .5) discard; gl_FragColor = vec4(ink, vA * smoothstep(.5, .2, r)); }`,
   }));
   stars.matrixAutoUpdate = false; scene.add(stars);
   let starsYear = NaN, starsFrom: Catalogue | null = null; const named: { name: string; v: V3 }[] = [];
@@ -142,7 +147,7 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
       const ra = s.ra_deg * D + (cd > 1e-6 ? (s.pm_ra_cosdec_mas_per_year * MAS * dt) / cd : 0);
       const v: V3 = [cd * Math.cos(ra), cd * Math.sin(ra), Math.sin(dec)];
       pos.push(v[0] * STAR_R, v[1] * STAR_R, v[2] * STAR_R);
-      size.push(Math.max(1.2, 4.6 - s.mag_v * 0.62)); alpha.push(Math.min(1, Math.max(0.2, 1.05 - s.mag_v * 0.14)));
+      size.push(Math.max(1.2, 4.6 - s.mag_v * 0.62)); alpha.push(Math.min(1, gain * Math.max(ink ? 0.45 : 0.2, (ink ? 1.25 : 1.05) - s.mag_v * 0.14)));   // ink on paper: darker, and no star fainter than a grey dot
       if (s.name && s.mag_v < 1.4) named.push({ name: s.name, v });
     }
     const g = stars.geometry; g.dispose();

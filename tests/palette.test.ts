@@ -52,3 +52,13 @@ test('no source file outside the palette writes a colour out (use a token: var(-
   }
   assert.deepEqual(found, []);
 });
+
+test('every theme has its block in theme.css, and the boot script knows every choice', async () => {
+  const { THEME_CHOICES } = await import('../src/theme');
+  const boot = readFileSync('public/theme-boot.js', 'utf8');
+  for (const t of THEME_CHOICES) {
+    assert.ok(boot.includes(`'${t}'`), `theme-boot.js handles '${t}'`);
+    if (t !== 'dark' && t !== 'auto') assert.match(css, new RegExp(`:root\\[data-theme=${t}\\]`), `theme.css has a block for ${t}`);
+  }
+  assert.match(readFileSync('index.html', 'utf8'), /<filter id="night-red"/, 'the Red theme\'s filter is in index.html');
+});

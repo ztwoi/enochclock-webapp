@@ -3,9 +3,9 @@
 // page, so the drawings and the stylesheets can never disagree. A key is the property's name in
 // camelCase: C.goldHi is --gold-hi, C.dlOx2 is --dl-ox2.
 //
-// Two palettes are in use: C, the page's theme (it changes when the theme does), and DARK, for what
-// stays a night window in every theme (Sky, The Day, the Atlas globe: the sky is drawn in light added
-// to black, and it is the night sky). theme.css gives those windows the dark values too.
+// Every drawing uses C, the theme in force (DARK is its fallback where there is no page). A theme draws
+// either in light on black (Dark, Contrast, Red: stars and glows add light) or in ink on paper (Light:
+// stars are ink dots, glows a wash of colour): paper() tells which.
 
 /** The dark theme's values: what C gives where there is no page to read (the Node tests), or before
  *  the stylesheet has loaded. tests/palette.test.ts holds them equal to src/theme.css's :root. */
@@ -19,7 +19,8 @@ export const DARK = {
   sun: '#f4dc9f', sunCore: '#fff3d0', glowCore: '#fff6dc',
   moon: '#d8d2c4', moonGlow: '#b9c6d8', moonDark: '#1a1814',
   mercury: '#c4a98a', venus: '#f6e6b0', mars: '#c76b4a', jupiter: '#e0b878', saturn: '#d8b45e', uranus: '#9cc7c9', neptune: '#7c95c9',
-  skyGround: '#050403', skyDay: '#3a2c17',
+  starInk: '#ece3cf', skyGround: '#050403', skyDay: '#3a2c17',
+  globeSea: '#0a0a0c', globeSeaDay: '#171511', globeLand: '#26231e', globeLandDay: '#705c3a', globePolar: '#782622',
   dlOx: '#3b1513', dlOx2: '#4a1a17', dlRed: '#b4291f', dlOxEdge: '#1a0b0a',
   dlSageDim: '#4d6149',
   dlPortal: '#2a2318', dlPortal2: '#1f1a12', dlCell: '#15130f', dlCell2: '#1b1814', dlDay: '#1d1a15', dlSabbath: '#3a2f1c',
@@ -47,6 +48,10 @@ export const C: Palette = Object.defineProperties({} as Record<PaletteKey, strin
 
 /** Forget the reading: the next use of C reads the page again (after the theme changes). */
 export function paletteChanged() { cache = null; generation++; }
+/** The theme draws in ink on paper (Light), not in light on black: theme.css --paper. */
+export const paper = () => typeof document !== 'undefined' && typeof getComputedStyle !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--paper').trim() === '1';
+/** How much brighter than the catalogue the theme draws the stars (theme.css --star-gain: Contrast and Red lift them). */
+export const starGain = () => (typeof document !== 'undefined' && typeof getComputedStyle !== 'undefined' && Number(getComputedStyle(document.documentElement).getPropertyValue('--star-gain'))) || 1;
 /** Counts the theme's changes: a drawing that keeps what it built can key it on this. */
 export const paletteGeneration = () => generation;
 

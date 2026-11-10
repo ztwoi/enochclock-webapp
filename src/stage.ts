@@ -7,7 +7,7 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { H, W } from './model';
-import { alpha, DARK } from './palette';
+import { alpha, C, paletteGeneration, paper } from './palette';
 
 const SVG = 'http://www.w3.org/2000/svg';
 export type Pt = [number, number];
@@ -20,26 +20,28 @@ export function svgEl(tag: string, attrs: Record<string, string | number | undef
   return n;
 }
 
-let glow: THREE.CanvasTexture | null = null;
+let glow: THREE.CanvasTexture | null = null, glowGen = -1;
+/** The glow every view shares, in the theme in force (made again after it changes). */
 function glowTexture() {
-  if (glow) return glow;
+  if (glow && glowGen === paletteGeneration()) return glow;
+  glowGen = paletteGeneration();
   const c = document.createElement('canvas'); c.width = c.height = 256;
   const g = c.getContext('2d')!, r = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-  r.addColorStop(0, alpha('glowCore', 1, DARK)); r.addColorStop(0.18, alpha('goldHi', 0.75, DARK));   // a glow is light added: the night's colours
-  r.addColorStop(0.5, alpha('gold', 0.18, DARK)); r.addColorStop(1, alpha('gold', 0, DARK));
+  if (paper()) { r.addColorStop(0, alpha('glowCore', 0.85)); r.addColorStop(0.18, alpha('glowCore', 0.55)); r.addColorStop(0.5, alpha('glowCore', 0.14)); r.addColorStop(1, alpha('glowCore', 0)); }   // on paper a wash of colour
+  else { r.addColorStop(0, alpha('glowCore', 1)); r.addColorStop(0.18, alpha('goldHi', 0.75)); r.addColorStop(0.5, alpha('gold', 0.18)); r.addColorStop(1, alpha('gold', 0)); }   // on black, light added
   g.fillStyle = r; g.fillRect(0, 0, 256, 256);
   glow = new THREE.CanvasTexture(c); glow.colorSpace = THREE.SRGBColorSpace; return glow;
 }
 
 export const hatchMaterial = (opacity: number) => new THREE.ShaderMaterial({
   transparent: true, depthWrite: false, side: THREE.DoubleSide,
-  uniforms: { color: { value: new THREE.Color(DARK.silver) }, opacity: { value: opacity } },
+  uniforms: { color: { value: new THREE.Color(C.silver) }, opacity: { value: opacity } },
   vertexShader: 'varying vec2 p; void main(){ p = (modelMatrix * vec4(position,1.)).xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
   fragmentShader: 'uniform vec3 color; uniform float opacity; varying vec2 p; void main(){ float s = fract((p.x + p.y) / 5.0); float a = smoothstep(0.0, 0.08, s) * (1.0 - smoothstep(0.16, 0.24, s)); gl_FragColor = vec4(color, a * opacity); }',
 });
 
 export const sprite = (scale: number, opacity = 1) => {
-  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity, side: THREE.DoubleSide }));
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), blending: paper() ? THREE.NormalBlending : THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity, side: THREE.DoubleSide }));
   s.scale.set(scale, scale, 1); return s;
 };
 

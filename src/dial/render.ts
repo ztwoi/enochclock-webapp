@@ -7,7 +7,7 @@ import { GEEZ, pillars } from '../model';
 import { archPath, seamPath, within } from './portals';
 import type { YearDoc } from '../types';
 import { ringRotation, type DialState } from './state';
-import { alpha, bodyColor, C as PAGE, paletteGeneration, type Palette } from '../palette';
+import { alpha, bodyColor, C as PAGE, paletteGeneration, paper, starGain, type Palette } from '../palette';
 
 const NS = 'http://www.w3.org/2000/svg';
 export const DR = {
@@ -80,7 +80,7 @@ let dials = 0;
 export interface RingReport { name: string; rotation: number; current: number; units: number; dir: 1 | -1; centre: number }
 interface Ring { name: string; layer: Layer; units: number; dir: 1 | -1; cur: (s: DialState) => number; mark: Element; markR: number }
 
-/** The Dial in `svg`, in palette C: the page's theme (the Dial tab), or DARK (The Day's night window). */
+/** The Dial in `svg`, in palette C (the theme in force). */
 export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
   svg.replaceChildren();
   const id = `dl${++dials}`;                                  // its defs' ids: the Dial tab and The Day each draw a Dial, in different palettes
@@ -243,8 +243,10 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
       const [x, y] = polar(altRadius(st.alt), bear(st.az)), r = Math.max(0.6, 2.6 - 0.5 * (st.mag ?? 3)), d = dot(x, y, r);
       if ((st.mag ?? 9) <= 3.2) stars += d; else faint += d;
     }
-    el('path', { d: faint, fill: C.ivory, opacity: 0.32 }, B);
-    el('path', { d: stars, fill: C.ivory, opacity: 0.55 }, B);
+    const ink = paper();                                  // on paper a star is an ink dot, drawn darker than a point of light needs
+    const g = starGain();
+    el('path', { d: faint, fill: C.starInk, opacity: ink ? 0.6 : Math.min(1, 0.32 * g) }, B);
+    el('path', { d: stars, fill: C.starInk, opacity: ink ? 0.9 : Math.min(1, 0.55 * g) }, B);
     for (const st of s.bright) if (st.alt > 0 && (st.mag ?? 9) < 1.2 && st.name) lab(altRadius(st.alt) + 9, bear(st.az), st.name, 'dl-star');
     // planets and the Moon: above the horizon at their altitude; below it on the inner track, hollow
     const body = (name: string, key: string, az: number, alt: number, rr: number, fill: string, cls = 'dl-body', halo = true) => {
@@ -270,7 +272,7 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
     if (sky.figures) el('path', { d: figurePath(s, sky.figures, at, false), fill: 'none', stroke: C.silver, 'stroke-width': 0.5, opacity: 0.5, 'data-figures': 'chart' }, G);
     let stars = '';
     for (const st of s.bright) if (st.alt > 0) { const [x, y] = at(st.az, st.alt); stars += dot(x, y, Math.max(0.35, 1.7 - 0.3 * (st.mag ?? 3))); }
-    el('path', { d: stars, fill: C.ivory, opacity: 0.7, 'data-chart-stars': '1' }, G);
+    el('path', { d: stars, fill: C.starInk, opacity: paper() ? 0.92 : 0.7, 'data-chart-stars': '1' }, G);
     const mark = (name: string, az: number, alt: number, r: number, fill: string, halo = false) => {
       if (alt <= 0) return; const [x, y] = at(az, alt);
       if (halo) el('circle', { cx: x, cy: y, r: r + 1.7, fill: 'none', stroke: fill, 'stroke-width': 0.5, opacity: 0.45 }, G);

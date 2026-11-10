@@ -15,7 +15,7 @@ import { dayIndexAt } from '../model';
 import { skyFrame } from '../sky/astronomy';
 import { createSky, type Catalogue, type Sky } from '../skyview';
 import type { YearDoc } from '../types';
-import { bodyColor, DARK } from '../palette';
+import { bodyColor } from '../palette';
 import { createDayBar } from './bar';
 import { dayEvents, risingWithSun, type DayEvent } from './events';
 import { createFollow } from './follow';
@@ -77,7 +77,7 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
   sky.setPaths(true);
   const follow = createFollow(sky, { kind: 'sun' }, () => opts.onFollow?.(false), opts.keep?.followK ?? 1);   // a zoom while it follows is its own (src/day/follow.ts), kept across years
   // the face's sky as the Dial tab has it (its star limit, figures and centre: setDialSky); until told, the Dial's defaults
-  const dial = createDial(dialSvg, DARK);                       // The Day is a night window in every theme
+  const dial = createDial(dialSvg);
   /** The face zooms as the Dial tab's does (wheel, pinch, drag when zoomed, double tap for the whole face): the whole clock grows
    *  over the Dial's part of the view. The thread follows its Sun wherever the zoom puts it. */
   let lastSun: { az: number; alt: number } | null = null;
@@ -125,7 +125,7 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
   }
 
   // ---- the day bar (src/day/bar.ts)
-  const bar = createDayBar(barSvg, { width: () => g.foot.w - 44, onScrub: opts.onScrub, palette: DARK });
+  const bar = createDayBar(barSvg, { width: () => g.foot.w - 44, onScrub: opts.onScrub });
   const buildBar = () => bar.build(doc, dayI, events, hm);
   const placeHead = () => bar.place(lastPart);
 
@@ -134,7 +134,7 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
   const deg = (a: number) => `${a < 0 ? '−' : ''}${Math.abs(a).toFixed(1)}°`;
   function caption(v: DayEvent, op: number) {
     const e = doc.extended[dayI], c = doc.calculation;
-    const line = (who: string, note = '') => `<div class="cap" style="--c:${bodyColor(v.body, DARK)};opacity:${op.toFixed(3)}"><b>${who}</b><time>${hm(v.jd)}</time>${note ? `<span>${note}</span>` : ''}</div>`;
+    const line = (who: string, note = '') => `<div class="cap" style="--c:${bodyColor(v.body)};opacity:${op.toFixed(3)}"><b>${who}</b><time>${hm(v.jd)}</time>${note ? `<span>${note}</span>` : ''}</div>`;
     if (v.body === 'Sun') {
       if (v.kind === 'rise') return line('Sunrise', `in portal ${e.portal} · ${doc.rows[dayI].azimuth_deg.toFixed(1)}°`);
       if (v.kind === 'set') return line('Sunset', `at ${e.sunset_azimuth_deg.toFixed(1)}° · ${e.day_parts.toFixed(2)} parts of daylight`);
@@ -147,7 +147,7 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
   function summary() {
     const e = doc.extended[dayI], light = Math.round((e.sunset_jd_ut - doc.rows[dayI].sunrise_jd_ut) * 1440);
     return `<div class="cap sum"><span>Daylight</span><time>${Math.floor(light / 60)} h ${light % 60} min</time><span>· ${e.day_parts.toFixed(2)} of 18 parts · portal ${e.portal}</span></div>`
-      + (rising.length ? `<div class="cap sum"><span>Rising with the Sun</span>${rising.map((r) => `<b style="--c:${bodyColor(r.body, DARK)}">${r.body}</b><time>${r.offset < 0 ? '−' : '+'}${mins(r.offset)}</time>`).join('')}</div>`
+      + (rising.length ? `<div class="cap sum"><span>Rising with the Sun</span>${rising.map((r) => `<b style="--c:${bodyColor(r.body)}">${r.body}</b><time>${r.offset < 0 ? '−' : '+'}${mins(r.offset)}</time>`).join('')}</div>`
         : '<div class="cap sum"><span>No planet rises within two hours of the Sun</span></div>');
   }
   function showCaptions() {

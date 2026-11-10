@@ -781,7 +781,7 @@ function mountSettings() {
   const sec = document.createElement('div'); sec.className = 'section settings'; sec.id = 'settings';
   sec.innerHTML = `<div class="eyebrow">Settings</div>
    <div class="set-row"><span class="set-l" id="set-clock-l">Clock</span><div class="seg" role="group" aria-labelledby="set-clock-l">${(['12', '24'] as ClockFormat[]).map((f) => `<button type="button" class="btn" data-clock="${f}" title="Clock times ${f === '12' ? 'with AM and PM: 7:41 PM' : 'from 00:00 to 23:59: 19:41'}">${f}-hour</button>`).join('')}</div></div>
-   <div class="set-row"><span class="set-l" id="set-theme-l">Theme</span><div class="seg" role="group" aria-labelledby="set-theme-l">${THEME_CHOICES.map((t) => `<button type="button" class="btn" data-theme-choice="${t}" title="${THEME_TIP[t]}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div></div>
+   <div class="set-row stack"><span class="set-l" id="set-theme-l">Theme</span><div class="seg" role="group" aria-labelledby="set-theme-l">${THEME_CHOICES.map((t) => `<button type="button" class="btn" data-theme-choice="${t}" title="${THEME_TIP[t]}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}</div></div>
    <p class="set-note">Kept on this device.</p>`;
   const press = (sel: string, on: (b: HTMLButtonElement) => boolean) => sec.querySelectorAll<HTMLButtonElement>(sel).forEach((b) => { b.classList.toggle('on', on(b)); b.setAttribute('aria-pressed', String(on(b))); });
   const paint = () => { press('[data-clock]', (b) => b.dataset.clock === clockFormat()); press('[data-theme-choice]', (b) => b.dataset.themeChoice === themeChoice()); };
@@ -797,12 +797,24 @@ function mountSettings() {
   $('insp').after(sec);
 }
 const THEME_TIP: Record<ThemeChoice, string> = {
-  dark: 'The instrument on black: for the evening, and the default',
-  light: 'The instrument on vellum: for daylight. Sky, The Day and Atlas stay a night sky',
-  auto: "Light or dark as this device's appearance is",
+  dark: 'The instrument on black: the default',
+  light: 'The instrument printed on vellum, the sky a star atlas in ink: for daylight',
+  contrast: 'Black, with every line and word at its brightest: for glare and low vision',
+  red: 'Night vision: everything in red light, so your eyes stay used to the dark',
+  auto: "Light when this device's appearance is light, Contrast when it asks for more contrast, otherwise Dark",
 };
-/** A new theme: what keeps colours it was built with draws again (the Dial rebuilds its face by itself, on the palette's generation). */
-onThemeChange(() => { state.deep?.restyle(); shown.i = -1; update(); });
+/** A new theme: every drawing that kept the colours it was built with is built again, where it was (the Dial's face rebuilds by
+ *  itself, on the palette's generation). Sky and Atlas keep their zoom (the stage remembers it per view), The Day its zooms. */
+onThemeChange(async () => {
+  if (state.sky) { state.sky.dispose(); state.sky = null; }
+  if (state.day) { dayKeep = state.day.keep(); state.day.dispose(); state.day = null; }
+  if (state.atlas) { state.atlas.dispose(); state.atlas = null; }
+  state.deep?.restyle();
+  if (state.view === 'sky') await ensureSky();
+  if (state.view === 'day') await ensureDay();
+  if (state.view === 'atlas') ensureAtlas();
+  shown.i = -1; update();
+});
 /** Open the Enoch year containing a civil date (any year in range), at that morning. */
 async function goDate(iso: string) {
   await load({ date: iso }, 'start');
