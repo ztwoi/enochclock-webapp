@@ -82,5 +82,10 @@ export function attachZoom(svg: SVGSVGElement, onTap: (x: number, y: number) => 
   // iOS Safari's own page pinch would fight the dial's
   for (const t of ['gesturestart', 'gesturechange']) svg.addEventListener(t, (e) => e.preventDefault());
   apply();
-  return { reset, zoomAt, get zoom() { return z; } };
+  return {
+    reset, zoomAt, get zoom() { return z; },
+    /** The zoom and pan, to carry over to a new face (The Day builds its own again with each year). */
+    get view() { return { z, cx, cy }; },
+    setView(v: { z: number; cx: number; cy: number }) { z = Math.max(MIN, Math.min(MAX, v.z)); cx = v.cx; cy = v.cy; apply(); },
+  };
 }

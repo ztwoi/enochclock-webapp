@@ -36,7 +36,7 @@ import { createFocus } from './focus';
 import { enochTime } from './dial/state';
 import { createDialView, loadSky as dialSky, type DialView } from './dial/view';
 import { createFilm } from './film';
-import { createDayView, dayPanel, geometryFor, type DayView } from './day/view';
+import { createDayView, dayPanel, geometryFor, type DayKeep, type DayView } from './day/view';
 import { createFollow, type Follow } from './day/follow';
 import { createAtlas, LAYERS as ATLAS_LAYERS, type Atlas, type Camera as AtlasCamera, type Layers as AtlasLayers } from './atlas/view';
 import { siteAt, siteName } from './atlas/panel';
@@ -116,7 +116,7 @@ async function load(by: { date: string } | { enochYear: number } | { year: numbe
     state.nowIndex = dayIndexAt(doc, jdFromMs(Date.now()));
     state.cursor = cursor === 'end' ? days.length - 1 : cursor === 'today' && state.nowIndex >= 0 ? state.nowIndex : 0;
     if (state.sky) { state.sky.dispose(); state.sky = null; }
-    if (state.day) { state.day.dispose(); state.day = null; }
+    if (state.day) { dayKeep = state.day.keep(); state.day.dispose(); state.day = null; }   // The Day is built again for the year: its zooms carry over
     if (state.view === 'sky') await ensureSky();                  // other views build the Sky (and The Day) when it is opened (setView), not on every year load
     if (state.view === 'day') await ensureDay();
     if (state.deep || state.view === 'deep') await syncDeep();
@@ -152,6 +152,8 @@ async function ensureSky() {
   }
 }
 
+/** The reader's view of The Day as the last year left it (its zooms), for the next one built. */
+let dayKeep: DayKeep | null = null;
 /** The Day, on the catalogue Sky loads: its sky follows the star limit, its face the Dial tab's sky settings; its options are the buttons under the title. */
 async function ensureDay() {
   if (!state.doc) return;
@@ -162,8 +164,10 @@ async function ensureDay() {
       mag: Number($<HTMLSelectElement>('mag').value),
       onScrub: (p) => { manual(); tp.pause(); state.part = p; update(); },   // a hand on the day bar
       onFollow: (f) => setOn('day-follow', f),
+      keep: dayKeep,
     });
     state.day.setDaylight(on('day-daylight')); state.day.setCaptions(on('day-captions')); state.day.setFollow(on('day-follow'));
+    state.day.restoreSky(dayKeep); dayKeep = null;
   }
   state.day.setDialSky(dialSky());                                 // the face as the Dial tab has it (its settings change only there)
 }

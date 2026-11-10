@@ -13,7 +13,7 @@ import type { SkyPrefs } from '../dial/view';
 import { attachZoom } from '../dial/zoom';
 import { dayIndexAt } from '../model';
 import { skyFrame } from '../sky/astronomy';
-import { createSky, type Catalogue } from '../skyview';
+import { createSky, type Catalogue, type Sky } from '../skyview';
 import type { YearDoc } from '../types';
 import { createDayBar } from './bar';
 import { dayEvents, risingWithSun, type DayEvent } from './events';
@@ -32,7 +32,12 @@ export interface DayViewOptions {
   onScrub?(part: number): void;
   /** Following the Sun stopped (a hand took the sky) or started. */
   onFollow?(on: boolean): void;
+  /** The view as the last Day left it (keep()): a new year builds The Day again, and the reader's zooms carry over. */
+  keep?: DayKeep | null;
 }
+/** What a reader has done to The Day's view: the face's zoom and pan, the sky's zoom while it follows the Sun, and the sky's view
+ *  when a hand has taken it from the Sun. */
+export interface DayKeep { dial: { z: number; cx: number; cy: number }; followK: number; following: boolean; skyZoom: Sky['stage']['zoom'] }
 export type DayView = ReturnType<typeof createDayView>;
 
 const MAX_CAPTIONS = 3;
@@ -69,7 +74,7 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
   sky.setMagLimit(opts.mag ?? 6.5);
   sky.setLayers({ daylight: false, below: true, figures: true, planets: true, portalStars: true, refraction: true, bearing: false });
   sky.setPaths(true);
-  const follow = createFollow(sky, { kind: 'sun' }, () => opts.onFollow?.(false));   // a zoom while it follows is its own (src/day/follow.ts)
+  const follow = createFollow(sky, { kind: 'sun' }, () => opts.onFollow?.(false), opts.keep?.followK ?? 1);   // a zoom while it follows is its own (src/day/follow.ts), kept across years
   // the face's sky as the Dial tab has it (its star limit, figures and centre: setDialSky); until told, the Dial's defaults
   const dial = createDial(dialSvg);
   /** The face zooms as the Dial tab's does (wheel, pinch, drag when zoomed, double tap for the whole face): the whole clock grows
@@ -77,6 +82,7 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
   let lastSun: { az: number; alt: number } | null = null;
   const dialZoom = attachZoom(dialSvg, () => undefined, () => { if (lastSun) thread(lastSun); }, undefined, null,
     () => ({ x: g.dial.cx - dialBox.x, y: g.dial.cy - dialBox.y, d: g.dial.d, w: dialBox.w, h: dialBox.h }));
+  if (opts.keep) dialZoom.setView(opts.keep.dial);
   let stars = cat.stars.filter((s) => s.mag_v <= BRIGHT_MAG), layers: SkyLayers = { figures: null, centre: 'off' };
 
   // ---- the day: its state for the Dial, its events, its bar and captions (built when the instant moves into another day)
@@ -170,6 +176,10 @@ export function createDayView(host: HTMLElement, doc: YearDoc, cat: Catalogue, o
     sky, draw,
     /** The face's zoom: reset() brings back the whole face (the 0 key, with the sky's). */
     dialZoom,
+    /** The reader's view of The Day, to hand to the next one built (a new year): createDayView's `keep`. */
+    keep(): DayKeep { return { dial: dialZoom.view, followK: follow.k, following: follow.on, skyZoom: follow.on ? null : sky.stage.zoom }; },
+    /** After setFollow: a sky a hand had taken from the Sun goes back to where it was looking. */
+    restoreSky(k: DayKeep | null | undefined) { if (k && !k.following && !follow.on && k.skyZoom) sky.stage.setZoom(k.skyZoom); },
     /** The day on show: its index, events, the planets rising with the Sun. */
     day: () => ({ i: dayI, events, rising }),
     get follow() { return follow.on; },
