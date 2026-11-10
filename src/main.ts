@@ -487,7 +487,9 @@ function syncSide() {
   syncReading();
 }
 let noteTimer = 0;
-const focus = createFocus($('app'), $<HTMLButtonElement>('focus'));
+const focus = createFocus($('app'), $<HTMLButtonElement>('focus'), (on) => {
+  if (!on && document.body.classList.contains('side-open') && !matchMedia('(max-width: 1100px), (max-aspect-ratio: 1/1)').matches) $('sheet-close').click();   // leaving focus on a wide screen: the details are the column again, not a drawer left open
+});
 state.dial = createDialView($('view-dial'), { title: $('vh-title'), prim: $('vh-prim'), controls: $('dial-controls') }, {
   details: $('insp'), openDetails: () => sheet.open(), narrow: () => sheet.narrow,
   goView: (v) => { if (v in VIEWS) setView(v as View); },
@@ -643,7 +645,9 @@ async function setView(v: View, push = true) {
   $('atlas-controls').hidden = v !== 'atlas';
   layoutChanged();                                                  // the title block and the options row changed: what was measured is stale
   adoptCompass();                                                   // the compass came on elsewhere: Sky follows it from here
-  focus.setAvailable(timed(v));                                     // the top bar folds away in Sky, the Dial and The Day
+  focus.setAvailable(timed(v) || v === 'deep');                    // full screen in every view; the top bar folds away
+  $('app').classList.toggle('keep-details', v === 'atlas');        // Atlas's details stay a column in full screen: they are where the place and time are chosen
+  if (v === 'atlas' && document.body.classList.contains('side-open') && !matchMedia('(max-width: 1100px), (max-aspect-ratio: 1/1)').matches) $('sheet-close').click();
   tp.setDegreeAvailable(timed(v));                                  // only Sky, the Dial and The Day have a time of day
   tp.setYearView(v === 'deep');                                     // Deep Time plays by year
   $('deep-controls').hidden = v !== 'deep';                          // shown in Deep Time's compact layout (style.css)

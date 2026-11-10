@@ -60,7 +60,7 @@ carries on into the next one, calculated ahead so the crossing does not wait. **
 | Space | play / pause |
 | ← → | step as ◀◀ ▶▶ do: days × the speed (Shift: degrees; in Deep Time, years) |
 | D · S | switch Day / Degree · change speed |
-| N · F | follow now · fold away the top bar |
+| N · F | follow now · full screen (the top bar folds away, and on a wide screen the details too: ⋯ shows them) |
 | 1 2 3 4 | Sky · The Dial · The Day · Deep Time |
 | + − 0 | zoom Sky, The Day or Deep Time in, out, home |
 

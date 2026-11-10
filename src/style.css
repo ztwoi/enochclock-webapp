@@ -241,3 +241,24 @@ dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6p
 .set-l { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ivory3); }
 .settings .seg { display: flex; } .settings .seg .btn { min-height: 36px; } .settings .seg .btn + .btn { margin-left: -1px; } .settings .seg .btn.on { position: relative; background: rgba(214,178,106,.10); }
 .set-note { font-family: var(--mono); font-size: 10.5px; color: var(--ivory3); }
+/* Focus on a wide screen (an iPad on its side, a laptop): the details column folds away with the top bar, so the drawing has the
+   whole width; ⋯ joins the bar and slides the details in over the drawing (✕, ⋯ or Escape closes them). Narrow screens already
+   keep the details in a sheet; Atlas keeps its column (.keep-details: its details are where you choose). Not narrow = the
+   complement of NARROW in sheet.ts. */
+@media (min-width: 1101px) and (min-aspect-ratio: 1001/1000) {
+  .app.focus:not(.keep-details) { grid-template-columns: minmax(0, 1fr) 0; }
+  .app.focus:not(.keep-details) .inspector { position: fixed; z-index: 6; top: env(safe-area-inset-top); right: 0; bottom: var(--foot-h, 60px); width: 440px; padding-top: 0;
+    border-left: 1px solid var(--gold-dim); background: #0a0908; box-shadow: -12px 0 30px rgba(0,0,0,.6);
+    transform: translateX(100%); visibility: hidden; transition: transform .25s ease, visibility 0s .25s; }
+  .side-open .app.focus:not(.keep-details) .inspector { transform: none; visibility: visible; transition: transform .25s ease; }
+  .app.focus:not(.keep-details) .sheet-bar { display: flex; align-items: center; position: sticky; top: 0; z-index: 1; background: #0a0908; margin: 0 -32px 18px; padding: 0 6px 0 32px; height: 48px; border-bottom: 1px solid var(--rule); }
+  .app.focus:not(.keep-details) .sheet-bar .grab { display: none; }
+  .app.focus:not(.keep-details) .sheet-t { font-family: var(--cond); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ivory3); }
+  .app.focus:not(.keep-details) .sheet-x { margin-left: auto; width: 44px; height: 44px; font-size: 16px; color: var(--ivory2); }
+  .app.focus:not(.keep-details) .transport { grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr) auto; }
+  .app.focus:not(.keep-details) .more { display: inline-block; margin-left: 0; }
+}
+@media (min-width: 1101px) and (max-width: 1680px) and (min-aspect-ratio: 1001/1000) {
+  .app.focus:not(.keep-details) .inspector { width: 380px; }
+  .app.focus:not(.keep-details) .sheet-bar { margin: 0 -24px 18px; padding-left: 24px; }
+}
