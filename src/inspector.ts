@@ -7,7 +7,6 @@ import { annual, fmt, GEEZ, ROMAN } from './model';
 import { declinationOfDate, horizonAzimuth, lastPassage, litPortals, passageRun, portalAt } from './sky/instrument';
 import { AstroTime } from 'astronomy-engine';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
-import { PCOL } from './dial/state';
 import { bodyColor, C, INST } from './palette';
 import { followable, positionOf, sameBody, type Followed, type SkyInfo } from './skyview';
 import type { DeepDoc, YearDoc } from './types';

@@ -6,18 +6,12 @@ import { annual, dayIndexAt, partOfDay } from '../model';
 import { skyFrame, starVector } from '../sky/astronomy';
 import type { Star } from '../sky/catalogue';
 import type { YearDoc } from '../types';
-import { C } from '../palette';
 
 /** Which way the face is turned: north at the top, the Sun's line at the top, the device's heading at the top, or the Sun's line at
  *  the left ('sun-left': The Day's wide layout, the face beside the sky to its left). */
 export type Framing = 'sun' | 'north' | 'compass' | 'sun-left';
 export const PLANETS: [Body, string][] = [[Body.Mercury, 'Mercury'], [Body.Venus, 'Venus'], [Body.Mars, 'Mars'], [Body.Jupiter, 'Jupiter'],
   [Body.Saturn, 'Saturn'], [Body.Uranus, 'Uranus'], [Body.Neptune, 'Neptune']];
-/** Each planet's colour, on the Dial and in Sky. */
-export const PCOL: Readonly<Record<string, string>> = {
-  get Mercury() { return C.mercury; }, get Venus() { return C.venus; }, get Mars() { return C.mars; }, get Jupiter() { return C.jupiter; },
-  get Saturn() { return C.saturn; }, get Uranus() { return C.uranus; }, get Neptune() { return C.neptune; },
-};
 interface Body2 { name: string; az: number; alt: number; mag?: number; id?: string }
 /** The default star set on the face: V ≤ 3.2 (the brightest 214). */
 export const BRIGHT_MAG = 3.2;

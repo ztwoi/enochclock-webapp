@@ -1,7 +1,7 @@
 // The palette for drawing code: SVG built in TypeScript, WebGL materials, canvas gradients. The
 // colours live in src/theme.css (one block per theme); this reads the same custom properties off the
 // page, so the drawings and the stylesheets can never disagree. A key is the property's name in
-// camelCase: C.goldHi is --gold-hi, C.dlOx2 is --dl-ox2.
+// camelCase: C.goldHi is --gold-hi, C.dlCountDim is --dl-count-dim.
 //
 // Two palettes. C is the page's, the theme in force (DARK is its fallback where there is no page). INST is the
 // instruments': the Dial, Sky, The Day's sky and dial, the Atlas globe. An instrument is night in every theme: it is

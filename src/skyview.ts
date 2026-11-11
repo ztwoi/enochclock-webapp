@@ -6,7 +6,7 @@
 // level with the portals along its bottom edge, turns sideways and looks up toward the zenith or down under the ground.
 // Positions: HYG 4.1 + Astronomy Engine, astrometric; refracted as at sunrise (Swiss Ephemeris' refraction,
 // the year's pressure and temperature), unless Refraction is off.
-// The planets are the Dial's (src/dial/state.ts PLANETS, PCOL): the same bodies, places and colours.
+// The planets are the Dial's (src/dial/state.ts PLANETS; their colours palette.ts bodyColor): the same bodies, places and colours.
 import { Body } from 'astronomy-engine';
 import { StarField } from './sky/starfield';
 import * as THREE from 'three';
@@ -230,7 +230,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     const held = (k: number) => Array.from({ length: k }, () => now);
     setLine(past, [...done, now, ...held(n - at)], 2.8); setLine(ahead, [...held(at + 1), now, ...pts.slice(at + 1)], 2.8);
   }
-  function drawPaths(sun: Dir, mo: Dir, planets: SkyPlanet[], at0: Dir | null) {
+  function drawPaths(sun: Dir, at0: Dir | null) {
     const k = dayIndexAt(doc, jd), on = pathsOn && k >= 0 && k + 1 < doc.rows.length;
     const star = followed?.kind === 'star' ? followed.star : null;
     const fb = !followed || followed.kind === 'sun' || (followed.kind === 'planet' && !planetsOn) ? null
@@ -370,7 +370,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     const fp = followed?.kind === 'planet' ? followed.name : '';
     const fAt: Dir | null = !followed ? null : followed.kind === 'sun' ? sun : followed.kind === 'moon' ? mo : followed.kind === 'planet' ? planets.find((p) => p.name === fp) ?? null
       : fi >= 0 ? dirAt(fi) : f.direction(starVector(fs!, f.time));   // a star: as drawn (or as the selection finds one)
-    drawPaths(sun, mo, planets, fAt);
+    drawPaths(sun, fAt);
     dyn.replaceChildren();
     const taken: [number, number, number, number][] = [];     // boxes the constellation names keep clear of: the Sun's, planets' and stars' labels, the bodies
     if (sunIn) taken.push([skyX(sun.az) - 20, skyY(sun.alt) - 28, skyX(sun.az) + 190, skyY(sun.alt) + 14]);

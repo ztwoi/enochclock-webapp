@@ -41,7 +41,7 @@ test('priestly courses: a week each, Sunday to the Sabbath, unbroken through the
     if (sameWeek) assert.equal(ext[k].course, ext[k - 1].course);
     else assert.equal(ext[k].course, ext[k - 1].course % 24 + 1); // next course at each new week
   }
-  const today = ext.find((e, k) => days[k].civil_date === '2026-10-19')!;
+  const today = ext.find((_, k) => days[k].civil_date === '2026-10-19')!;
   assert.deepEqual([today.course_name, today.course_week_start, today.six_year_cycle, today.six_year_year], ['Hakkoz', '2026-10-18', 22, 3]);
   assert.equal(doc.priests.courses[0].name, 'Gamul');
 });
