@@ -21,13 +21,13 @@ export const DARK = {
   mercury: '#c4a98a', venus: '#f6e6b0', mars: '#c76b4a', jupiter: '#e0b878', saturn: '#d8b45e', uranus: '#9cc7c9', neptune: '#7c95c9',
   starInk: '#ece3cf', skyGround: '#050403', skyDay: '#3a2c17',
   globeSea: '#0a0a0c', globeSeaDay: '#171511', globeLand: '#26231e', globeLandDay: '#705c3a', globePolar: '#782622',
-  onGold: '#120e08',
   // the Dial (theme.css: rings of light on space, the colours of the sky's day)
   dlSpace0: '#13151f', dlSpace1: '#0a0b11', dlSpace2: '#050506', dlRim0: '#0a0b11', dlRim1: '#050506', dlDisc: '#07080c', dlLine: '#8a867d',
   dlSkyDay: '#fff0c2', dlSkyAmber: '#ffc468', dlSkyEmber: '#ff7a4c', dlSkyViolet: '#9676e0', dlSkyNight: '#8ea5ee',
   dlPday: '#ffd071', dlPnight: '#a3b9f7', dlRunDay: '#ffe9ad', dlRunNight: '#b9c9ff', dlRunInk: '#2a1f08',
   dlRed: '#f55a36', dlOx: '#2a1713', dlOx2: '#3b1e17', dlOxEdge: '#050506',
-  dlGlass: '#b2c4ee', dlCourse: '#e6ebf8', dlCount: '#c3c9d6', dlCountDim: '#666d7c', dlLit: '#fff6d8', dlLitEdge: '#e9cf8a',
+  dlGlass: '#b2c4ee', dlCourse: '#e6ebf8', dlCount: '#c3c9d6', dlCountDim: '#666d7c', dlLit: '#fff6d8', dlLitEdge: '#e9cf8a', dlOnLit: '#120e08',
+  dlToneCourse: '#15171d', dlToneCourse2: '#101217', dlToneCount: '#0f1014', dlToneParts: '#0a0b11', dlToneBearing: '#0a0b11',
 };
 export type PaletteKey = keyof typeof DARK;
 export type Palette = Readonly<Record<PaletteKey, string>>;

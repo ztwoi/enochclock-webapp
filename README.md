@@ -22,9 +22,9 @@ Five views share one time cursor:
   horizon marks where). **Paths** draws the day's course of the Sun, the Moon and each planet (solid behind it, dotted
   ahead), and of the body you follow.
 - **The Dial.** Every layer of the calendar on one face, each ring turned onto the Sun's line, with the planets, Moon and
-  bright stars: rings of light on space, what is now lit (the month, the course, the weekday, the part of the day and how far
-  through its 20 degrees). Each weekday's arc is that day's own sky, gold its light and blue its night. Frame it north-up,
-  Sun-up or by compass.
+  bright stars: rings of light on space, what is now lit (the month, the course, the day of the week, the part of the day and
+  how far through its 20 degrees), beside the day's own sky, gold its light and blue its night. Frame it north-up, Sun-up
+  or by compass.
 - **The Day.** The Sky and the Dial together, sunrise to sunrise: the sky turns with the Sun and the Dial is turned to face
   it, joined by a gold thread through the Sun (sky over dial on a phone, side by side on a wide screen). Captions name each
   rising and setting as the day reaches it, and the day bar under it moves through the day. Both halves zoom: pinch or scroll the

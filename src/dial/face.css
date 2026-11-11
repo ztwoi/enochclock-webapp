@@ -40,15 +40,14 @@
 .dl-body { font-family: var(--mono); font-size: 10px; fill: var(--ivory2); }
 .dl-moon { font-family: var(--mono); font-size: 11px; fill: var(--ivory); }
 .dl-below { opacity: .45; }
-/* Read at a glance on a phone (about 9 px there): the months, the parts, the week's names, the courses' numbers. Fine engraving, to zoom into: the rest. */
+/* Read at a glance on a phone (about 9 px there): the months, the parts, the courses' numbers. Fine engraving, to zoom into: the rest. */
 .dl-um { font-family: var(--mono); font-size: 13px; fill: var(--dl-count); } .dl-um.dl-on { fill: var(--ivory); font-weight: 600; }
 .dl-month { font-family: var(--mono); font-size: 21px; fill: var(--dl-month); } .dl-month.dl-on { fill: var(--dl-month-on); font-weight: 600; }
 .dl-geez { font-family: var(--geez); font-size: 11px; fill: var(--dl-geez); opacity: .75; }
 .dl-cor { font-family: var(--mono); font-size: 10px; fill: var(--dl-count); } .dl-cor.dl-on { fill: var(--ivory); }
-.dl-cnum { font-family: var(--mono); font-size: 17px; fill: var(--dl-course); }                       /* a course, by its number */
+.dl-cnum { font-family: var(--mono); font-size: 19px; fill: var(--dl-course); }                       /* a course, by its number */
 .dl-cname { font-family: var(--cond); font-size: 7.5px; letter-spacing: .04em; fill: var(--dl-course-name); }   /* and its name, small */
-.dl-wk { font-family: var(--cond); font-size: 13.5px; font-weight: 500; letter-spacing: .14em; fill: var(--dl-week); } .dl-wk.dl-sab { fill: var(--dl-sab); }
-.dl-on-dark { fill: var(--on-gold) !important; font-weight: 600; }                                    /* words on what is lit: the course now, today */
+.dl-on-dark { fill: var(--dl-on-lit) !important; font-weight: 600; }                                 /* words on what is lit: the course now */
 .dl-part { font-family: var(--mono); font-size: 19px; } .dl-pday { fill: var(--dl-pday); } .dl-pnight { fill: var(--dl-pnight); } .dl-part.dl-on { fill: var(--ivory); font-weight: 600; }
 .dl-pn { font-family: var(--mono); font-size: 9.5px; font-weight: 500; fill: var(--gold); } .dl-pn.dl-on { fill: var(--gold-hi); font-weight: 600; } .dl-pn-rim { font-size: 8.5px; }   /* a portal's number, 1 to 6 */
 /* What is now has its own light, where the theme draws in light (on paper, ink has none) */

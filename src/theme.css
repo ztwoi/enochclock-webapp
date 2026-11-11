@@ -54,8 +54,7 @@
   /* Atlas's globe: the sea and the land, on the night side and the day side; the latitudes the calculator refuses */
   --globe-sea: #0a0a0c; --globe-sea-day: #171511; --globe-land: #26231e; --globe-land-day: #705c3a; --globe-polar: #782622;
   /* The Dial: rings of light on space, not painted bands. Its colours are the sky's own day, so each has a reason: gold the day's light, ember its rising and
-     setting (and the months'), periwinkle its night, violet only where they meet; all that is neither day nor night (the courses, the week's names, the
-     counts) is starlight. What is now is solid; the rest is glass and hairline. A theme gives the same roles its own values. */
+     setting (and the months'), periwinkle its night, violet only where they meet; all that is neither day nor night (the courses, the counts) is starlight. What is now is solid; the rest is glass and hairline. A theme gives the same roles its own values. */
   --dl-space0: #13151f; --dl-space1: #0a0b11; --dl-space2: #050506;   /* the ground under the instrument: centre, middle, rim */
   --dl-rim0: #0a0b11; --dl-rim1: #050506;                     /* the sky band's night ground where the page is paper: horizon, rim */
   --dl-disc: #07080c; --dl-line: #8a867d;                     /* the centre (the compass, or the sky chart); hairlines, ticks and tiny numbers */
@@ -66,8 +65,8 @@
   --dl-month: #ffd9cb; --dl-month-on: #ffffff; --dl-geez: #ff9d86;
   --dl-glass: #b2c4ee;                                        /* a ring's ground: this, nearly clear */
   --dl-course: #e6ebf8; --dl-course-name: #99a3ba; --dl-count: #c3c9d6; --dl-count-dim: #666d7c;   /* starlight: the courses; the two counts and their lines */
-  --dl-week: #f4f1ea; --dl-sab: #ffe0a0;                      /* the week's names; the Sabbath's */
-  --dl-lit: #fff6d8; --dl-lit-edge: #e9cf8a;                  /* the course now: a lit window (words on it are --on-gold) */
+  --dl-lit: #fff6d8; --dl-lit-edge: #e9cf8a; --dl-on-lit: #120e08;   /* the course now: a lit window, and the words on it; today's bead */
+  --dl-tone-course: #15171d; --dl-tone-course2: #101217; --dl-tone-count: #0f1014; --dl-tone-parts: #0a0b11; --dl-tone-bearing: #0a0b11;   /* a ring's own shade, where the theme paints its ground (paper); in light the grounds are glass */
   --dl-sage: #8fb08a;                                         /* the uncorrected date in the Dial's counts */
   --serif: "Cormorant", "Ethiopic", serif; --mono: "Plex Mono", ui-monospace, monospace; --cond: "Plex Cond", sans-serif; --geez: "Ethiopic", serif;
 }
@@ -95,11 +94,12 @@
   --star-ink: #0d0a05; --sky-ground: #d6c8a8; --sky-day: #b7ccd6;
   --globe-sea: #c9c8bd; --globe-sea-day: #e3e6df; --globe-land: #ad9771; --globe-land-day: #d4bd8f; --globe-polar: #a4382a;
   --dl-space0: #f1e9d8; --dl-space1: #ebe2cd; --dl-space2: #e6dcc6; --dl-rim0: #1c1712; --dl-rim1: #0d0b08; --dl-disc: #e8dfc9; --dl-line: #695f4c;
-  --dl-sky-day: #b07a10; --dl-sky-amber: #b8641a; --dl-sky-ember: #b03a22; --dl-sky-violet: #5a4496; --dl-sky-night: #2f4a86;
-  --dl-pday: #6e4f0c; --dl-pnight: #2c4a86; --dl-run-day: #9a6a0e; --dl-run-night: #35528f; --dl-run-ink: #fdf9ef;
+  --dl-sky-day: #e2b440; --dl-sky-amber: #e08a2c; --dl-sky-ember: #cf4a2e; --dl-sky-violet: #6a52a8; --dl-sky-night: #2f4a9a;   /* gold leaf, through vermilion, to lapis */
+  --dl-pday: #7a560a; --dl-pnight: #27408a; --dl-run-day: #9a6a0e; --dl-run-night: #35528f; --dl-run-ink: #fdf9ef;
   --dl-red: #cf4a2e; --dl-ox: #a4382a; --dl-ox2: #943023; --dl-ox-edge: #ebe2cd; --dl-month: #f6e2d6; --dl-month-on: #fffaf0; --dl-geez: #ecc9b8;
   --dl-glass: #6b5524; --dl-course: #2b2418; --dl-course-name: #3d3628; --dl-count: #2f4a52; --dl-count-dim: #7c8d91;
-  --dl-week: #2b2418; --dl-sab: #5a3c00; --dl-lit: #6e4f0c; --dl-lit-edge: #5a3c00; --dl-sage: #3d6537;
+  --dl-lit: #f3d778; --dl-lit-edge: #d2a02a; --dl-on-lit: #1a1408; --dl-sage: #3d6537;
+  --dl-tone-course: #cdd3d3; --dl-tone-course2: #bfc7c8; --dl-tone-count: #dadedb; --dl-tone-parts: #f5efe0; --dl-tone-bearing: #d2c29b;   /* pewter against the vellum; the parts the lightest */
 }
 
 
@@ -123,11 +123,12 @@
   --star-ink: #0d0804; --sky-ground: #c3ae86; --sky-day: #a7bcc4;
   --globe-sea: #b4b1a0; --globe-sea-day: #d2d3c6; --globe-land: #977f58; --globe-land-day: #c0a575; --globe-polar: #8f2a17;
   --dl-space0: #ddcdab; --dl-space1: #d6c5a2; --dl-space2: #d0be9a; --dl-rim0: #1b150e; --dl-rim1: #0c0906; --dl-disc: #d2c09c; --dl-line: #5e4c33;
-  --dl-sky-day: #9a6a0e; --dl-sky-amber: #a0561a; --dl-sky-ember: #9a2f1c; --dl-sky-violet: #4c3a86; --dl-sky-night: #263f78;
-  --dl-pday: #5c3d00; --dl-pnight: #263f78; --dl-run-day: #7f5609; --dl-run-night: #263f78; --dl-run-ink: #f3e8cf;
+  --dl-sky-day: #d9aa30; --dl-sky-amber: #cf7d24; --dl-sky-ember: #b83a22; --dl-sky-violet: #5a4496; --dl-sky-night: #263f88;
+  --dl-pday: #5c3d00; --dl-pnight: #223a7c; --dl-run-day: #7f5609; --dl-run-night: #263f78; --dl-run-ink: #f3e8cf;
   --dl-red: #b83a22; --dl-ox: #8f2c1e; --dl-ox2: #7f2618; --dl-ox-edge: #d6c5a2; --dl-month: #f3dccd; --dl-month-on: #fff6e8; --dl-geez: #e8c2ae;
   --dl-glass: #5c4a22; --dl-course: #1c1209; --dl-course-name: #3a2b19; --dl-count: #233d44; --dl-count-dim: #5f6b6e;
-  --dl-week: #1c1209; --dl-sab: #3d2700; --dl-lit: #5c3d00; --dl-lit-edge: #3d2700; --dl-sage: #2f5329;
+  --dl-lit: #edd06c; --dl-lit-edge: #c4912a; --dl-on-lit: #1a1408; --dl-sage: #2f5329;
+  --dl-tone-course: #bfc4bd; --dl-tone-course2: #b1b8b2; --dl-tone-count: #cccbbc; --dl-tone-parts: #e8dcbd; --dl-tone-bearing: #bda977;
 }
 
 /* On paper (Light, Sepia) nothing is left faint to read: labels over the globe get a paper halo; a body below the horizon
@@ -162,7 +163,7 @@
   --dl-pday: #ffdc8a; --dl-pnight: #bccdff; --dl-run-day: #fff0c2; --dl-run-night: #cfdcff; --dl-run-ink: #000000;
   --dl-red: #ff7a55; --dl-ox: #3a1c16; --dl-ox2: #4d241b; --dl-ox-edge: #000000; --dl-month: #ffe6dc; --dl-month-on: #000000; --dl-geez: #ffc4ae;
   --dl-glass: #c8d6fa; --dl-course: #ffffff; --dl-course-name: #c9d2e6; --dl-count: #e3e8f2; --dl-count-dim: #9aa3b5;
-  --dl-week: #ffffff; --dl-sab: #ffe9b0; --dl-lit: #fffaf0; --dl-lit-edge: #ffe9ad; --dl-sage: #b6e0ae;
+  --dl-lit: #fffaf0; --dl-lit-edge: #ffe9ad; --dl-on-lit: #000000; --dl-sage: #b6e0ae;
 }
 
 /* Red: the Contrast palette through a red filter (index.html #night-red: the light of each pixel, in red alone, dimmed), over
