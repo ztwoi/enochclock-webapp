@@ -17,7 +17,7 @@ import { PLANETS } from './dial/state';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { easeHeading, mod360, wrap180 } from './sky/heading';
 import { dayIndexAt, GEEZ, H, PORTAL_ALT, pillars, W } from './model';
-import { bodyColor, C, paper, starGain } from './palette';
+import { bodyColor, INST as C, starGain } from './palette';       // Sky is an instrument: night in every theme
 import { createStage, hatchMaterial, headClearance, layoutRead, setLinePoints, sprite, svgEl, UNTILED, type Pt } from './stage';
 import type { Portal, YearDoc } from './types';
 
@@ -65,12 +65,12 @@ export interface SkyInfo {
   shown: number; selection: Selection; selected?: { az: number; alt: number; dec: number; rise: number | null; set: number | null; portal: ReturnType<typeof portalAt> | null; portalWest: ReturnType<typeof portalAt> | null };
 }
 
-/** On black a star is light added, softly edged; on paper (the Light theme) an ink dot with a crisp edge. */
-const starMaterial = (ink: boolean) => new THREE.ShaderMaterial({
-  transparent: true, depthWrite: false, blending: ink ? THREE.NormalBlending : THREE.AdditiveBlending,
-  uniforms: { pr: { value: Math.min(window.devicePixelRatio, 2) }, edge: { value: ink ? 0.55 : 0.15 } },
+/** A star is light added, softly edged. */
+const starMaterial = () => new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  uniforms: { pr: { value: Math.min(window.devicePixelRatio, 2) } },
   vertexShader: 'attribute float size; attribute float alpha; attribute vec3 tint; varying float va; varying vec3 vc; uniform float pr; void main(){ va = alpha; vc = tint; gl_PointSize = size * pr * 2.0; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
-  fragmentShader: 'varying float va; varying vec3 vc; uniform float edge; void main(){ vec2 d = gl_PointCoord - .5; float r = length(d) * 2.; if (r > 1.) discard; gl_FragColor = vec4(vc, va * (1. - smoothstep(edge, 1., r))); }',
+  fragmentShader: 'varying float va; varying vec3 vc; void main(){ vec2 d = gl_PointCoord - .5; float r = length(d) * 2.; if (r > 1.) discard; gl_FragColor = vec4(vc, va * (1. - smoothstep(.15, 1., r))); }',
 });
 
 /** Pixels along the stage's bottom held by the page's note (the method line under the view), when it shows. */
@@ -197,10 +197,8 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   }
   const eclLine = line([[0, 0], [1, 0]], C.gold, 0.9, 0.55, [4, 4]);
   const figGeom = new THREE.BufferGeometry(); const figures = new THREE.LineSegments(figGeom, new THREE.LineBasicMaterial({ color: C.ivory, transparent: true, opacity: 0.2 })); figures.position.z = 0.2; figures.frustumCulled = false; scene.add(figures);
-  /** Light on black, or ink on paper (the Light theme): the stars' material and colours, chosen when the view is built (a new theme builds it again). */
-  const ink = paper(), gain = starGain(), rgbOf = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
-  const inkRgb = rgbOf(C.starInk), portalRgb = ink ? rgbOf(C.gold) : [1.0, 0.78, 0.36];   // a star in a portal's span: gold
-  const starGeom = new THREE.BufferGeometry(); const points = new THREE.Points(starGeom, starMaterial(ink)); points.position.z = 0.5; points.frustumCulled = false; scene.add(points);
+  const gain = starGain();                                // the stars a step brighter where the theme asks (Contrast, Red; and set into a paper page, for daylight)
+  const starGeom = new THREE.BufferGeometry(); const points = new THREE.Points(starGeom, starMaterial()); points.position.z = 0.5; points.frustumCulled = false; scene.add(points);
   const sunHalo = sprite(90, 0.85), sunCore = new THREE.Mesh(new THREE.CircleGeometry(7, 40), new THREE.MeshBasicMaterial({ color: C.sunCore, side: THREE.DoubleSide, transparent: true }));
   scene.add(sunHalo); scene.add(sunCore);
   // the Moon's glow, cooler and smaller than the Sun's, brighter toward full; a faint ring of it even at new moon, so it is found beside the Sun
@@ -308,7 +306,6 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     frameStamp = ++field.clock; nShown = 0;
     if (portalDay !== Math.floor(jd) || portalOf.length < field.n) { portalDay = Math.floor(jd); portalOf = new Uint8Array(Math.max(field.n, 1024)); }
     const n = field.n, mags = field.mag, base = field.alpha, rgb = field.rgb, dim = 1 - 0.82 * twilight;
-    const [ir, ig, ib] = inkRgb, [pr, pg, pb] = portalRgb;
     for (let i = 0; i < n; i++) {
       if (mags[i] > magLimit) continue;
       proj.star(i);
@@ -318,9 +315,8 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
       field.az[i] = az; field.alt[i] = alt; field.stamp[i] = frameStamp;
       const x = skyX(az), y = skyY(alt), k = nShown++;
       let a = base[i] * dim * (alt < 0 ? (belowOn ? 0.9 : 0.35) : 1), r = rgb[3 * i], g = rgb[3 * i + 1], bl = rgb[3 * i + 2];
-      if (ink) { r = ir; g = ig; bl = ib; }                 // on paper every star is ink: bright ones bold, the faint field receding (depth by the square of its light)
-      if (portalStarsOn && portalStar(i, () => proj.dec(), spans)) { r = pr; g = pg; bl = pb; a = Math.min(1, a * 1.5); }
-      pos[3 * k] = x; pos[3 * k + 1] = y; size[k] = ink ? Math.max(1.3, field.size[i] * 1.05) : field.size[i]; alpha[k] = ink ? Math.min(1, 0.12 + 1.5 * a * a) : Math.max(0.05, Math.min(1, a * gain));
+      if (portalStarsOn && portalStar(i, () => proj.dec(), spans)) { r = 1.0; g = 0.78; bl = 0.36; a = Math.min(1, a * 1.5); }
+      pos[3 * k] = x; pos[3 * k + 1] = y; size[k] = field.size[i]; alpha[k] = Math.max(0.05, Math.min(1, a * gain));
       tint[3 * k] = r; tint[3 * k + 1] = g; tint[3 * k + 2] = bl;
       shownIdx[k] = i; shownX[k] = x; shownY[k] = y;
     }

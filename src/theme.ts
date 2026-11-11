@@ -1,5 +1,6 @@
-// The colour theme (Details → Settings, kept on the device): Dark (the engraved instrument on black, the default); Light (the
-// instrument printed on vellum, the sky a printed star atlas, for daylight); Sepia (the same on toned paper, darker); Contrast (Dark with every tier lifted, for glare
+// The colour theme (Details → Settings, kept on the device): Dark (the engraved instrument on black, the default); Light (a
+// vellum page, for daylight) and Sepia (the same on toned paper, darker), in both of which the instruments themselves stay
+// night, set into the page (they are drawn in light, which paper cannot do); Contrast (Dark with every tier lifted, for glare
 // and low vision); Red (night vision: the whole page in red light, so the eyes stay dark-adapted); or Auto (Light when the
 // device's appearance is light, Contrast when it asks for more contrast, else Dark). public/theme-boot.js applies the saved
 // choice before the page draws (no flash of another theme; the CSP allows no inline script) by the same key and rule as here.

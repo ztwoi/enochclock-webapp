@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { alpha, C, cssVar, DARK, type PaletteKey } from '../src/palette';
+import { alpha, C, cssVar, DARK, INST, type PaletteKey } from '../src/palette';
 
 const css = readFileSync('src/theme.css', 'utf8');
 /** Each block of custom properties in theme.css (:root, and a theme's), as name → value. */
@@ -24,7 +24,7 @@ test('every theme block gives its colours as hex, and each --x-rgb is --x', () =
   }
 });
 test('with no page, the palette is the dark theme; alpha() tints a palette colour', () => {
-  assert.equal(C.goldHi, '#f4dc9f'); assert.equal(C.dlOx2, '#3b1e17');
+  assert.equal(C.goldHi, '#f4dc9f'); assert.equal(C.dlRed, '#f55a36'); assert.equal(INST.dlRed, C.dlRed);   // with no page the instruments' palette is the same
   assert.equal(cssVar('dlCountDim'), '--dl-count-dim'); assert.equal(cssVar('ivory2'), '--ivory2');
   assert.equal(alpha('gold', 0.28), 'rgba(214,178,106,0.28)');
 });

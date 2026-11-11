@@ -65,7 +65,7 @@ export function createDialView(host: HTMLElement, head: { title: HTMLElement; pr
     <div class="dl-face" id="dl-face"><div class="dl-sun" id="dl-sun"></div><p class="sky-note" id="dl-note" role="status" hidden></p></div>`;
   const $ = (id: string) => document.getElementById(id) as HTMLElement;
   const svg = $('dl-svg') as unknown as SVGSVGElement, face = $('dl-face'), ledger = $('dl-ledger');
-  const dial = createDial(svg);
+  const dial = createDial(svg, undefined, { bezel: true });      // on a paper page: one object set into it
   const st = {
     framing: ((new URLSearchParams(location.search).get('framing') as Framing) || (localStorage.getItem(FKEY) as Framing) || 'sun') as Framing,
     heading: 0, reading: null as Reading | null, sel: null as RingKey | null, sky: loadSky(),
@@ -125,7 +125,7 @@ export function createDialView(host: HTMLElement, head: { title: HTMLElement; pr
     ledger.classList.toggle('dl-row', phone.matches);                         // on a phone the counts are one row that scrolls sideways, at the foot of the view
     host.style.setProperty('--face-h', `${Math.max(0, Math.min(W, room()))}px`);   // a portrait face sits at the top
   }
-  const ro = new ResizeObserver(fit); ro.observe(host); ro.observe(ledger);
+  const ro = new ResizeObserver(fit); ro.observe(host); ro.observe(ledger); ro.observe(face);   // the face's room changes with the theme too (a paper page gives the Dial a margin)
   const vh = document.querySelector('.view-head'); if (vh) ro.observe(vh);
   narrow.addEventListener('change', fit); phone.addEventListener('change', fit); short.addEventListener('change', fit);
 

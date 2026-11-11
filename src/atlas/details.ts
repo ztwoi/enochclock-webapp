@@ -15,7 +15,7 @@ import { atlasPanel, globePanel, placeSite, siteAt, snapTo } from './panel';
 import { places } from './places';
 import type { AtlasInfo } from './view';
 import { amongEvents, daysIn, ENOCH_MONTH_DAYS, eventName, fromEra, MONTHS, toEra } from './when';
-import { bodyColor } from '../palette';
+import { bodyColor, paletteGeneration } from '../palette';
 
 export type AtlasTab = 'where' | 'when' | 'moments';
 export type Cal = 'greg' | 'enoch';
@@ -117,7 +117,7 @@ export function createAtlasDetails(opts: AtlasDetailsOptions): AtlasDetails {
   const time = q<HTMLInputElement>('[data-w=time]'), read = q('[data-w=read]'), evs = q('[data-w=events]'), rows = q('[data-w=rows]');
   let cal: Cal = 'greg', tm: 'clock' | 'part' = 'clock', tab: AtlasTab = 'where', allEvents = false;
   let cur: { doc: YearDoc; i: number; part: number; jd: number; g: ReturnType<typeof localParts>; e: { y: number; m: number; d: number } } | null = null;
-  let dayOf: { doc: YearDoc; i: number; events: DayEvent[]; clock: number } | null = null;
+  let dayOf: { doc: YearDoc; i: number; events: DayEvent[]; clock: number; theme: number } | null = null;
   let site: Site | null = null;
   const tags = new Set<string>();
 
@@ -278,8 +278,8 @@ export function createAtlasDetails(opts: AtlasDetailsOptions): AtlasDetails {
       const tz = doc.calculation.timezone, off = fmt.offset(doc.rows[i].sunrise_local), g = localParts(jd, tz, off);
       const [ey, em, ed] = annual(doc)[i].enoch_date.split(/(?<=\d)-/).map(Number);
       cur = { doc, i, part, jd, g, e: { y: ey, m: em, d: ed } };
-      if (!dayOf || dayOf.doc !== doc || dayOf.i !== i || dayOf.clock !== clockVersion()) {
-        dayOf = { doc, i, events: dayEvents(doc, i), clock: clockVersion() };
+      if (!dayOf || dayOf.doc !== doc || dayOf.i !== i || dayOf.clock !== clockVersion() || dayOf.theme !== paletteGeneration()) {   // a new day, clock format or theme: the bar again
+        dayOf = { doc, i, events: dayEvents(doc, i), clock: clockVersion(), theme: paletteGeneration() };
         bar.build(doc, i, dayOf.events, (x) => shownHm(localParts(x, tz, off).time));
       }
       bar.place(part);

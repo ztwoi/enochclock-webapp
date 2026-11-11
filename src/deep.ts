@@ -16,7 +16,7 @@ import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeome
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import type { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import { alpha, C } from './palette';
+import { alpha, C, paper } from './palette';
 import { createStage, headClearance, sprite, svgEl, type Pt } from './stage';
 import { AXIS, binsIn, binWidth, clampDays, clampRange, clipX, DAYS, dayText, dayTicks, yearTicks, yearText, zoomDays, zoomRange, type Bin, type DeepSeries, type Key } from './deepplot';
 import type { DeepDoc } from './types';
@@ -165,7 +165,7 @@ function build(host: HTMLElement, L: DeepLayout, deep: DeepDoc, series: DeepSeri
   // the selected year (plot, visible range) + hover crosshair
   let year = c.year;
   const sel = poly(C.goldHi, 0.8, 1, [2, 3]);
-  const selDot = sprite(22); scene.add(selDot);
+  const selDot = sprite(22, 1, paper()); scene.add(selDot);          // on a paper page a wash, not light (Deep Time is a chart on the page)
   const selLabel = text(0, L.compact ? top + 14 : bot - 8, '', 'lbl-mono gold-hi');   // compact: at the top, clear of the zoom buttons
   const hover = svgEl('g', { class: 'hover', visibility: 'hidden' }, overlay);
   const hLine = svgEl('line', { y1: cy + 6, y2: bot, stroke: C.ivory2, 'stroke-width': 0.6, 'stroke-dasharray': '1 3' }, hover);

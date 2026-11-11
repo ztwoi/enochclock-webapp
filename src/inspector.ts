@@ -8,7 +8,7 @@ import { declinationOfDate, horizonAzimuth, lastPassage, litPortals, passageRun,
 import { AstroTime } from 'astronomy-engine';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { PCOL } from './dial/state';
-import { bodyColor, C } from './palette';
+import { bodyColor, C, INST } from './palette';
 import { followable, positionOf, sameBody, type Followed, type SkyInfo } from './skyview';
 import type { DeepDoc, YearDoc } from './types';
 
@@ -71,6 +71,7 @@ function portalSection(doc: YearDoc, S: { portal: number; side: 'east' | 'west' 
 /** The Sky's reading, under its options (as the Dial's under its title): the body or star selected, or else the one followed, in a line, with
  *  its Follow toggle; a portal selected, where the Sun last crossed in it. The `w` parts are a wide screen's: a phone keeps the line short. */
 export function skyReading(doc: YearDoc, sky: SkyInfo | null, followed: Followed | null) {
+  const C = INST;                                                  // the line lies on the sky: an instrument's colours
   const S = sky?.selection ?? null, b = followable(S) ?? followed;
   if (!sky || (!b && S?.kind !== 'portal')) return '';
   const c = doc.calculation, part = (html: string, wide = false) => `<span${wide ? ' class="w"' : ''}>${html}</span>`;

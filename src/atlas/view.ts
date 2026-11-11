@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { AstroTime, Body, GeoVector, Rotation_EQJ_EQD, SiderealTime } from 'astronomy-engine';
 import type { Catalogue } from '../skyview';
-import { C, paper, starGain, type PaletteKey } from '../palette';
+import { INST as C, starGain, type PaletteKey } from '../palette';   // the globe is an instrument: night in every theme
 import { band, bearingWord, dot, eqjToEarth, frameAt, latLon, nearest, norm180, obliquity, polarLimit, preview, vec, type V3 } from './geo';
 import { coastSegments, landMask, loadLand } from './land';
 import { places } from './places';
@@ -99,7 +99,7 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
   const tag = document.createElement('div'); tag.className = 'atlas-tag'; host.append(tag);
   const note = document.createElement('p'); note.className = 'atlas-note'; note.setAttribute('role', 'status'); note.hidden = true; host.append(note);
 
-  const ink = paper(), gain = starGain();                               // the Light theme: a printed globe and ink stars; Contrast and Red: brighter stars
+  const gain = starGain();                                             // the stars a step brighter where the theme asks
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(20, 1, 0.01, STAR_R * 2);
   const maskTex = new THREE.Texture(); maskTex.minFilter = THREE.LinearFilter; maskTex.generateMipmaps = false;   // no mipmaps: the longitude wraps per fragment
   const globeMat = globeShader(maskTex), globeGeo = new THREE.SphereGeometry(1, 192, 96).rotateX(Math.PI / 2);   // the sphere's poles on z
@@ -147,7 +147,7 @@ export function createAtlas(host: HTMLElement, catalogue: () => Catalogue | null
       const ra = s.ra_deg * D + (cd > 1e-6 ? (s.pm_ra_cosdec_mas_per_year * MAS * dt) / cd : 0);
       const v: V3 = [cd * Math.cos(ra), cd * Math.sin(ra), Math.sin(dec)];
       pos.push(v[0] * STAR_R, v[1] * STAR_R, v[2] * STAR_R);
-      size.push(Math.max(1.2, 4.6 - s.mag_v * 0.62)); alpha.push(Math.min(1, gain * Math.max(ink ? 0.45 : 0.2, (ink ? 1.25 : 1.05) - s.mag_v * 0.14)));   // ink on paper: darker, and no star fainter than a grey dot
+      size.push(Math.max(1.2, 4.6 - s.mag_v * 0.62)); alpha.push(Math.min(1, gain * Math.max(0.2, 1.05 - s.mag_v * 0.14)));
       if (s.name && s.mag_v < 1.4) named.push({ name: s.name, v });
     }
     const g = stars.geometry; g.dispose();

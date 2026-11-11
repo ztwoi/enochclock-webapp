@@ -3,9 +3,11 @@
 // page, so the drawings and the stylesheets can never disagree. A key is the property's name in
 // camelCase: C.goldHi is --gold-hi, C.dlOx2 is --dl-ox2.
 //
-// Every drawing uses C, the theme in force (DARK is its fallback where there is no page). A theme draws
-// either in light on black (Dark, Contrast, Red: stars and glows add light) or in ink on paper (Light:
-// stars are ink dots, glows a wash of colour): paper() tells which.
+// Two palettes. C is the page's, the theme in force (DARK is its fallback where there is no page). INST is the
+// instruments': the Dial, Sky, The Day's sky and dial, the Atlas globe. An instrument is night in every theme: it is
+// drawn in light (stars, glows, what is now), and paper cannot glow. So where the page is paper (Light, Sepia) the
+// instruments keep the night's colours, each one object set into the page, and INST reads them from theme.css's night
+// scope; in Dark, Contrast and Red the page is night already and INST is C. Deep Time is a chart, not a sky: it uses C.
 
 /** The dark theme's values: what C gives where there is no page to read (the Node tests), or before
  *  the stylesheet has loaded. tests/palette.test.ts holds them equal to src/theme.css's :root. */
@@ -22,12 +24,11 @@ export const DARK = {
   starInk: '#ece3cf', skyGround: '#050403', skyDay: '#3a2c17',
   globeSea: '#0a0a0c', globeSeaDay: '#171511', globeLand: '#26231e', globeLandDay: '#705c3a', globePolar: '#782622',
   // the Dial (theme.css: rings of light on space, the colours of the sky's day)
-  dlSpace0: '#13151f', dlSpace1: '#0a0b11', dlSpace2: '#050506', dlRim0: '#0a0b11', dlRim1: '#050506', dlDisc: '#07080c', dlLine: '#8a867d',
+  dlSpace0: '#13151f', dlSpace1: '#0a0b11', dlSpace2: '#050506', dlDisc: '#07080c', dlLine: '#8a867d',
   dlSkyDay: '#fff0c2', dlSkyAmber: '#ffc468', dlSkyEmber: '#ff7a4c', dlSkyViolet: '#9676e0', dlSkyNight: '#8ea5ee',
   dlPday: '#ffd071', dlPnight: '#a3b9f7', dlRunDay: '#ffe9ad', dlRunNight: '#b9c9ff', dlRunInk: '#2a1f08',
-  dlRed: '#f55a36', dlOx: '#2a1713', dlOx2: '#3b1e17', dlOxEdge: '#050506',
-  dlGlass: '#b2c4ee', dlCourse: '#e6ebf8', dlCount: '#c3c9d6', dlCountDim: '#666d7c', dlLit: '#fff6d8', dlLitEdge: '#e9cf8a', dlOnLit: '#120e08',
-  dlToneCourse: '#15171d', dlToneCourse2: '#101217', dlToneCount: '#0f1014', dlToneParts: '#0a0b11', dlToneBearing: '#0a0b11',
+  dlRed: '#f55a36', dlOxEdge: '#050506',
+  dlGlass: '#b2c4ee', dlCourse: '#e6ebf8', dlCount: '#c3c9d6', dlCountDim: '#666d7c', dlLit: '#fff6d8', dlLitEdge: '#e9cf8a',
 };
 export type PaletteKey = keyof typeof DARK;
 export type Palette = Readonly<Record<PaletteKey, string>>;
@@ -52,10 +53,32 @@ export const C: Palette = Object.defineProperties({} as Record<PaletteKey, strin
 
 /** Forget the reading: the next use of C reads the page again (after the theme changes). */
 export function paletteChanged() { cache = null; generation++; }
-/** The theme draws in ink on paper (Light), not in light on black: theme.css --paper. */
+/** The page is paper (Light, Sepia), not night: theme.css --paper. Deep Time's glow is then a wash, not light; the instruments are night regardless (INST). */
 export const paper = () => typeof document !== 'undefined' && typeof getComputedStyle !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--paper').trim() === '1';
-/** How much brighter than the catalogue the theme draws the stars (theme.css --star-gain: Contrast and Red lift them). */
-export const starGain = () => (typeof document !== 'undefined' && typeof getComputedStyle !== 'undefined' && Number(getComputedStyle(document.documentElement).getPropertyValue('--star-gain'))) || 1;
+
+/** Where the instruments' colours are read: the page itself, or (the page being paper) an element in theme.css's night scope. */
+function nightScope(): Element {
+  if (!paper()) return document.documentElement;
+  let probe = document.getElementById('night-probe');
+  if (!probe) { probe = document.createElement('i'); probe.id = 'night-probe'; probe.className = 'night'; probe.hidden = true; document.body.append(probe); }
+  return probe;
+}
+let icache: Record<PaletteKey, string> | null = null, igen = -1;
+function readInst(): Record<PaletteKey, string> {
+  if (typeof document === 'undefined' || typeof getComputedStyle === 'undefined' || !document.body) return DARK;
+  if (!paper()) return read();
+  if (icache && igen === generation) return icache;
+  const s = getComputedStyle(nightScope());
+  if (!s.getPropertyValue('--bg').trim()) return DARK;
+  const o = {} as Record<PaletteKey, string>;
+  for (const k of Object.keys(DARK) as PaletteKey[]) o[k] = s.getPropertyValue(cssVar(k)).trim() || DARK[k];
+  igen = generation; return (icache = o);
+}
+/** The instruments' colours: night in every theme (the page's own where the page is night). */
+export const INST: Palette = Object.defineProperties({} as Record<PaletteKey, string>,
+  Object.fromEntries((Object.keys(DARK) as PaletteKey[]).map((k) => [k, { get: () => readInst()[k], enumerable: true }])));
+/** How much brighter than the catalogue the instruments draw the stars (theme.css --star-gain: lifted in Contrast and Red, and where the page around them is paper, for daylight). */
+export const starGain = () => (typeof document !== 'undefined' && typeof getComputedStyle !== 'undefined' && document.body && Number(getComputedStyle(nightScope()).getPropertyValue('--star-gain'))) || 1;
 /** Counts the theme's changes: a drawing that keeps what it built can key it on this. */
 export const paletteGeneration = () => generation;
 

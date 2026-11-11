@@ -10,15 +10,17 @@
 
    The themes (data-theme on <html>, set by public/theme-boot.js before the page draws, then src/theme.ts):
    - Dark (the default, :root): the engraved instrument on black.
-   - Light: the instrument printed on vellum, for daylight. Every view follows it: the sky becomes a printed star atlas
-     (ink stars, sized by brightness), the globe a printed globe. --paper: 1 tells the drawing code to draw in ink, not light.
-   - Sepia: Light's printed instrument on toned paper, darker: for when vellum is too bright.
+   - Light: a vellum page, for daylight. Sepia: the same on toned paper, darker. The page is paper (--paper: 1): the bar, the
+     details, the controls and Deep Time are ink on it. The instruments are not: the Dial, Sky, The Day and the Atlas globe
+     are drawn in light (stars, glows, what is now), which paper cannot do, so they stay night, each one object set into the
+     page (the Dial a disc with a brass bezel, the others a panel with a brass edge), their stars a step brighter. They take
+     the Dark values below (the night scope: .night, and the stage while it shows Sky, The Day or Atlas); palette.ts INST
+     reads the same for the drawing code.
    - Contrast: Dark with every tier lifted (no text under 7:1, rules and borders stronger), for glare and low vision.
    - Red: Contrast, the whole page (the sky, the WebGL, the film) seen through a red filter: the night-vision light astronomers
      use, so the eyes stay dark-adapted. The filter is #night-red in index.html.
-   The film stays dark in every theme (.film): it is video. So does the Dial's sky band on paper (.dl-night: its stars, planets and arches are light on
-   a night ground in Light and Sepia too; render.ts draws them in palette.ts DARK). */
-:root, .film, .dl-night {
+   The film stays dark in every theme (.film): it is video. */
+:root, .film, :is([data-theme=light], [data-theme=sepia]) :is(.night, .stage:is([data-view=sky], [data-view=day], [data-view=atlas])) {
   --paper: 0;                                                 /* the drawings: light on black (0), or ink on paper (1) */
   --star-gain: 1;                                             /* the stars' brightness, over the catalogue's */
   /* ground and rules */
@@ -56,26 +58,22 @@
   /* The Dial: rings of light on space, not painted bands. Its colours are the sky's own day, so each has a reason: gold the day's light, ember its rising and
      setting (and the months'), periwinkle its night, violet only where they meet; all that is neither day nor night (the courses, the counts) is starlight. What is now is solid; the rest is glass and hairline. A theme gives the same roles its own values. */
   --dl-space0: #13151f; --dl-space1: #0a0b11; --dl-space2: #050506;   /* the ground under the instrument: centre, middle, rim */
-  --dl-rim0: #0a0b11; --dl-rim1: #050506;                     /* the sky band's night ground where the page is paper: horizon, rim */
   --dl-disc: #07080c; --dl-line: #8a867d;                     /* the centre (the compass, or the sky chart); hairlines, ticks and tiny numbers */
   --dl-sky-day: #fff0c2; --dl-sky-amber: #ffc468; --dl-sky-ember: #ff7a4c; --dl-sky-violet: #9676e0; --dl-sky-night: #8ea5ee;   /* a day's sky, sunrise round to sunrise */
   --dl-pday: #ffd071; --dl-pnight: #a3b9f7;                   /* the parts' numerals, by day and by night */
   --dl-run-day: #ffe9ad; --dl-run-night: #b9c9ff; --dl-run-ink: #2a1f08;   /* the part's degrees run so far, and their ticks over it */
-  --dl-red: #f55a36; --dl-ox: #2a1713; --dl-ox2: #3b1e17; --dl-ox-edge: #050506;   /* the months: the month now; the others (as paint, where a theme paints them); the gap between */
+  --dl-red: #f55a36; --dl-ox-edge: #050506;                   /* the months: ember glass, the month now solid; the gap between */
   --dl-month: #ffd9cb; --dl-month-on: #ffffff; --dl-geez: #ff9d86;
   --dl-glass: #b2c4ee;                                        /* a ring's ground: this, nearly clear */
   --dl-course: #e6ebf8; --dl-course-name: #99a3ba; --dl-count: #c3c9d6; --dl-count-dim: #666d7c;   /* starlight: the courses; the two counts and their lines */
   --dl-lit: #fff6d8; --dl-lit-edge: #e9cf8a; --dl-on-lit: #120e08;   /* the course now: a lit window, and the words on it; today's bead */
-  --dl-tone-course: #15171d; --dl-tone-course2: #101217; --dl-tone-count: #0f1014; --dl-tone-parts: #0a0b11; --dl-tone-bearing: #0a0b11;   /* a ring's own shade, where the theme paints its ground (paper); in light the grounds are glass */
   --dl-sage: #8fb08a;                                         /* the uncorrected date in the Dial's counts */
   --serif: "Cormorant", "Ethiopic", serif; --mono: "Plex Mono", ui-monospace, monospace; --cond: "Plex Cond", sans-serif; --geez: "Ethiopic", serif;
 }
 
-/* Light · Vellum: the instrument printed on vellum, for daylight. A parchment tone, not white (glare in the sun, and ink
-   stars lost on it). The ink is the ivory tier (darkest is strongest, so the
-   "hi" tiers are the deepest); gold is ochre, bronze sepia, silver slate; the month ring is rubricated. Reading text is
-   5.5:1 or more on --bg (body 10:1+, labels 7:1); in daylight even the engraving (--ivory3, the -dim tiers: the Dial's small
-   numerals) is 4:1 or more on the cells it is cut into. */
+/* Light · Vellum: a vellum page, for daylight: a parchment tone, not white (glare in the sun). Ink is the ivory tier (darkest is strongest, so the "hi"
+   tiers are the deepest); gold is ochre, bronze sepia, silver slate. Reading text is 5.5:1 or more on --bg (body 10:1+, labels 6.5:1). The instruments
+   set into the page keep the night's values (above). */
 :root[data-theme=light] {
   --paper: 1;
   --bg: #ebe2cd; --bg-rgb: 235,226,205; --rule: rgba(var(--ivory-rgb),.14); --rule2: rgba(var(--ivory-rgb),.28);
@@ -88,23 +86,14 @@
   --on-gold: #fdf9ef; --shade: #ebe2cd; --shade-hard: #ebe2cd;
   --scrim: rgba(40,32,20,.35); --shadow: rgba(60,45,20,.2);
   --warn: #9c2f16; --warn-soft: #9c2f16; --alarm: #a3331f; --alarm-rgb: 163,51,31; --vermilion: #ad2c1a;
-  --sun: #7a560a; --sun-core: #c98a12; --glow-core: #e9b23e;
-  --moon: #4f4c45; --moon-glow: #8b96a4; --moon-dark: #d8cfbb;
+  --sun: #7a560a; --sun-core: #c98a12; --glow-core: #e9b23e;   /* the bodies' names in the details; Deep Time's glow, a wash on paper */
+  --moon: #4f4c45;
   --mercury: #6e553d; --venus: #6c5412; --mars: #953a24; --jupiter: #7d5416; --saturn: #625819; --uranus: #24676b; --neptune: #334c88;
-  --star-ink: #0d0a05; --sky-ground: #d6c8a8; --sky-day: #b7ccd6;
-  --globe-sea: #c9c8bd; --globe-sea-day: #e3e6df; --globe-land: #ad9771; --globe-land-day: #d4bd8f; --globe-polar: #a4382a;
-  --dl-space0: #f1e9d8; --dl-space1: #ebe2cd; --dl-space2: #e6dcc6; --dl-rim0: #1c1712; --dl-rim1: #0d0b08; --dl-disc: #e8dfc9; --dl-line: #695f4c;
-  --dl-sky-day: #e2b440; --dl-sky-amber: #e08a2c; --dl-sky-ember: #cf4a2e; --dl-sky-violet: #6a52a8; --dl-sky-night: #2f4a9a;   /* gold leaf, through vermilion, to lapis */
-  --dl-pday: #7a560a; --dl-pnight: #27408a; --dl-run-day: #9a6a0e; --dl-run-night: #35528f; --dl-run-ink: #fdf9ef;
-  --dl-red: #cf4a2e; --dl-ox: #a4382a; --dl-ox2: #943023; --dl-ox-edge: #ebe2cd; --dl-month: #f6e2d6; --dl-month-on: #fffaf0; --dl-geez: #ecc9b8;
-  --dl-glass: #6b5524; --dl-course: #2b2418; --dl-course-name: #3d3628; --dl-count: #2f4a52; --dl-count-dim: #7c8d91;
-  --dl-lit: #f3d778; --dl-lit-edge: #d2a02a; --dl-on-lit: #1a1408; --dl-sage: #3d6537;
-  --dl-tone-course: #cdd3d3; --dl-tone-course2: #bfc7c8; --dl-tone-count: #dadedb; --dl-tone-parts: #f5efe0; --dl-tone-bearing: #d2c29b;   /* pewter against the vellum; the parts the lightest */
+  --dl-sage: #3d6537;
 }
 
-
-/* Sepia: the instrument on toned paper, darker than Light: for readers who find vellum too bright, and a warm page at dusk.
-   Ink on tan; reading text 6.4:1 or more (body 10:1), the engraving 4:1. */
+/* Sepia: the page on toned paper, darker than Light: for readers who find vellum too bright, and a warm page at dusk. Reading text 6.4:1 or more
+   (body 10:1). The instruments are night here too. */
 :root[data-theme=sepia] {
   --paper: 1;
   --bg: #d6c5a2; --bg-rgb: 214,197,162; --rule: rgba(var(--ivory-rgb),.16); --rule2: rgba(var(--ivory-rgb),.32);
@@ -118,24 +107,23 @@
   --scrim: rgba(40,28,12,.4); --shadow: rgba(50,35,15,.25);
   --warn: #8a220c; --warn-soft: #8a220c; --alarm: #8f2a17; --alarm-rgb: 143,42,23; --vermilion: #962410;
   --sun: #6a4605; --sun-core: #b4740c; --glow-core: #d9a03a;
-  --moon: #3f3b34; --moon-glow: #6f7a88; --moon-dark: #c4b28e;
+  --moon: #3f3b34;
   --mercury: #5a4330; --venus: #5a4410; --mars: #7e2c18; --jupiter: #684310; --saturn: #514712; --uranus: #1a5559; --neptune: #283d72;
-  --star-ink: #0d0804; --sky-ground: #c3ae86; --sky-day: #a7bcc4;
-  --globe-sea: #b4b1a0; --globe-sea-day: #d2d3c6; --globe-land: #977f58; --globe-land-day: #c0a575; --globe-polar: #8f2a17;
-  --dl-space0: #ddcdab; --dl-space1: #d6c5a2; --dl-space2: #d0be9a; --dl-rim0: #1b150e; --dl-rim1: #0c0906; --dl-disc: #d2c09c; --dl-line: #5e4c33;
-  --dl-sky-day: #d9aa30; --dl-sky-amber: #cf7d24; --dl-sky-ember: #b83a22; --dl-sky-violet: #5a4496; --dl-sky-night: #263f88;
-  --dl-pday: #5c3d00; --dl-pnight: #223a7c; --dl-run-day: #7f5609; --dl-run-night: #263f78; --dl-run-ink: #f3e8cf;
-  --dl-red: #b83a22; --dl-ox: #8f2c1e; --dl-ox2: #7f2618; --dl-ox-edge: #d6c5a2; --dl-month: #f3dccd; --dl-month-on: #fff6e8; --dl-geez: #e8c2ae;
-  --dl-glass: #5c4a22; --dl-course: #1c1209; --dl-course-name: #3a2b19; --dl-count: #233d44; --dl-count-dim: #5f6b6e;
-  --dl-lit: #edd06c; --dl-lit-edge: #c4912a; --dl-on-lit: #1a1408; --dl-sage: #2f5329;
-  --dl-tone-course: #bfc4bd; --dl-tone-course2: #b1b8b2; --dl-tone-count: #cccbbc; --dl-tone-parts: #e8dcbd; --dl-tone-bearing: #bda977;
+  --dl-sage: #2f5329;
 }
 
-/* On paper (Light, Sepia) nothing is left faint to read: labels over the globe get a paper halo; a body below the horizon
-   dims less. */
-[data-theme=light] .atlas-overlay text, [data-theme=sepia] .atlas-overlay text { stroke: var(--bg); stroke-width: 2px; stroke-opacity: .7; paint-order: stroke; }
+/* On paper, in the details: a body below the horizon dims less (nothing is left faint to read in daylight). */
 [data-theme=light] .dl-side .read dt.down, [data-theme=light] .dl-side .read dt.down + dd,
 [data-theme=sepia] .dl-side .read dt.down, [data-theme=sepia] .dl-side .read dt.down + dd { opacity: .72; }
+
+/* The instruments set into a paper page (Light, Sepia). They hold the night's values (the first block's scope); here, their stars a step brighter for
+   daylight, and each made one object: Sky, The Day and the Atlas globe a panel with a brass edge and a shadow; the Dial a disc (its bezel and shadow are
+   drawn with it, render.ts) with room around it. */
+:is([data-theme=light], [data-theme=sepia]) :is(.night, .stage:is([data-view=sky], [data-view=day], [data-view=atlas])) { --star-gain: 1.6; }
+:is([data-theme=light], [data-theme=sepia]) .stage:is([data-view=sky], [data-view=day], [data-view=atlas]) { color: var(--ivory); background: radial-gradient(1200px 800px at 38% 42%, var(--bg-glow) 0%, var(--bg) 70%);
+  margin: 10px 10px 8px; border-radius: 16px; box-shadow: 0 0 0 1.5px var(--gold-dim), 0 0 0 3.5px var(--bg), 0 0 0 4.5px var(--gold), 0 12px 28px var(--shadow); }
+@media (max-width: 700px) { :is([data-theme=light], [data-theme=sepia]) .stage:is([data-view=sky], [data-view=day], [data-view=atlas]) { margin: 7px 7px 6px; border-radius: 13px; } }
+:is([data-theme=light], [data-theme=sepia]) #view-dial .dl-face { margin: 14px 10px; }
 
 /* Contrast: Dark with every tier lifted, on pure black. Reading text 12:1 or more, labels 12:1, the faint engraving 7.9:1;
    rules and borders stronger; the stars brighter. Red takes the same values under its filter: reduced to their light, Dark's
@@ -158,10 +146,10 @@
   --mercury: #e2c8a8; --venus: #fff1c0; --mars: #ff8e6a; --jupiter: #ffd28e; --saturn: #f4d27a; --uranus: #b6eef0; --neptune: #a6bcf2;
   --star-ink: #fffaf0; --sky-ground: #000000; --sky-day: #3a2c17;
   --globe-sea: #000000; --globe-sea-day: #1c1a15; --globe-land: #3a352c; --globe-land-day: #8f774a; --globe-polar: #a03028;
-  --dl-space0: #0a0a0a; --dl-space1: #000000; --dl-space2: #000000; --dl-rim0: #000000; --dl-rim1: #000000; --dl-disc: #000000; --dl-line: #a89e8a;
+  --dl-space0: #0a0a0a; --dl-space1: #000000; --dl-space2: #000000; --dl-disc: #000000; --dl-line: #a89e8a;
   --dl-sky-day: #fff6d8; --dl-sky-amber: #ffd27a; --dl-sky-ember: #ff8a60; --dl-sky-violet: #b79cf5; --dl-sky-night: #a9bdf9;
   --dl-pday: #ffdc8a; --dl-pnight: #bccdff; --dl-run-day: #fff0c2; --dl-run-night: #cfdcff; --dl-run-ink: #000000;
-  --dl-red: #ff7a55; --dl-ox: #3a1c16; --dl-ox2: #4d241b; --dl-ox-edge: #000000; --dl-month: #ffe6dc; --dl-month-on: #000000; --dl-geez: #ffc4ae;
+  --dl-red: #ff7a55; --dl-ox-edge: #000000; --dl-month: #ffe6dc; --dl-month-on: #000000; --dl-geez: #ffc4ae;
   --dl-glass: #c8d6fa; --dl-course: #ffffff; --dl-course-name: #c9d2e6; --dl-count: #e3e8f2; --dl-count-dim: #9aa3b5;
   --dl-lit: #fffaf0; --dl-lit-edge: #ffe9ad; --dl-on-lit: #000000; --dl-sage: #b6e0ae;
 }

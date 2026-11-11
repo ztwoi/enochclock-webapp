@@ -50,10 +50,8 @@
 .dl-on-dark { fill: var(--dl-on-lit) !important; font-weight: 600; }                                 /* words on what is lit: the course now */
 .dl-part { font-family: var(--mono); font-size: 19px; } .dl-pday { fill: var(--dl-pday); } .dl-pnight { fill: var(--dl-pnight); } .dl-part.dl-on { fill: var(--ivory); font-weight: 600; }
 .dl-pn { font-family: var(--mono); font-size: 9.5px; font-weight: 500; fill: var(--gold); } .dl-pn.dl-on { fill: var(--gold-hi); font-weight: 600; } .dl-pn-rim { font-size: 8.5px; }   /* a portal's number, 1 to 6 */
-/* What is now has its own light, where the theme draws in light (on paper, ink has none) */
+/* What is now has its own light (the Dial is night, and drawn in light, in every theme) */
 :is(.dl-part, .dl-month, .dl-um, .dl-pn).dl-on { filter: drop-shadow(0 0 2.5px rgba(var(--gold-hi-rgb),.95)) drop-shadow(0 0 7px rgba(var(--gold-rgb),.55)); }
-:is([data-theme=light], [data-theme=sepia]) :is(.dl-part, .dl-month, .dl-um, .dl-pn).dl-on { filter: none; }
-.dl-night .dl-pn.dl-on { filter: drop-shadow(0 0 2.5px rgba(var(--gold-hi-rgb),.95)) drop-shadow(0 0 7px rgba(var(--gold-rgb),.55)); }   /* but the sky band is night on paper too: its lit portal numbers keep theirs */
 .dl-chart-lbl { font-family: var(--mono); font-size: 5.5px; fill: var(--ivory2); letter-spacing: .04em; }
 .dl-chart-card { font-family: var(--serif); font-size: 9px; fill: var(--ivory2); font-weight: 600; }
 .dl-centre-above .dl-portal { fill-opacity: .4; stroke-opacity: .5; } .dl-centre-above :is(.dl-cmp, .dl-pn) { opacity: .55; }
