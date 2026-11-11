@@ -96,7 +96,7 @@
   --dl-sky-day: #b07a10; --dl-sky-amber: #b8641a; --dl-sky-ember: #b03a22; --dl-sky-violet: #5a4496; --dl-sky-night: #2f4a86;
   --dl-pday: #6e4f0c; --dl-pnight: #2c4a86; --dl-run-day: #9a6a0e; --dl-run-night: #35528f; --dl-run-ink: #fdf9ef;
   --dl-red: #cf4a2e; --dl-ox: #a4382a; --dl-ox2: #943023; --dl-ox-edge: #ebe2cd; --dl-month: #f6e2d6; --dl-month-on: #fffaf0; --dl-geez: #ecc9b8;
-  --dl-glass: #6b5524; --dl-course: #2b2418; --dl-course-name: #4a4234; --dl-count: #2f4a52; --dl-count-dim: #7c8d91;
+  --dl-glass: #6b5524; --dl-course: #2b2418; --dl-course-name: #3d3628; --dl-count: #2f4a52; --dl-count-dim: #7c8d91;
   --dl-week: #2b2418; --dl-sab: #5a3c00; --dl-lit: #6e4f0c; --dl-lit-edge: #5a3c00; --dl-sage: #3d6537;
 }
 
@@ -124,8 +124,8 @@
   --dl-sky-day: #9a6a0e; --dl-sky-amber: #a0561a; --dl-sky-ember: #9a2f1c; --dl-sky-violet: #4c3a86; --dl-sky-night: #263f78;
   --dl-pday: #5c3d00; --dl-pnight: #263f78; --dl-run-day: #7f5609; --dl-run-night: #263f78; --dl-run-ink: #f3e8cf;
   --dl-red: #b83a22; --dl-ox: #8f2c1e; --dl-ox2: #7f2618; --dl-ox-edge: #d6c5a2; --dl-month: #f3dccd; --dl-month-on: #fff6e8; --dl-geez: #e8c2ae;
-  --dl-glass: #5c4a22; --dl-course: #1c1209; --dl-course-name: #4a3a25; --dl-count: #233d44; --dl-count-dim: #5f6b6e;
-  --dl-week: #1c1209; --dl-sab: #5c3d00; --dl-lit: #5c3d00; --dl-lit-edge: #3d2700; --dl-sage: #2f5329;
+  --dl-glass: #5c4a22; --dl-course: #1c1209; --dl-course-name: #3a2b19; --dl-count: #233d44; --dl-count-dim: #5f6b6e;
+  --dl-week: #1c1209; --dl-sab: #3d2700; --dl-lit: #5c3d00; --dl-lit-edge: #3d2700; --dl-sage: #2f5329;
 }
 
 /* On paper (Light, Sepia) nothing is left faint to read: labels over the globe get a paper halo; a body below the horizon

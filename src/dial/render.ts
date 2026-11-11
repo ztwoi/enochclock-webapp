@@ -140,8 +140,9 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
       const mark = el('circle', { r: 0.6, fill: 'none', 'data-ring-mark': name }, layer.g);
       rings.push({ name, layer, units, dir, cur, mark, markR }); return { g: layer.g, at, layer };
     };
-    /** A ring's ground: a pane of glass between r0 and r1, nearly clear. */
-    const glass = (r0: number, r1: number, a: number, parent: Element) => el('path', { d: dot(0, 0, r1) + dot(0, 0, r0), fill: alpha('dlGlass', a, C), 'fill-rule': 'evenodd' }, parent);
+    /** A ring's ground between r0 and r1: in light a pane of glass, nearly clear; on paper a wash of ink, toned enough to set the ring off the page. */
+    const tone = (a: number) => (ink ? Math.min(0.5, a * 2.4) : a);
+    const glass = (r0: number, r1: number, a: number, parent: Element) => el('path', { d: dot(0, 0, r1) + dot(0, 0, r0), fill: alpha('dlGlass', tone(a), C), 'fill-rule': 'evenodd' }, parent);
     const hair = (r: number, color: string, opacity: number, parent: Element) => el('circle', { r, fill: 'none', stroke: color, 'stroke-opacity': opacity, 'stroke-width': 0.55 }, parent);
 
     // ------------------------------------------------ world (true bearings, turned by the framing)
@@ -151,6 +152,7 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
     for (const alt of [30, 60]) el('circle', { r: altRadius(alt), fill: 'none', stroke: C.dlLine, 'stroke-width': 0.5, 'stroke-dasharray': '1 5' }, W);
     let ticks = '', majors = '';
     for (let b = 0; b < 360; b += 5) if (b % 30) ticks += `M${P(DR.tick0, b)}L${P(DR.tick1, b)}`; else majors += `M${P(DR.tick0, b)}L${P(DR.tick1 + 4, b)}`;
+    if (ink) glass(DR.tick0 - 1, DR.band0, 0.09, W);          // on paper the bearings sit on their own tone
     el('path', { d: ticks, stroke: C.dlLine, 'stroke-width': 0.6 }, W); el('path', { d: majors, stroke: C.ivory2, 'stroke-width': 1 }, W);
     for (const [b, t] of [[0, 'N'], [90, 'E'], [180, 'S'], [270, 'W']] as const) world.label(DR.horizon - 10, b, t, { class: 'dl-card' });
     for (let b = 30; b < 360; b += 30) if (b % 90) world.label(DR.horizon - 10, b, String(b), { class: 'dl-tiny' });
@@ -235,7 +237,7 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
       const lit = rgrad('lit', DR.crs0, DR.crs1, [C.dlLitEdge, C.dlLit, C.dlLitEdge]);
       doc.priests.courses.forEach((c, k) => {
         const a0 = at(k + 1), a1 = at(k), on = c.n === e.course;
-        el('path', { d: sectorPath(DR.crs0, DR.crs1, Math.min(a0, a1) + 0.4, Math.max(a0, a1) - 0.4), fill: on ? lit : alpha('dlGlass', k % 2 ? 0.11 : 0.06, C), filter: on ? glow('soft') : undefined,
+        el('path', { d: sectorPath(DR.crs0, DR.crs1, Math.min(a0, a1) + 0.4, Math.max(a0, a1) - 0.4), fill: on ? lit : alpha('dlGlass', tone(k % 2 ? 0.11 : 0.06), C), filter: on ? glow('soft') : undefined,
           'data-course': on ? 'on' : undefined }, g);
         layer.label(DR.crs1 - 6, (a0 + a1) / 2, c.name, { class: on ? 'dl-cname dl-on-dark' : 'dl-cname' });
         layer.label(DR.crs0 + 14, (a0 + a1) / 2, String(c.n), { class: on ? 'dl-cnum dl-on-dark' : 'dl-cnum' });
@@ -246,7 +248,7 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
             stroke: sab && !today ? bead : 'none', 'stroke-width': 0.6, 'data-day': today ? 'on' : undefined }, g);
         }
       });
-      for (const r of [DR.crs0, DR.crs1]) hair(r, C.dlCourse, 0.28, g); }
+      for (const r of [DR.crs0, DR.crs1]) hair(r, C.dlCourse, ink ? 0.5 : 0.28, g); }
     // R2 the week, Sunday to the Sabbath, anticlockwise, a turn a week: each day's arc is that day's sky, sunrise round to the next sunrise, by its own
     // measure of light (a day begins at sunrise). Today's is lit; the others the same sky, dimmed
     { const { g, at, layer } = ring('weekday', 7, -1, (x) => x.phases.weekday, (DR.wk0 + DR.wk1) / 2);
@@ -261,6 +263,7 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
     // R1 the 18 parts of the day, clockwise, gliding: beside them the day's sky (its light from the measured sunrise to sunset, then its night); each part
     // 20 degrees, ticked along the rim (a longer one every 5); the part now is lit and its degrees run so far a bar (update)
     { const { g, at, layer } = ring('parts', 18, 1, (x) => x.phases.parts, (DR.pt0 + DR.pt1) / 2);
+      if (ink) glass(DR.pt0, DR.pt1, 0.05, g);                // on paper the parts sit on their own tone
       partHi = el('path', { class: 'dl-part-hi' }, g);
       if (!ink) skyArc(g, DR.day0 - 3.5, DR.day1 + 3.5, (f) => at(18 * f), 2, s.dayParts, { opacity: 0.2 });   // the sky's light, spread
       skyArc(g, DR.day0, DR.day1, (f) => at(18 * f), 5, s.dayParts, { 'data-sky': '1' });
@@ -272,6 +275,7 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
       el('path', { d: sp, stroke: C.dlLine, 'stroke-width': 0.6 }, g);
       let fine = ''; for (let k = 0; k < 360; k++) fine += `M${P(DR.pt1 - (k % 20 === 0 ? 0 : k % 5 === 0 ? 6 : 3), at(k / 20))}L${P(DR.pt1, at(k / 20))}`;
       el('path', { d: fine, stroke: C.dlLine, 'stroke-width': 0.55 }, g);
+      if (ink) for (const r of [DR.pt0, DR.pt1]) hair(r, C.dlLine, 0.6, g);
       degRun = el('path', { class: 'dl-deg-run' }, g); degInk = el('path', { stroke: C.dlRunInk, 'stroke-width': 0.8, fill: 'none', class: 'dl-deg-ink' }, g);
     }
     needle = el('g', { class: 'dl-needle' }, root) as SVGGElement;
