@@ -3,7 +3,7 @@
 import { correctionSection, courseSection } from './cycleui';
 import { clockText } from './clock';
 import { civil } from './dates';
-import { annual, fmt, GEEZ, ROMAN } from './model';
+import { annual, archOf, fmt, GEEZ, ROMAN } from './model';
 import { declinationOfDate, horizonAzimuth, lastPassage, litPortals, passageRun, portalAt } from './sky/instrument';
 import { AstroTime } from 'astronomy-engine';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
@@ -53,7 +53,7 @@ const portalText = (p: SkyInfo['selected'] extends infer S ? S extends { portal:
 function portalSection(doc: YearDoc, S: { portal: number; side: 'east' | 'west' }, jd: number) {
   const rising = S.side === 'east', P = (rising ? doc.portals : doc.portals_west).find((q) => q.portal === S.portal);
   if (!P) return '';
-  const noun = rising ? 'sunrise' : 'sunset', verb = rising ? 'rose' : 'set', pas = lastPassage(doc, S.side, S.portal, jd), run = passageRun(doc, S.side, S.portal, jd), lit = litPortals(doc, jd)[S.side] === S.portal;
+  const verb = rising ? 'rose' : 'set', pas = lastPassage(doc, S.side, S.portal, jd), run = passageRun(doc, S.side, S.portal, jd), lit = litPortals(doc, jd)[S.side] === S.portal;
   const ago = (n: number) => (n === 0 ? 'today' : n === 1 ? 'yesterday' : `${n} days ago`);
   const last = pas
     ? `<dt>The Sun last ${verb} here</dt><dd class="cal" data-k="portal-last">${ago(pas.daysAgo)}</dd><dt>On</dt><dd>${pas.row.enoch_date} · ${civil(pas.row.civil_date)}</dd><dt>At bearing</dt><dd>${pas.azimuth.toFixed(3)}°</dd><dt>That pass</dt><dd data-k="portal-run">${run.length} ${run.length === 1 ? 'morning' : 'mornings'} · ${run[0].row.month}/${run[0].row.day} → ${run[run.length - 1].row.month}/${run[run.length - 1].row.day}</dd>`
@@ -62,9 +62,9 @@ function portalSection(doc: YearDoc, S: { portal: number; side: 'east' | 'west' 
   return `<div class="section"><div class="eyebrow">Selected portal</div>
    <div class="big" style="font-size:30px" data-k="portal">${ROMAN[S.portal]} <span class="geez">${GEEZ[S.portal]}</span></div>
    <div class="sub">where the Sun ${rising ? 'rises' : 'sets'} · ${S.side}${lit ? ` · lit: the Sun ${rising ? 'rose' : 'sets'} here today` : ''}</div>
-   <dl class="read"><dt>Common span</dt><dd>${P.common[0].toFixed(3)}° – ${P.common[1].toFixed(3)}°</dd>${last}</dl>
+   <dl class="read"><dt>Span</dt><dd>${archOf(rising ? doc.portals : doc.portals_west, S.portal).map((a) => `${a.toFixed(3)}°`).join(' – ')}</dd>${last}</dl>
    <div class="eyebrow" style="margin-top:14px">The calendar's passes through it</div><dl class="read">${passes}</dl>
-   <p class="note">A morning counts when its ${noun} bearing falls within the portal's common span; a ${noun} in a seam between two portals counts for neither. Each tick on the horizon is one morning of the last pass, at the bearing where the Sun crossed the horizon; the brightest is the latest. The Sun keeps moving after it rises, about 0.15° of bearing a minute, so a few minutes later it has drifted past its own tick.</p></div>`;
+   <p class="note">The portals go by month (1 Enoch 72): a morning counts when it is in one of the portal's months, the first in the fourth portal, the great one. The span is the bearings its months reach; the seam beside it, the bearings its neighbour's months reach too, where the month decides. Each tick on the horizon is one morning of the last pass, at the bearing where the Sun crossed the horizon; the brightest is the latest. The Sun keeps moving after it rises, about 0.15° of bearing a minute, so a few minutes later it has drifted past its own tick.</p></div>`;
 }
 
 /** The Sky's reading, under its options (as the Dial's under its title): the body or star selected, or else the one followed, in a line, with

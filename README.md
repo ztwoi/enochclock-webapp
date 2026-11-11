@@ -16,6 +16,9 @@ Five views share one time cursor:
 
 - **Sky.** The real sky over the six eastern portals (1 Enoch 72) at any of the 18 parts of the selected day: stars,
   constellation figures, Sun, Moon and planets. Turn to the east or west, or follow the device's compass.
+  The portals, numbered 1 to 6, go by month as in the text: the Sun enters the fourth, the great portal, on Day 1, is in
+  the sixth at the summer solstice and the first at the winter solstice, and the arch of its month is lit. Each arch spans the
+  bearings its months reach; a hatched seam marks where two portals' months both reach, and there the month decides.
   Tap the Sun, the Moon, a planet or any star and a line of reading appears under the options (where it is, and which
   portal it rises in); its **Follow** turns the view with it as the day or the years play. The Moon's reading also gives
   its day, counted from the conjunction, its light in fourteenths, and the portal it last rose in (a silver tick on the

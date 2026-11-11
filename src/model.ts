@@ -36,14 +36,33 @@ export const W = 1480, H = 908;
 export const PORTAL_ALT = 44 / ((1420 - 60) / 180);
 
 /**
- * The seams: where adjacent portals' two passes of the Sun disagree, as [low, high] azimuths between one portal's common span and the next's, in azimuth order.
+ * The seams: where adjacent portals' months both reach, as [low, high] azimuths between one portal's arch and the next's (see `arches`), in azimuth order.
  * The east's portals are numbered with falling azimuth and the west's with rising, so the neighbours are taken by azimuth, not by number.
  */
 export function pillars(portals: Portal[]): [number, number][] {
-  const byAz = [...portals].sort((a, b) => a.common[0] - b.common[0]), out: [number, number][] = [];
-  for (let i = 0; i < byAz.length - 1; i++) { const lo = byAz[i].common[1], hi = byAz[i + 1].common[0]; if (hi > lo) out.push([lo, hi]); }
+  const byAz = [...portals].sort((a, b) => a.union[0] - b.union[0]), S = arches(portals), out: [number, number][] = [];
+  for (let i = 0; i < byAz.length - 1; i++) { const lo = S.get(byAz[i].portal)![1], hi = S.get(byAz[i + 1].portal)![0]; if (hi > lo) out.push([lo, hi]); }
   return out;
 }
+
+/**
+ * Each portal's arch, as drawn on the horizon (Sky, the Dial): the azimuths its own months reach (the union of its two passes, 1 Enoch 72), less where
+ * a neighbouring portal's months reach too. That shared stretch is the seam between them, and there the month decides which portal the Sun is in: the
+ * portals are aligned by month (litPortals). The engine's `common` (what a portal's two passes share) is the same span except where a pass ends at the
+ * next year's Day 1, not this year's: month 12 does, so `common` would put this year's Day 1 sunrise, the first morning of the fourth portal, on the
+ * third portal's arch. By portal number.
+ */
+export function arches(portals: Portal[]): Map<number, [number, number]> {
+  let out = archCache.get(portals);
+  if (out) return out;
+  const byAz = [...portals].sort((a, b) => a.union[0] - b.union[0]);
+  out = new Map(byAz.map((p, i) => [p.portal, [i > 0 ? Math.max(p.union[0], byAz[i - 1].union[1]) : p.union[0], i < byAz.length - 1 ? Math.min(p.union[1], byAz[i + 1].union[0]) : p.union[1]] as [number, number]]));
+  archCache.set(portals, out);
+  return out;
+}
+const archCache = new WeakMap<Portal[], Map<number, [number, number]>>();
+/** One portal's arch (see `arches`). */
+export const archOf = (portals: Portal[], portal: number): [number, number] => arches(portals).get(portal)!;
 
 /** Cursor (fractional elapsed index) → the shown morning and the interpolation fraction toward the next. */
 export function cursorRow(days: Row[], cursor: number) {

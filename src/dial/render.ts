@@ -11,8 +11,8 @@
 //
 // The Dial is night in every theme (palette.ts INST): it is drawn in light, which paper cannot do. On a paper page (Light, Sepia) it is one object set into
 // the page: the same Dial, with a brass bezel and a shadow under it.
-import { GEEZ, pillars, PORTAL_ALT } from '../model';
-import { archPath, seamPath, within } from './portals';
+import { arches, GEEZ, pillars, PORTAL_ALT } from '../model';
+import { archPath, seamPath } from './portals';
 import type { YearDoc } from '../types';
 import { ringRotation, type DialState } from './state';
 import { alpha, bodyColor, C as PAGE, INST, paletteGeneration, paper, starGain, type Palette } from '../palette';
@@ -166,15 +166,16 @@ export function createDial(svg: SVGSVGElement, C: Palette = INST, opts: { bezel?
     const tr = s.trace; let d = ''; tr.forEach((p, k) => { if (p.alt > 0) d += `${k && tr[k - 1].alt > 0 ? 'L' : 'M'}${P(altRadius(p.alt), p.az)}`; });
     el('path', { d, fill: 'none', stroke: C.goldDim, 'stroke-width': 0.9, 'stroke-dasharray': '2 3', class: 'dl-sunpath' }, W);
     s.path.forEach((p, k) => { if (p.alt > 0 && k < 18) { const [x, y] = polar(altRadius(p.alt), p.az); el('circle', { cx: x, cy: y, r: 1.6, fill: C.gold, opacity: 0.7 }, W); } });
-    // the portals, standing on the horizon as the Sky draws them: a hatched pillar over each seam, an arch over each portal's common span, its number over
-    // it; the arches the Sun rises and sets in today are lit (today's sunrise and sunset bearings, as the marks in the centre)
-    for (const [PP, bearing] of [[doc.portals, s.row.azimuth_deg], [doc.portals_west, e.sunset_azimuth_deg]] as const) {
+    // the portals, standing on the horizon as the Sky draws them: a hatched pillar over each seam, an arch over each portal's span (model.ts arches), its
+    // number over it; the arches the Sun rises and sets in today are lit: its month's (1 Enoch 72), east and west alike
+    for (const PP of [doc.portals, doc.portals_west]) {
       for (const [lo, hi] of pillars(PP)) el('path', { d: seamPath(lo, hi, altRadius), fill: `url(#${id}-hatch)`, 'fill-opacity': 0.7, class: 'dl-seam', 'pointer-events': 'none' }, W);
+      const S = arches(PP);
       for (const p of PP) {
-        const on = within(p, bearing);
-        el('path', { d: archPath(p, altRadius), fill: on ? alpha('goldHi', 0.16, C) : 'none', stroke: on ? C.goldHi : C.gold, 'stroke-width': on ? 2.4 : 1.5, 'stroke-opacity': on ? 1 : 0.9,
+        const on = p.portal === e.portal, span = S.get(p.portal)!;
+        el('path', { d: archPath(span, altRadius), fill: on ? alpha('goldHi', 0.16, C) : 'none', stroke: on ? C.goldHi : C.gold, 'stroke-width': on ? 2.4 : 1.5, 'stroke-opacity': on ? 1 : 0.9,
           'stroke-linejoin': 'round', filter: glow(on ? 'wide' : 'lit'), class: on ? 'dl-arch dl-arch-on' : 'dl-arch', 'data-portal': p.portal, 'pointer-events': 'none' }, W);
-        world.label(altRadius(PORTAL_ALT) + 9, (p.common[0] + p.common[1]) / 2, String(p.portal), { class: on ? 'dl-pn dl-pn-rim dl-on' : 'dl-pn dl-pn-rim' });
+        world.label(altRadius(PORTAL_ALT) + 9, (span[0] + span[1]) / 2, String(p.portal), { class: on ? 'dl-pn dl-pn-rim dl-on' : 'dl-pn dl-pn-rim' });
       }
     }
     // centre: the disc, the optional sky chart (redrawn per instant, screen angles), then on top the compass and the six portals east and west: the same
@@ -183,14 +184,14 @@ export function createDial(svg: SVGSVGElement, C: Palette = INST, opts: { bezel?
     chart = el('g', { class: 'dl-chart' }, root) as SVGGElement;
     centre = new Layer(root, 'dl-centre'); const Z = centre.g;
     const inner = (alt: number) => 100 + (alt / PORTAL_ALT) * 24;
-    for (const [PP, bearing] of [[doc.portals, s.row.azimuth_deg], [doc.portals_west, e.sunset_azimuth_deg]] as const) {
-      const lo = Math.min(...PP.map((p) => p.common[0])) - 3, hi = Math.max(...PP.map((p) => p.common[1])) + 3;
+    for (const PP of [doc.portals, doc.portals_west]) {
+      const S = arches(PP), lo = Math.min(...[...S.values()].map((q) => q[0])) - 3, hi = Math.max(...[...S.values()].map((q) => q[1])) + 3;
       el('path', { d: `M${P(100, lo)}A100 100 0 0 1 ${P(100, hi)}`, fill: 'none', stroke: C.ivory2, 'stroke-width': 0.9, class: 'dl-portal' }, Z);
       for (const p of PP) {
-        const on = within(p, bearing);
-        el('path', { d: archPath(p, inner), fill: alpha(on ? 'goldHi' : 'gold', on ? 0.2 : 0.05, C), stroke: on ? C.goldHi : C.gold, 'stroke-width': on ? 1.6 : 1, 'stroke-linejoin': 'round',
+        const on = p.portal === e.portal, span = S.get(p.portal)!;
+        el('path', { d: archPath(span, inner), fill: alpha(on ? 'goldHi' : 'gold', on ? 0.2 : 0.05, C), stroke: on ? C.goldHi : C.gold, 'stroke-width': on ? 1.6 : 1, 'stroke-linejoin': 'round',
           filter: on ? glow('soft') : undefined, class: on ? 'dl-portal dl-arch-on' : 'dl-portal', 'data-portal-in': p.portal }, Z);
-        centre.label(110, (p.common[0] + p.common[1]) / 2, String(p.portal), { class: on ? 'dl-pn dl-on' : 'dl-pn' });
+        centre.label(110, (span[0] + span[1]) / 2, String(p.portal), { class: on ? 'dl-pn dl-on' : 'dl-pn' });
       }
     }
     for (const [b, col] of [[s.row.azimuth_deg, C.goldHi], [e.sunset_azimuth_deg, C.dlSkyNight]] as const) el('path', { d: `M${P(98, b)}L${P(128, b)}`, stroke: col, 'stroke-width': 1.6 }, Z);

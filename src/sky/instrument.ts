@@ -5,7 +5,7 @@
 // convention's own refraction (below) on every drawn altitude when Refraction is on, and
 // always where a quantity is compared with the portal edges.
 import { BaryState, Body, C_AUDAY, Equator, EquatorFromVector, GeoVector, Illumination, ObserverVector, RotateVector, Rotation_ECT_EQJ, Rotation_EQJ_EQD, SearchMoonPhase, SearchRiseSet, Vector, VectorFromSphere, Spherical, type AstroTime } from 'astronomy-engine';
-import { dayIndexAt } from '../model';
+import { arches, dayIndexAt } from '../model';
 import type { Portal, Row, YearDoc } from '../types';
 import { skyFrame, starVector } from './astronomy';
 import type { Star } from './catalogue';
@@ -120,9 +120,9 @@ export function horizonAzimuth(dec: number, latitude: number, rising = true) {
   return rising ? a : 360 - a;
 }
 
-/** Which portal a horizon azimuth falls in, by the portals' common spans (shared by both passages). */
+/** Which portal a horizon azimuth falls in, by the portals' arches (model.ts arches): where the Moon, a star or a planet rises or sets. The Sun's is its month's (litPortals). */
 export function portalAt(az: number, portals: Portal[]) {
-  for (const p of portals) if (az >= p.common[0] && az <= p.common[1]) return { portal: p.portal, where: 'within' as const };
+  for (const [portal, [lo, hi]] of arches(portals)) if (az >= lo && az <= hi) return { portal, where: 'within' as const };
   const lo = Math.min(...portals.map((p) => p.union[0])), hi = Math.max(...portals.map((p) => p.union[1]));
   if (az < lo || az > hi) return { portal: null, where: 'outside' as const };
   return { portal: null, where: 'seam' as const };
@@ -170,36 +170,38 @@ export function createMoonClock(latitude: number, longitude: number, height: num
 export const jdOfPart = (a: number, b: number, part: number) => a + (part / 18) * (b - a);
 
 /**
- * The portals the Sun rises and sets in on the Enoch day that contains `jd`: where that day's sunrise and sunset bearings fall within a portal's common span
- * (the east's for the rising, the west's for the setting), or null: in a seam, outside the portals, or `jd` outside the year.
+ * The portals the Sun rises and sets in on the Enoch day that contains `jd`: its month's (1 Enoch 72: the first month in the fourth, the great portal,
+ * then the fifth, the sixth twice, the fifth, the fourth, the third, the second, the first twice, the second, the third), rising in the east's and setting in
+ * the west's of that number. The portals are aligned by month: Day 1 enters the fourth, whatever the bearing (it is then on the seam with the third;
+ * model.ts arches). Null when `jd` is outside the year.
  */
 export function litPortals(doc: YearDoc, jd: number): { east: number | null; west: number | null } {
   const k = dayIndexAt(doc, jd), e = doc.extended[k];
   if (k < 0 || !e) return { east: null, west: null };
-  return { east: portalAt(doc.rows[k].azimuth_deg, doc.portals).portal, west: portalAt(e.sunset_azimuth_deg, doc.portals_west).portal };
+  return { east: e.portal, west: e.portal };
 }
 
-/** A morning on which the Sun rose (east) or set (west) within a portal's common span. */
+/** A morning on which the Sun rose (east) or set (west) in a portal: a day of one of its months. */
 export interface Passage { k: number; row: Row; azimuth: number; daysAgo: number }
 
 /**
- * The latest morning, up to the one containing `jd`, on which the Sun rose (east) or set (west) within the portal's common span: the Enoch day's sunrise or
- * sunset bearing is inside the span, the same test that lights an arch. A bearing in a seam, or outside the portals, counts for neither. Null when none yet
- * this Enoch year (the last passage was in the year before) or `jd` is outside the year.
+ * The latest morning, up to the one containing `jd`, on which the Sun rose (east) or set (west) in the portal: a day of one of the portal's months, the
+ * same rule that lights an arch (litPortals). `azimuth` is where it crossed the horizon that morning. Null when none yet this Enoch year (the last
+ * passage was in the year before) or `jd` is outside the year.
  */
 export function lastPassage(doc: YearDoc, side: 'east' | 'west', portal: number, jd: number): Passage | null {
   const now = dayIndexAt(doc, jd), p = (side === 'east' ? doc.portals : doc.portals_west).find((q) => q.portal === portal);
   if (now < 0 || !p) return null;
   for (let k = now; k >= 0; k--) {
     const row = doc.rows[k], az = side === 'east' ? row.azimuth_deg : doc.extended[k]?.sunset_azimuth_deg;
-    if (!row.closing_boundary && az !== undefined && az >= p.common[0] && az <= p.common[1]) return { k, row, azimuth: az, daysAgo: now - k };
+    if (!row.closing_boundary && az !== undefined && doc.extended[k]?.portal === portal) return { k, row, azimuth: az, daysAgo: now - k };
   }
   return null;
 }
 
 /**
- * The mornings of the last pass through a portal: the unbroken run of mornings, ending at `lastPassage`, whose sunrise (east) or sunset (west) bearing was
- * inside the portal's common span, oldest first. Each is one tick on the horizon, at the bearing where the Sun crossed it.
+ * The mornings of the last pass through a portal: the unbroken run of mornings, ending at `lastPassage`, in the portal's month (or its two months, the
+ * first and sixth portals' run on), oldest first. Each is one tick on the horizon, at the bearing where the Sun crossed it.
  */
 export function passageRun(doc: YearDoc, side: 'east' | 'west', portal: number, jd: number): Passage[] {
   const last = lastPassage(doc, side, portal, jd), p = (side === 'east' ? doc.portals : doc.portals_west).find((q) => q.portal === portal);
@@ -207,7 +209,7 @@ export function passageRun(doc: YearDoc, side: 'east' | 'west', portal: number, 
   const out: Passage[] = [];
   for (let k = last.k; k >= 0; k--) {
     const row = doc.rows[k], az = side === 'east' ? row.azimuth_deg : doc.extended[k]?.sunset_azimuth_deg;
-    if (row.closing_boundary || az === undefined || az < p.common[0] || az > p.common[1]) break;
+    if (row.closing_boundary || az === undefined || doc.extended[k]?.portal !== portal) break;
     out.unshift({ k, row, azimuth: az, daysAgo: last.daysAgo + (last.k - k) });
   }
   return out;

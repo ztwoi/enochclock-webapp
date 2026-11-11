@@ -16,7 +16,7 @@ import { aberrated, aberration, bodyDirection, createMoonClock, declinationOfDat
 import { PLANETS } from './dial/state';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { easeHeading, mod360, wrap180 } from './sky/heading';
-import { dayIndexAt, H, PORTAL_ALT, pillars, W } from './model';
+import { arches, dayIndexAt, H, PORTAL_ALT, pillars, W } from './model';
 import { bodyColor, INST as C, starGain } from './palette';       // Sky is an instrument: night in every theme
 import { createStage, hatchMaterial, headClearance, layoutRead, setLinePoints, sprite, svgEl, UNTILED, type Pt } from './stage';
 import type { Portal, YearDoc } from './types';
@@ -156,7 +156,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     fixed.add(once(lineObj([[far0, SL.horizon], [far1, SL.horizon]], C.ivory, 1.2, 1, 2)));
     for (const [P, caption, mid] of [[doc.portals, 'the six portals in which the sun rises — 72:3', 90], [doc.portals_west, 'the six portals in which the sun sets — 72:3', 270]] as const) {
       for (const p of P) {
-        const [lo, hi] = p.common, x0 = skyX(lo), x1 = x0 + wrap180(hi - lo) * K, xm = (x0 + x1) / 2, h = PORTAL_ALT * K;
+        const [lo, hi] = arches(P).get(p.portal)!, x0 = skyX(lo), x1 = x0 + wrap180(hi - lo) * K, xm = (x0 + x1) / 2, h = PORTAL_ALT * K;
         const pts: Pt[] = [[x0, SL.horizon], [x0, SL.horizon - h * 0.55]];
         for (let k = 0; k <= 24; k++) { const t = Math.PI - (k / 24) * Math.PI; pts.push([xm + Math.cos(t) * (x1 - x0) / 2, SL.horizon - h * 0.55 - Math.sin(t) * h * 0.45]); }
         pts.push([x1, SL.horizon]);
@@ -448,13 +448,13 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
   const placeHit = () => { hit.setAttribute('x', String(SL.x0 - TURN)); hit.setAttribute('width', String(3 * TURN)); hit.setAttribute('height', String(bottom() - SL.top + 20)); };
   /** x − x0 in design units, the shorter way round. */
   const dx = (x: number, x0: number) => mod360(((x - x0) / K) + 180) * K - TURN / 2;
-  /** The portal under a tap: the arch's height above the horizon and its numeral below it, over the portal's common span, a finger's width of slack either side. */
+  /** The portal under a tap: the arch's height above the horizon and its numeral below it, over the portal's span (model.ts arches), a finger's width of slack either side. */
   function portalAtPoint(p: { x: number; y: number }, reach: (px: number, du: number) => number): Selection {
     if (p.y < SL.horizon - PORTAL_ALT * K - reach(8, 4) || p.y > SL.horizon + 52) return null;
     const az = mod360((p.x - SL.x0) / K), tol = reach(12, 3) / K;
     let best: { portal: number; side: Side; d: number } | null = null;
     for (const [side, PP] of [['east', doc.portals], ['west', doc.portals_west]] as const) for (const q of PP) {
-      const d = az < q.common[0] ? q.common[0] - az : az > q.common[1] ? az - q.common[1] : 0;
+      const [lo, hi] = arches(PP).get(q.portal)!, d = az < lo ? lo - az : az > hi ? az - hi : 0;
       if (d <= tol && (!best || d < best.d)) best = { portal: q.portal, side, d };
     }
     return best ? { kind: 'portal', portal: best.portal, side: best.side } : null;
