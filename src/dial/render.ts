@@ -12,7 +12,7 @@ import { GEEZ, pillars, PORTAL_ALT } from '../model';
 import { archPath, seamPath, within } from './portals';
 import type { YearDoc } from '../types';
 import { ringRotation, type DialState } from './state';
-import { alpha, bodyColor, C as PAGE, paletteGeneration, paper, starGain, type Palette } from '../palette';
+import { alpha, bodyColor, C as PAGE, DARK, paletteGeneration, paper, starGain, type Palette } from '../palette';
 
 const NS = 'http://www.w3.org/2000/svg';
 export const DR = {
@@ -96,7 +96,10 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
   const hw = 5 / Math.SQRT2, hatch = el('pattern', { id: `${id}-hatch`, width: hw, height: hw, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
   const hatchLine = el('rect', { x: (0.12 * hw - 0.283).toFixed(3), y: 0, width: 0.566, height: hw }, hatch);
   /** The defs' colours, set again with the face when the theme changes. */
-  const paintDefs = () => { glowStops[0].setAttribute('stop-color', C.goldHi); glowStops[1].setAttribute('stop-color', C.gold); hatchLine.setAttribute('fill', C.dlCountDim); };
+  /** The sky band's palette. The band is night in every theme: on paper (Light, Sepia) it keeps a dark ground, and the stars, the planets, the arches and the
+   *  Sun on it are light, in the Dark theme's colours (theme.css gives .dl-night the same tokens for its labels); the rings inside stay ink on paper. */
+  const night = (): Palette => (paper() ? DARK : C);
+  const paintDefs = () => { const N = night(); glowStops[0].setAttribute('stop-color', N.goldHi); glowStops[1].setAttribute('stop-color', N.gold); hatchLine.setAttribute('fill', C.dlCountDim); };
   // Light behind a shape: 'lit' close, 'soft' and 'wide' spreading (each the shape over its own blur). Only on small shapes: a blur costs by its area.
   for (const [name, sd, twice] of [['lit', 2.2, false], ['soft', 3.2, true], ['wide', 7, true]] as const) {
     const f = el('filter', { id: `${id}-${name}`, x: '-80%', y: '-80%', width: '260%', height: '260%' }, defs);
@@ -104,6 +107,8 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
   }
   /** A glow, where the theme draws in light (Dark, Contrast, Red); on paper (Light, Sepia) ink has none. */
   const glow = (name: 'lit' | 'soft' | 'wide') => (paper() ? undefined : `url(#${id}-${name})`);
+  /** A glow on the sky band, which is night (and so drawn in light) in every theme. */
+  const glowN = (name: 'lit' | 'soft' | 'wide') => `url(#${id}-${name})`;
   /** Gradients from the centre, made again with each face (the theme's colours): r0…r1 through `cols`. */
   const pdefs = el('g', {}, defs);
   const rgrad = (name: string, r0: number, r1: number, cols: string[]) => {
@@ -146,10 +151,12 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
     const hair = (r: number, color: string, opacity: number, parent: Element) => el('circle', { r, fill: 'none', stroke: color, 'stroke-opacity': opacity, 'stroke-width': 0.55 }, parent);
 
     // ------------------------------------------------ world (true bearings, turned by the framing)
-    world = new Layer(root, 'dl-world'); const W = world.g;
+    const N = night();                                       // the sky band's colours
+    world = new Layer(root, ink ? 'dl-world dl-night' : 'dl-world'); const W = world.g;
     el('circle', { r: DR.band1, fill: rgrad('space', 0, DR.band1, [C.dlSpace0, C.dlSpace1, C.dlSpace2]), stroke: C.dlLine, 'stroke-width': 0.8 }, W);   // space, under the whole instrument
-    el('circle', { r: DR.horizon, fill: 'none', stroke: C.ivory2, 'stroke-width': 1.1 }, W);
-    for (const alt of [30, 60]) el('circle', { r: altRadius(alt), fill: 'none', stroke: C.dlLine, 'stroke-width': 0.5, 'stroke-dasharray': '1 5' }, W);
+    if (ink) el('path', { d: dot(0, 0, DR.band1) + dot(0, 0, DR.band0), fill: rgrad('rim', DR.band0, DR.band1, [C.dlRim0, C.dlRim1]), 'fill-rule': 'evenodd' }, W);   // on paper the sky band is still night
+    el('circle', { r: DR.horizon, fill: 'none', stroke: N.ivory2, 'stroke-width': 1.1 }, W);
+    for (const alt of [30, 60]) el('circle', { r: altRadius(alt), fill: 'none', stroke: N.dlLine, 'stroke-width': 0.5, 'stroke-dasharray': '1 5' }, W);
     let ticks = '', majors = '';
     for (let b = 0; b < 360; b += 5) if (b % 30) ticks += `M${P(DR.tick0, b)}L${P(DR.tick1, b)}`; else majors += `M${P(DR.tick0, b)}L${P(DR.tick1 + 4, b)}`;
     if (ink) glass(DR.tick0 - 1, DR.band0, 0.09, W);          // on paper the bearings sit on their own tone
@@ -158,16 +165,16 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
     for (let b = 30; b < 360; b += 30) if (b % 90) world.label(DR.horizon - 10, b, String(b), { class: 'dl-tiny' });
     // the Sun's path today, a dot at every whole part: their spacing is the Sun's speed
     const tr = s.trace; let d = ''; tr.forEach((p, k) => { if (p.alt > 0) d += `${k && tr[k - 1].alt > 0 ? 'L' : 'M'}${P(altRadius(p.alt), p.az)}`; });
-    el('path', { d, fill: 'none', stroke: C.goldDim, 'stroke-width': 0.9, 'stroke-dasharray': '2 3', class: 'dl-sunpath' }, W);
-    s.path.forEach((p, k) => { if (p.alt > 0 && k < 18) { const [x, y] = polar(altRadius(p.alt), p.az); el('circle', { cx: x, cy: y, r: 1.6, fill: C.gold, opacity: 0.7 }, W); } });
+    el('path', { d, fill: 'none', stroke: N.goldDim, 'stroke-width': 0.9, 'stroke-dasharray': '2 3', class: 'dl-sunpath' }, W);
+    s.path.forEach((p, k) => { if (p.alt > 0 && k < 18) { const [x, y] = polar(altRadius(p.alt), p.az); el('circle', { cx: x, cy: y, r: 1.6, fill: N.gold, opacity: 0.7 }, W); } });
     // the portals, standing on the horizon as the Sky draws them: a hatched pillar over each seam, an arch over each portal's common span, its number over
     // it; the arches the Sun rises and sets in today are lit (today's sunrise and sunset bearings, as the marks in the centre)
     for (const [PP, bearing] of [[doc.portals, s.row.azimuth_deg], [doc.portals_west, e.sunset_azimuth_deg]] as const) {
       for (const [lo, hi] of pillars(PP)) el('path', { d: seamPath(lo, hi, altRadius), fill: `url(#${id}-hatch)`, 'fill-opacity': 0.7, class: 'dl-seam', 'pointer-events': 'none' }, W);
       for (const p of PP) {
         const on = within(p, bearing);
-        el('path', { d: archPath(p, altRadius), fill: on ? alpha('goldHi', 0.16, C) : 'none', stroke: on ? C.goldHi : C.gold, 'stroke-width': on ? 2.4 : 1.5, 'stroke-opacity': on ? 1 : 0.9,
-          'stroke-linejoin': 'round', filter: glow(on ? 'wide' : 'lit'), class: on ? 'dl-arch dl-arch-on' : 'dl-arch', 'data-portal': p.portal, 'pointer-events': 'none' }, W);
+        el('path', { d: archPath(p, altRadius), fill: on ? alpha('goldHi', 0.16, N) : 'none', stroke: on ? N.goldHi : N.gold, 'stroke-width': on ? 2.4 : 1.5, 'stroke-opacity': on ? 1 : 0.9,
+          'stroke-linejoin': 'round', filter: glowN(on ? 'wide' : 'lit'), class: on ? 'dl-arch dl-arch-on' : 'dl-arch', 'data-portal': p.portal, 'pointer-events': 'none' }, W);
         world.label(altRadius(PORTAL_ALT) + 9, (p.common[0] + p.common[1]) / 2, String(p.portal), { class: on ? 'dl-pn dl-pn-rim dl-on' : 'dl-pn dl-pn-rim' });
       }
     }
@@ -191,7 +198,7 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
     for (const [b, t] of [[0, 'N'], [90, 'E'], [180, 'S'], [270, 'W']] as const) centre.label(82, b, t, { class: b === 0 ? 'dl-cmp dl-north' : 'dl-cmp' });
     let ct = ''; for (let b = 0; b < 360; b += 10) ct += `M${P(130, b)}L${P(b % 90 ? 134 : 138, b)}`;
     el('path', { d: ct, stroke: C.dlLine, 'stroke-width': 0.6 }, Z);
-    bodies = el('g', { class: 'dl-bodies' }, root) as SVGGElement;
+    bodies = el('g', { class: ink ? 'dl-bodies dl-night' : 'dl-bodies' }, root) as SVGGElement;
 
     // ------------------------------------------------ calendar rings (all continuous: the gear train in state.ts)
     // R6 uncorrected month (the paper's 364-day count, no correction), anticlockwise
@@ -316,18 +323,18 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
       const a = ((th % 360) + 360) % 360, flip = a > 90 && a < 270, [x, y] = polar(r, th);
       el('text', { x: x.toFixed(2), y: y.toFixed(2), 'text-anchor': 'middle', 'dominant-baseline': 'central', class: cls, transform: `rotate(${(th + (flip ? 180 : 0)).toFixed(3)} ${x.toFixed(2)} ${y.toFixed(2)})` }, B, t);
     };
+    const C = night();                                     // everything here is on the sky band: night, and so light, in every theme
     if (sky.figures) el('path', { d: figurePath(s, sky.figures, (az, alt) => polar(altRadius(alt), bear(az)), true), fill: 'none', stroke: C.silver, 'stroke-width': 0.6, opacity: 0.45, 'data-figures': 'band' }, B);
-    // stars: the default set (V ≤ 3.2) brighter; fainter ones (a deeper limit, the figures' stars) dimmer
+    // stars: the default set (V ≤ 3.2) brighter; fainter ones (a deeper limit, the figures' stars) dimmer; a step brighter than the catalogue's, and the brightest shine
     let stars = '', faint = '';
-    const inkDot = paper();                               // ink needs a mark a light point does not: no star under ~1 px on a phone, the bright ones bold
+    const size = (m: number) => Math.max(0.6, 2.6 - 0.5 * m), g = Math.max(1.5, starGain());
     for (const st of s.bright) if (st.alt > 0) {
-      const [x, y] = polar(altRadius(st.alt), bear(st.az)), m = st.mag ?? 3, r = inkDot ? (m <= 3.2 ? Math.max(1.65, 3.6 - 0.6 * m) : 1.0) : Math.max(0.6, 2.6 - 0.5 * m), d = dot(x, y, r);
+      const [x, y] = polar(altRadius(st.alt), bear(st.az)), m = st.mag ?? 3, d = dot(x, y, size(m));
+      if (m <= 1.6) el('circle', { cx: x, cy: y, r: 5 * size(m), fill: `url(#${id}-glow)`, opacity: 0.5 }, B);
       if ((st.mag ?? 9) <= 3.2) stars += d; else faint += d;
     }
-    const g = inkDot ? 1 : Math.max(1.5, starGain());      // in light the Dial's stars are a step brighter than the catalogue's, and the brightest shine
-    if (!inkDot) for (const st of s.bright) if (st.alt > 0 && (st.mag ?? 9) <= 1.6) { const [x, y] = polar(altRadius(st.alt), bear(st.az)); el('circle', { cx: x, cy: y, r: 5 * Math.max(0.6, 2.6 - 0.5 * (st.mag ?? 3)), fill: `url(#${id}-glow)`, opacity: 0.5 }, B); }
-    el('path', { d: faint, fill: C.starInk, opacity: inkDot ? 0.4 : Math.min(1, 0.32 * g) }, B);
-    el('path', { d: stars, fill: C.starInk, opacity: inkDot ? 1 : Math.min(1, 0.55 * g) }, B);
+    el('path', { d: faint, fill: C.starInk, opacity: Math.min(1, 0.32 * g) }, B);
+    el('path', { d: stars, fill: C.starInk, opacity: Math.min(1, 0.55 * g) }, B);
     for (const st of s.bright) if (st.alt > 0 && (st.mag ?? 9) < 1.2 && st.name) lab(altRadius(st.alt) + 9, bear(st.az), st.name, 'dl-star');
     // planets and the Moon: above the horizon at their altitude; below it on the inner track, hollow
     const body = (name: string, key: string, az: number, alt: number, rr: number, fill: string, cls = 'dl-body', halo = true) => {
@@ -382,19 +389,24 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
   function drawNeedle(s: DialState) {
     const G = needle!, N = s.needle; G.replaceChildren();
     const up = s.sun.alt > 0, sr = up ? altRadius(s.sun.alt) : DR.band0 + 3, [sx, sy] = polar(sr, N), [tx, ty] = polar(DR.band1, N);
-    const light = !paper();
-    if (light) for (const [w, o] of [[14, 0.07], [7, 0.16]] as const) el('line', { x1: 0, y1: 0, x2: tx, y2: ty, stroke: C.goldHi, 'stroke-width': w, opacity: o, 'stroke-linecap': 'round' }, G);   // its light (two wide strokes: a filter cannot blur a straight line, whose box has no width)
-    el('line', { x1: 0, y1: 0, x2: tx, y2: ty, stroke: C.goldHi, 'stroke-width': light ? 2 : 1.6, 'stroke-dasharray': up ? undefined : '6 4', opacity: light ? 1 : 0.9, 'data-needle': '1' }, G);
+    const Nt = night(), dash = up ? undefined : '6 4';
+    const beam = (x1: number, y1: number) => { for (const [w, o] of [[14, 0.07], [7, 0.16]] as const) el('line', { x1, y1, x2: tx, y2: ty, stroke: Nt.goldHi, 'stroke-width': w, opacity: o, 'stroke-linecap': 'round' }, G); };   // its light (two wide strokes: a filter cannot blur a straight line, whose box has no width)
+    if (!paper()) { beam(0, 0); el('line', { x1: 0, y1: 0, x2: tx, y2: ty, stroke: C.goldHi, 'stroke-width': 2, 'stroke-dasharray': dash, 'data-needle': '1' }, G); }
+    else {                                                 // on paper: ink across the rings, then light across the night of the sky band
+      const [bx, by] = polar(DR.band0, N);
+      el('line', { x1: 0, y1: 0, x2: bx, y2: by, stroke: C.goldHi, 'stroke-width': 1.6, 'stroke-dasharray': dash, opacity: 0.9, 'data-needle': '1' }, G);
+      beam(bx, by); el('line', { x1: bx, y1: by, x2: tx, y2: ty, stroke: Nt.goldHi, 'stroke-width': 2, 'stroke-dasharray': dash }, G);
+    }
     tri(DR.mo1 + 2, N, 'l-6 -9h12z', C.goldHi, G);
     // the Sun's motion along the horizon: an arc arrow whose length is the azimuth rate (20 units per °/min)
     const len = Math.max(-40, Math.min(40, s.sun.rate * 20)), R = sr + 16;
     if (Math.abs(len) > 1) {
       const a1 = N + (len / R) * (180 / Math.PI), [ax, ay] = polar(R, a1);
-      el('path', { d: `M${P(R, N)}A${R} ${R} 0 0 ${len > 0 ? 1 : 0} ${ax.toFixed(2)} ${ay.toFixed(2)}`, fill: 'none', stroke: C.goldHi, 'stroke-width': 1.2, 'data-sun-rate': '1' }, G);
-      tri(R, a1, len > 0 ? 'l-5 -4v8z' : 'l5 -4v8z', C.goldHi, G);
+      el('path', { d: `M${P(R, N)}A${R} ${R} 0 0 ${len > 0 ? 1 : 0} ${ax.toFixed(2)} ${ay.toFixed(2)}`, fill: 'none', stroke: Nt.goldHi, 'stroke-width': 1.2, 'data-sun-rate': '1' }, G);
+      tri(R, a1, len > 0 ? 'l-5 -4v8z' : 'l5 -4v8z', Nt.goldHi, G);
     }
-    el('circle', { cx: sx, cy: sy, r: light ? 38 : 22, fill: `url(#${id}-glow)` }, G);
-    el('circle', { cx: sx, cy: sy, r: 8, fill: up ? C.sunCore : 'none', stroke: C.sunCore, 'stroke-width': 1.5, 'data-body': 'sun' }, G);
+    el('circle', { cx: sx, cy: sy, r: 38, fill: `url(#${id}-glow)` }, G);
+    el('circle', { cx: sx, cy: sy, r: 8, fill: up ? Nt.sunCore : 'none', stroke: Nt.sunCore, 'stroke-width': 1.5, 'data-body': 'sun' }, G);
     el('circle', { r: 4, fill: C.goldHi }, G);
   }
 

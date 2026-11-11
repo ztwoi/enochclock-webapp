@@ -23,7 +23,7 @@ export const DARK = {
   globeSea: '#0a0a0c', globeSeaDay: '#171511', globeLand: '#26231e', globeLandDay: '#705c3a', globePolar: '#782622',
   onGold: '#120e08',
   // the Dial (theme.css: rings of light on space, the colours of the sky's day)
-  dlSpace0: '#13151f', dlSpace1: '#0a0b11', dlSpace2: '#050506', dlDisc: '#07080c', dlLine: '#8a867d',
+  dlSpace0: '#13151f', dlSpace1: '#0a0b11', dlSpace2: '#050506', dlRim0: '#0a0b11', dlRim1: '#050506', dlDisc: '#07080c', dlLine: '#8a867d',
   dlSkyDay: '#fff0c2', dlSkyAmber: '#ffc468', dlSkyEmber: '#ff7a4c', dlSkyViolet: '#9676e0', dlSkyNight: '#8ea5ee',
   dlPday: '#ffd071', dlPnight: '#a3b9f7', dlRunDay: '#ffe9ad', dlRunNight: '#b9c9ff', dlRunInk: '#2a1f08',
   dlRed: '#f55a36', dlOx: '#2a1713', dlOx2: '#3b1e17', dlOxEdge: '#050506',

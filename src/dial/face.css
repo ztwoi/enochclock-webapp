@@ -54,6 +54,7 @@
 /* What is now has its own light, where the theme draws in light (on paper, ink has none) */
 :is(.dl-part, .dl-month, .dl-um, .dl-pn).dl-on { filter: drop-shadow(0 0 2.5px rgba(var(--gold-hi-rgb),.95)) drop-shadow(0 0 7px rgba(var(--gold-rgb),.55)); }
 :is([data-theme=light], [data-theme=sepia]) :is(.dl-part, .dl-month, .dl-um, .dl-pn).dl-on { filter: none; }
+.dl-night .dl-pn.dl-on { filter: drop-shadow(0 0 2.5px rgba(var(--gold-hi-rgb),.95)) drop-shadow(0 0 7px rgba(var(--gold-rgb),.55)); }   /* but the sky band is night on paper too: its lit portal numbers keep theirs */
 .dl-chart-lbl { font-family: var(--mono); font-size: 5.5px; fill: var(--ivory2); letter-spacing: .04em; }
 .dl-chart-card { font-family: var(--serif); font-size: 9px; fill: var(--ivory2); font-weight: 600; }
 .dl-centre-above .dl-portal { fill-opacity: .4; stroke-opacity: .5; } .dl-centre-above :is(.dl-cmp, .dl-pn) { opacity: .55; }

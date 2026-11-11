@@ -16,8 +16,9 @@
    - Contrast: Dark with every tier lifted (no text under 7:1, rules and borders stronger), for glare and low vision.
    - Red: Contrast, the whole page (the sky, the WebGL, the film) seen through a red filter: the night-vision light astronomers
      use, so the eyes stay dark-adapted. The filter is #night-red in index.html.
-   The film stays dark in every theme (.film): it is video. */
-:root, .film {
+   The film stays dark in every theme (.film): it is video. So does the Dial's sky band on paper (.dl-night: its stars, planets and arches are light on
+   a night ground in Light and Sepia too; render.ts draws them in palette.ts DARK). */
+:root, .film, .dl-night {
   --paper: 0;                                                 /* the drawings: light on black (0), or ink on paper (1) */
   --star-gain: 1;                                             /* the stars' brightness, over the catalogue's */
   /* ground and rules */
@@ -56,6 +57,7 @@
      setting (and the months'), periwinkle its night, violet only where they meet; all that is neither day nor night (the courses, the week's names, the
      counts) is starlight. What is now is solid; the rest is glass and hairline. A theme gives the same roles its own values. */
   --dl-space0: #13151f; --dl-space1: #0a0b11; --dl-space2: #050506;   /* the ground under the instrument: centre, middle, rim */
+  --dl-rim0: #0a0b11; --dl-rim1: #050506;                     /* the sky band's night ground where the page is paper: horizon, rim */
   --dl-disc: #07080c; --dl-line: #8a867d;                     /* the centre (the compass, or the sky chart); hairlines, ticks and tiny numbers */
   --dl-sky-day: #fff0c2; --dl-sky-amber: #ffc468; --dl-sky-ember: #ff7a4c; --dl-sky-violet: #9676e0; --dl-sky-night: #8ea5ee;   /* a day's sky, sunrise round to sunrise */
   --dl-pday: #ffd071; --dl-pnight: #a3b9f7;                   /* the parts' numerals, by day and by night */
@@ -92,7 +94,7 @@
   --mercury: #6e553d; --venus: #6c5412; --mars: #953a24; --jupiter: #7d5416; --saturn: #625819; --uranus: #24676b; --neptune: #334c88;
   --star-ink: #0d0a05; --sky-ground: #d6c8a8; --sky-day: #b7ccd6;
   --globe-sea: #c9c8bd; --globe-sea-day: #e3e6df; --globe-land: #ad9771; --globe-land-day: #d4bd8f; --globe-polar: #a4382a;
-  --dl-space0: #f1e9d8; --dl-space1: #ebe2cd; --dl-space2: #e6dcc6; --dl-disc: #e8dfc9; --dl-line: #695f4c;
+  --dl-space0: #f1e9d8; --dl-space1: #ebe2cd; --dl-space2: #e6dcc6; --dl-rim0: #1c1712; --dl-rim1: #0d0b08; --dl-disc: #e8dfc9; --dl-line: #695f4c;
   --dl-sky-day: #b07a10; --dl-sky-amber: #b8641a; --dl-sky-ember: #b03a22; --dl-sky-violet: #5a4496; --dl-sky-night: #2f4a86;
   --dl-pday: #6e4f0c; --dl-pnight: #2c4a86; --dl-run-day: #9a6a0e; --dl-run-night: #35528f; --dl-run-ink: #fdf9ef;
   --dl-red: #cf4a2e; --dl-ox: #a4382a; --dl-ox2: #943023; --dl-ox-edge: #ebe2cd; --dl-month: #f6e2d6; --dl-month-on: #fffaf0; --dl-geez: #ecc9b8;
@@ -120,7 +122,7 @@
   --mercury: #5a4330; --venus: #5a4410; --mars: #7e2c18; --jupiter: #684310; --saturn: #514712; --uranus: #1a5559; --neptune: #283d72;
   --star-ink: #0d0804; --sky-ground: #c3ae86; --sky-day: #a7bcc4;
   --globe-sea: #b4b1a0; --globe-sea-day: #d2d3c6; --globe-land: #977f58; --globe-land-day: #c0a575; --globe-polar: #8f2a17;
-  --dl-space0: #ddcdab; --dl-space1: #d6c5a2; --dl-space2: #d0be9a; --dl-disc: #d2c09c; --dl-line: #5e4c33;
+  --dl-space0: #ddcdab; --dl-space1: #d6c5a2; --dl-space2: #d0be9a; --dl-rim0: #1b150e; --dl-rim1: #0c0906; --dl-disc: #d2c09c; --dl-line: #5e4c33;
   --dl-sky-day: #9a6a0e; --dl-sky-amber: #a0561a; --dl-sky-ember: #9a2f1c; --dl-sky-violet: #4c3a86; --dl-sky-night: #263f78;
   --dl-pday: #5c3d00; --dl-pnight: #263f78; --dl-run-day: #7f5609; --dl-run-night: #263f78; --dl-run-ink: #f3e8cf;
   --dl-red: #b83a22; --dl-ox: #8f2c1e; --dl-ox2: #7f2618; --dl-ox-edge: #d6c5a2; --dl-month: #f3dccd; --dl-month-on: #fff6e8; --dl-geez: #e8c2ae;
@@ -155,7 +157,7 @@
   --mercury: #e2c8a8; --venus: #fff1c0; --mars: #ff8e6a; --jupiter: #ffd28e; --saturn: #f4d27a; --uranus: #b6eef0; --neptune: #a6bcf2;
   --star-ink: #fffaf0; --sky-ground: #000000; --sky-day: #3a2c17;
   --globe-sea: #000000; --globe-sea-day: #1c1a15; --globe-land: #3a352c; --globe-land-day: #8f774a; --globe-polar: #a03028;
-  --dl-space0: #0a0a0a; --dl-space1: #000000; --dl-space2: #000000; --dl-disc: #000000; --dl-line: #a89e8a;
+  --dl-space0: #0a0a0a; --dl-space1: #000000; --dl-space2: #000000; --dl-rim0: #000000; --dl-rim1: #000000; --dl-disc: #000000; --dl-line: #a89e8a;
   --dl-sky-day: #fff6d8; --dl-sky-amber: #ffd27a; --dl-sky-ember: #ff8a60; --dl-sky-violet: #b79cf5; --dl-sky-night: #a9bdf9;
   --dl-pday: #ffdc8a; --dl-pnight: #bccdff; --dl-run-day: #fff0c2; --dl-run-night: #cfdcff; --dl-run-ink: #000000;
   --dl-red: #ff7a55; --dl-ox: #3a1c16; --dl-ox2: #4d241b; --dl-ox-edge: #000000; --dl-month: #ffe6dc; --dl-month-on: #000000; --dl-geez: #ffc4ae;
