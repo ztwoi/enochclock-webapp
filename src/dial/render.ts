@@ -3,7 +3,12 @@
 // computed azimuth); the world layer (compass, portals, the Sun's path) is a group turned by the
 // framing; the bodies and the needle are redrawn per instant. Angles are clockwise from the top.
 // build() runs once per Enoch day; update() once per instant.
-import { GEEZ, pillars } from '../model';
+//
+// The design: rings of light on space, not painted bands (theme.css, the Dial's roles). A ring's ground is a faint glass with hairlines; only what is now is
+// solid (the month, the course, the part, the Sun's line). The colours are the sky's own day: gold its light, ember its rising and setting, periwinkle its
+// night, and where they meet, twilight. What is read at a glance on a phone is large (the months, the parts, the week's names, the courses' numbers); the
+// rest is fine engraving to zoom into (the courses' names, the degrees, the week's beads).
+import { GEEZ, pillars, PORTAL_ALT } from '../model';
 import { archPath, seamPath, within } from './portals';
 import type { YearDoc } from '../types';
 import { ringRotation, type DialState } from './state';
@@ -12,19 +17,21 @@ import { alpha, bodyColor, C as PAGE, paletteGeneration, paper, starGain, type P
 const NS = 'http://www.w3.org/2000/svg';
 export const DR = {
   band1: 498, horizon: 376, band0: 356, tick1: 356, tick0: 346, um1: 344, um0: 326, mo1: 322, mo0: 282, pos0: 276,
-  cor1: 272, cor0: 254, crs1: 250, crs0: 188, dy1: 202, dy0: 190, pt1: 184, pt0: 154, day1: 152, day0: 146, cmp: 140,
+  cor1: 272, cor0: 254, crs1: 250, crs0: 216, wk1: 213, wk0: 190, pt1: 184, pt0: 154, day1: 152, day0: 146, cmp: 140,
 };
-export type RingKey = 'sky' | 'bearing' | 'uncorrected' | 'position' | 'correction' | 'courses' | 'parts' | 'compass';
+export type RingKey = 'sky' | 'bearing' | 'uncorrected' | 'position' | 'correction' | 'courses' | 'weekday' | 'parts' | 'compass';
 /** Hit bands (viewBox radius), outermost first: what a tap on the face selects. */
 const BANDS: { key: RingKey; r0: number; r1: number }[] = [
   { key: 'sky', r0: DR.horizon, r1: DR.band1 + 2 }, { key: 'bearing', r0: DR.band0 - 12, r1: DR.horizon },
   { key: 'uncorrected', r0: DR.um0 - 2, r1: DR.um1 + 1 }, { key: 'position', r0: DR.pos0 - 12, r1: DR.mo1 + 3 },
-  { key: 'correction', r0: DR.cor0 - 2, r1: DR.cor1 + 1 }, { key: 'courses', r0: DR.crs0 - 2, r1: DR.crs1 + 1 },
+  { key: 'correction', r0: DR.cor0 - 2, r1: DR.cor1 + 1 }, { key: 'courses', r0: DR.crs0 - 2, r1: DR.crs1 + 1 }, { key: 'weekday', r0: DR.wk0 - 3, r1: DR.crs0 - 2 },
   { key: 'parts', r0: DR.day0 - 6, r1: DR.pt1 + 2 }, { key: 'compass', r0: 0, r1: DR.cmp },
 ];
 const ALT_MIN = -12, K = (DR.band1 - DR.horizon) / 90;
 const altRadius = (alt: number) => DR.horizon + Math.max(ALT_MIN, alt) * K;
 const MS = [1, 31, 61, 92, 122, 152, 183, 213, 243, 274, 304, 334, 365];
+/** The week, Sunday to the Sabbath (state.ts phases.weekday). */
+const WEEK = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAB'];
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
 const polar = (r: number, th: number): [number, number] => [r * Math.sin(rad(th)), -r * Math.cos(rad(th))];
@@ -89,120 +96,183 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
   const hw = 5 / Math.SQRT2, hatch = el('pattern', { id: `${id}-hatch`, width: hw, height: hw, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
   const hatchLine = el('rect', { x: (0.12 * hw - 0.283).toFixed(3), y: 0, width: 0.566, height: hw }, hatch);
   /** The defs' colours, set again with the face when the theme changes. */
-  const paintDefs = () => { glowStops[0].setAttribute('stop-color', C.goldHi); glowStops[1].setAttribute('stop-color', C.gold); hatchLine.setAttribute('fill', C.silver); };
-  const lit = el('filter', { id: `${id}-lit`, x: '-60%', y: '-60%', width: '220%', height: '220%' }, defs);
-  el('feGaussianBlur', { stdDeviation: 2.2, result: 'b' }, lit); const mg = el('feMerge', {}, lit); el('feMergeNode', { in: 'b' }, mg); el('feMergeNode', { in: 'SourceGraphic' }, mg);
+  const paintDefs = () => { glowStops[0].setAttribute('stop-color', C.goldHi); glowStops[1].setAttribute('stop-color', C.gold); hatchLine.setAttribute('fill', C.dlCountDim); };
+  // Light behind a shape: 'lit' close, 'soft' and 'wide' spreading (each the shape over its own blur). Only on small shapes: a blur costs by its area.
+  for (const [name, sd, twice] of [['lit', 2.2, false], ['soft', 3.2, true], ['wide', 7, true]] as const) {
+    const f = el('filter', { id: `${id}-${name}`, x: '-80%', y: '-80%', width: '260%', height: '260%' }, defs);
+    el('feGaussianBlur', { stdDeviation: sd, result: 'b' }, f); const m = el('feMerge', {}, f); el('feMergeNode', { in: 'b' }, m); if (twice) el('feMergeNode', { in: 'b' }, m); el('feMergeNode', { in: 'SourceGraphic' }, m);
+  }
+  /** A glow, where the theme draws in light (Dark, Contrast, Red); on paper (Light, Sepia) ink has none. */
+  const glow = (name: 'lit' | 'soft' | 'wide') => (paper() ? undefined : `url(#${id}-${name})`);
+  /** Gradients from the centre, made again with each face (the theme's colours): r0…r1 through `cols`. */
+  const pdefs = el('g', {}, defs);
+  const rgrad = (name: string, r0: number, r1: number, cols: string[]) => {
+    const gid = `${id}-g-${name}`, g = el('radialGradient', { id: gid, gradientUnits: 'userSpaceOnUse', cx: 0, cy: 0, r: r1 }, pdefs);
+    cols.forEach((c, i) => el('stop', { offset: ((r0 + (i / (cols.length - 1)) * (r1 - r0)) / r1).toFixed(4), 'stop-color': c }, g)); return `url(#${gid})`;
+  };
+  const rgbOf = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  /** A day's sky round an arc: gold by day, through amber, ember and violet at dusk, periwinkle by night, back through violet and ember to the next sunrise.
+   *  Where day meets night it glows; it does not end at an edge. `at(f)`: the angle at fraction f of the day (0 at sunrise), whose light lasts dp of the 18
+   *  parts; between r0 and r1. The long stretches of day and of night are one piece each; only the twilights are stepped (`steps` to each change of colour). */
+  function skyArc(parent: Element, r0: number, r1: number, at: (f: number) => number, steps: number, dp: number, attrs: Record<string, string | number | undefined> = {}) {
+    const [day, amber, ember, violet, night] = [C.dlSkyDay, C.dlSkyAmber, C.dlSkyEmber, C.dlSkyViolet, C.dlSkyNight].map(rgbOf);
+    const w = 0.035, L = Math.max(4.4 * w, Math.min(1 - 4.4 * w, dp / 18));   // a day all light, or all night, keeps its twilights
+    const stops: [number, number[]][] = [[0, ember], [w, amber], [2 * w, day], [L - 2 * w, day], [L - w, amber], [L, ember], [L + w, violet], [L + 2.2 * w, night], [1 - 2.2 * w, night], [1 - w, violet], [1, ember]];
+    const g = el('g', attrs, parent), over = 0.0015;        // each piece a hair over the next: no seams
+    for (let k = 0; k < stops.length - 1; k++) {
+      const [f0, c0] = stops[k], [f1, c1] = stops[k + 1], n = c0 === c1 ? 1 : steps;
+      for (let q = 0; q < n; q++) { const t = (q + 0.5) / n;
+        el('path', { d: sectorPath(r0, r1, at(f0 + ((f1 - f0) * q) / n), at(Math.min(1, f0 + ((f1 - f0) * (q + 1)) / n + over))), fill: `rgb(${c0.map((v, i) => Math.round(v + (c1[i] - v) * t)).join(',')})` }, g); }
+    }
+    return g;
+  }
   const root = el('g', { class: 'dl-root' }, svg);
+  let partHi: Element | null = null, degRun: Element | null = null, degInk: Element | null = null;   // the part now and its degrees (update sets them)
   let rings: Ring[] = [], world: Layer | null = null, centre: Layer | null = null, chart: SVGGElement | null = null, bodies: SVGGElement | null = null, needle: SVGGElement | null = null, parts: Element[] = [], built = '';
   const keyOf = (doc: YearDoc, s: DialState) => `${doc.calculation.enoch_year}:${s.i}:${doc.calculation.latitude}:${doc.calculation.longitude_east}:${paletteGeneration()}`;   // a new theme draws the face again
 
   /** Rings and the world layer for day i, drawn at rotation 0 (ring-local angles). */
   function build(doc: YearDoc, s: DialState) {
-    root.replaceChildren(); rings = []; parts = []; paintDefs();
-    const e = s.ext;
+    root.replaceChildren(); pdefs.replaceChildren(); rings = []; parts = []; paintDefs();
+    const e = s.ext, ink = paper();
     const ring = (name: string, units: number, dir: 1 | -1, cur: (s: DialState) => number, markR: number) => {
       const layer = new Layer(root, `dl-ring dl-ring-${name}`), at = (u: number) => (dir * u * 360) / units;
       const mark = el('circle', { r: 0.6, fill: 'none', 'data-ring-mark': name }, layer.g);
       rings.push({ name, layer, units, dir, cur, mark, markR }); return { g: layer.g, at, layer };
     };
+    /** A ring's ground: a pane of glass between r0 and r1, nearly clear. */
+    const glass = (r0: number, r1: number, a: number, parent: Element) => el('path', { d: dot(0, 0, r1) + dot(0, 0, r0), fill: alpha('dlGlass', a, C), 'fill-rule': 'evenodd' }, parent);
+    const hair = (r: number, color: string, opacity: number, parent: Element) => el('circle', { r, fill: 'none', stroke: color, 'stroke-opacity': opacity, 'stroke-width': 0.55 }, parent);
 
     // ------------------------------------------------ world (true bearings, turned by the framing)
     world = new Layer(root, 'dl-world'); const W = world.g;
-    el('circle', { r: DR.band1, fill: 'none', stroke: C.ivory3, 'stroke-width': 0.8 }, W);
+    el('circle', { r: DR.band1, fill: rgrad('space', 0, DR.band1, [C.dlSpace0, C.dlSpace1, C.dlSpace2]), stroke: C.dlLine, 'stroke-width': 0.8 }, W);   // space, under the whole instrument
     el('circle', { r: DR.horizon, fill: 'none', stroke: C.ivory2, 'stroke-width': 1.1 }, W);
-    for (const alt of [30, 60]) el('circle', { r: altRadius(alt), fill: 'none', stroke: C.ivory3, 'stroke-width': 0.5, 'stroke-dasharray': '1 5' }, W);
+    for (const alt of [30, 60]) el('circle', { r: altRadius(alt), fill: 'none', stroke: C.dlLine, 'stroke-width': 0.5, 'stroke-dasharray': '1 5' }, W);
     let ticks = '', majors = '';
     for (let b = 0; b < 360; b += 5) if (b % 30) ticks += `M${P(DR.tick0, b)}L${P(DR.tick1, b)}`; else majors += `M${P(DR.tick0, b)}L${P(DR.tick1 + 4, b)}`;
-    el('path', { d: ticks, stroke: C.ivory3, 'stroke-width': 0.6 }, W); el('path', { d: majors, stroke: C.ivory2, 'stroke-width': 1 }, W);
+    el('path', { d: ticks, stroke: C.dlLine, 'stroke-width': 0.6 }, W); el('path', { d: majors, stroke: C.ivory2, 'stroke-width': 1 }, W);
     for (const [b, t] of [[0, 'N'], [90, 'E'], [180, 'S'], [270, 'W']] as const) world.label(DR.horizon - 10, b, t, { class: 'dl-card' });
     for (let b = 30; b < 360; b += 30) if (b % 90) world.label(DR.horizon - 10, b, String(b), { class: 'dl-tiny' });
     // the Sun's path today, a dot at every whole part: their spacing is the Sun's speed
     const tr = s.trace; let d = ''; tr.forEach((p, k) => { if (p.alt > 0) d += `${k && tr[k - 1].alt > 0 ? 'L' : 'M'}${P(altRadius(p.alt), p.az)}`; });
     el('path', { d, fill: 'none', stroke: C.goldDim, 'stroke-width': 0.9, 'stroke-dasharray': '2 3', class: 'dl-sunpath' }, W);
     s.path.forEach((p, k) => { if (p.alt > 0 && k < 18) { const [x, y] = polar(altRadius(p.alt), p.az); el('circle', { cx: x, cy: y, r: 1.6, fill: C.gold, opacity: 0.7 }, W); } });
-    // the portals, standing on the horizon as the Sky draws them: a hatched pillar over each seam, an arch over each portal's common span; the arches the Sun
-    // rises and sets in today are lit (today's sunrise and sunset bearings, as the marks in the centre)
+    // the portals, standing on the horizon as the Sky draws them: a hatched pillar over each seam, an arch over each portal's common span, its number over
+    // it; the arches the Sun rises and sets in today are lit (today's sunrise and sunset bearings, as the marks in the centre)
     for (const [PP, bearing] of [[doc.portals, s.row.azimuth_deg], [doc.portals_west, e.sunset_azimuth_deg]] as const) {
       for (const [lo, hi] of pillars(PP)) el('path', { d: seamPath(lo, hi, altRadius), fill: `url(#${id}-hatch)`, 'fill-opacity': 0.7, class: 'dl-seam', 'pointer-events': 'none' }, W);
       for (const p of PP) {
         const on = within(p, bearing);
-        el('path', { d: archPath(p, altRadius), fill: on ? alpha('goldHi', 0.1, C) : 'none', stroke: on ? C.goldHi : C.bronze, 'stroke-width': on ? 1.6 : 1, 'stroke-opacity': on ? 1 : 0.9,
-          'stroke-linejoin': 'round', filter: on ? `url(#${id}-lit)` : undefined, class: on ? 'dl-arch dl-arch-on' : 'dl-arch', 'data-portal': p.portal, 'pointer-events': 'none' }, W);
+        el('path', { d: archPath(p, altRadius), fill: on ? alpha('goldHi', 0.16, C) : 'none', stroke: on ? C.goldHi : C.gold, 'stroke-width': on ? 2.4 : 1.5, 'stroke-opacity': on ? 1 : 0.9,
+          'stroke-linejoin': 'round', filter: glow(on ? 'wide' : 'lit'), class: on ? 'dl-arch dl-arch-on' : 'dl-arch', 'data-portal': p.portal, 'pointer-events': 'none' }, W);
+        world.label(altRadius(PORTAL_ALT) + 9, (p.common[0] + p.common[1]) / 2, String(p.portal), { class: on ? 'dl-pn dl-pn-rim dl-on' : 'dl-pn dl-pn-rim' });
       }
     }
-    // centre: the disc, the optional sky chart (redrawn per instant, screen angles), then on top the
-    // compass, the six portals east and west, today's sunrise and sunset bearings (true bearings)
-    el('circle', { r: DR.cmp, fill: C.dlDisc, stroke: C.ivory3, 'stroke-width': 0.8 }, W);
+    // centre: the disc, the optional sky chart (redrawn per instant, screen angles), then on top the compass and the six portals east and west: the same
+    // arches as on the horizon and in Sky, standing on the centre's own horizon, numbered 1 to 6, today's two lit; and today's sunrise and sunset bearings
+    el('circle', { r: DR.cmp, fill: C.dlDisc, stroke: C.dlLine, 'stroke-width': 0.8 }, W);
     chart = el('g', { class: 'dl-chart' }, root) as SVGGElement;
     centre = new Layer(root, 'dl-centre'); const Z = centre.g;
-    for (const PP of [doc.portals, doc.portals_west]) for (const p of PP) {
-      el('path', { d: sectorPath(104, 122, p.common[0], p.common[1]), fill: p.portal % 2 ? C.dlPortal : C.dlPortal2, stroke: C.bronze, 'stroke-width': 0.6, class: 'dl-portal' }, Z);
-      centre.label(113, (p.common[0] + p.common[1]) / 2, GEEZ[p.portal], { class: 'dl-geez-s' });
+    const inner = (alt: number) => 100 + (alt / PORTAL_ALT) * 24;
+    for (const [PP, bearing] of [[doc.portals, s.row.azimuth_deg], [doc.portals_west, e.sunset_azimuth_deg]] as const) {
+      const lo = Math.min(...PP.map((p) => p.common[0])) - 3, hi = Math.max(...PP.map((p) => p.common[1])) + 3;
+      el('path', { d: `M${P(100, lo)}A100 100 0 0 1 ${P(100, hi)}`, fill: 'none', stroke: C.ivory2, 'stroke-width': 0.9, class: 'dl-portal' }, Z);
+      for (const p of PP) {
+        const on = within(p, bearing);
+        el('path', { d: archPath(p, inner), fill: alpha(on ? 'goldHi' : 'gold', on ? 0.2 : 0.05, C), stroke: on ? C.goldHi : C.gold, 'stroke-width': on ? 1.6 : 1, 'stroke-linejoin': 'round',
+          filter: on ? glow('soft') : undefined, class: on ? 'dl-portal dl-arch-on' : 'dl-portal', 'data-portal-in': p.portal }, Z);
+        centre.label(110, (p.common[0] + p.common[1]) / 2, String(p.portal), { class: on ? 'dl-pn dl-on' : 'dl-pn' });
+      }
     }
-    for (const [b, col] of [[s.row.azimuth_deg, C.goldHi], [e.sunset_azimuth_deg, C.silver]] as const) el('path', { d: `M${P(98, b)}L${P(128, b)}`, stroke: col, 'stroke-width': 1.6 }, Z);
+    for (const [b, col] of [[s.row.azimuth_deg, C.goldHi], [e.sunset_azimuth_deg, C.dlSkyNight]] as const) el('path', { d: `M${P(98, b)}L${P(128, b)}`, stroke: col, 'stroke-width': 1.6 }, Z);
     for (const [b, t] of [[0, 'N'], [90, 'E'], [180, 'S'], [270, 'W']] as const) centre.label(82, b, t, { class: b === 0 ? 'dl-cmp dl-north' : 'dl-cmp' });
     let ct = ''; for (let b = 0; b < 360; b += 10) ct += `M${P(130, b)}L${P(b % 90 ? 134 : 138, b)}`;
-    el('path', { d: ct, stroke: C.ivory3, 'stroke-width': 0.6 }, Z);
+    el('path', { d: ct, stroke: C.dlLine, 'stroke-width': 0.6 }, Z);
     bodies = el('g', { class: 'dl-bodies' }, root) as SVGGElement;
 
     // ------------------------------------------------ calendar rings (all continuous: the gear train in state.ts)
     // R6 uncorrected month (the paper's 364-day count, no correction), anticlockwise
     { const { g, at, layer } = ring('uncorrected', 364, -1, (x) => x.phases.uncorrected, (DR.um0 + DR.um1) / 2);
-      el('circle', { r: DR.um0, fill: 'none', stroke: C.dlSageDim, 'stroke-width': 0.6 }, g);
+      glass(DR.um0 + 1, DR.um1 - 1, 0.07, g);
+      el('circle', { r: DR.um0, fill: 'none', stroke: C.dlCountDim, 'stroke-width': 0.6 }, g);
       let t = ''; for (let m = 1; m <= 12; m++) { const a0 = at(MS[m - 1] - 1), a1 = at(MS[m] - 1); t += `M${P(DR.um0, a0)}L${P(DR.um1, a0)}`;
         layer.label((DR.um0 + DR.um1) / 2, (a0 + a1) / 2, String(m), { class: m === e.uncorrected_month ? 'dl-um dl-on' : 'dl-um' }); }
-      el('path', { d: t, stroke: C.dlSageDim, 'stroke-width': 0.8 }, g); }
-    // R5 months and the 364 positions (corrected), anticlockwise; hold marks; the quarter leaders
+      el('path', { d: t, stroke: C.dlCountDim, 'stroke-width': 0.8 }, g); }
+    // R5 months and the 364 positions (corrected), anticlockwise; hold marks; the quarter leaders. In light the months are ember glass, the month now
+    // solid; on paper they are painted (rubricated)
     { const { g, at, layer } = ring('position', 364, -1, (x) => x.phases.position, (DR.mo0 + DR.mo1) / 2);
+      glass(DR.cor0 + 1, DR.cor1 - 1, 0.07, g);              // the correction ring's ground, under this ring's ticks
       for (let m = 1; m <= 12; m++) {
         const a0 = at(MS[m] - 1), a1 = at(MS[m - 1] - 1), on = m === s.row.month;
-        el('path', { d: sectorPath(DR.mo0, DR.mo1, a0, a1), fill: on ? C.dlRed : m % 2 ? C.dlOx2 : C.dlOx, stroke: C.dlOxEdge, 'stroke-width': 1.4 }, g);
+        el('path', { d: sectorPath(DR.mo0, DR.mo1, a0, a1), fill: on ? C.dlRed : ink ? (m % 2 ? C.dlOx2 : C.dlOx) : alpha('dlRed', m % 2 ? 0.2 : 0.13, C), stroke: C.dlOxEdge, 'stroke-width': ink ? 1.4 : 2.6,
+          filter: on ? glow('soft') : undefined }, g);
         layer.label((DR.mo0 + DR.mo1) / 2 + 3, (a0 + a1) / 2, String(m), { class: on ? 'dl-month dl-on' : 'dl-month' });
         layer.label((DR.mo0 + DR.mo1) / 2 - 11, (a0 + a1) / 2, GEEZ[m], { class: 'dl-geez' });
       }
+      if (!ink) for (const r of [DR.mo0, DR.mo1]) hair(r, C.dlRed, 0.5, g);
       let tk = '', tn = '', tm = ''; for (let p = 0; p <= 364; p++) { const month = MS.includes(p + 1), ten = p % 10 === 0, seg = `M${P(DR.pos0 - (month ? 14 : ten ? 9 : 5), at(p))}L${P(DR.pos0 + 2, at(p))}`;
         if (month) tm += seg; else if (ten) tn += seg; else tk += seg; }
       el('path', { d: tk, stroke: C.gold, 'stroke-width': 0.9, 'stroke-opacity': 0.85 }, g); el('path', { d: tn, stroke: C.goldHi, 'stroke-width': 1.3 }, g); el('path', { d: tm, stroke: C.goldHi, 'stroke-width': 1.8 }, g);
       el('circle', { r: DR.pos0 + 2, fill: 'none', stroke: C.gold, 'stroke-width': 0.8, 'stroke-opacity': 0.8 }, g);
       for (const q of [91, 182, 273, 364]) { const a = at(q - 0.5), [x, y] = polar(DR.mo1 + 1, a); el('path', { d: `M${x} ${y - 4}l4 4l-4 4l-4-4z`, fill: C.goldHi, transform: `rotate(${a} ${x} ${y})` }, g); }
-      doc.extended.forEach((x, k) => { if (x.hold && k < doc.rows.length - 1) tri(DR.pos0 - 10, at(doc.rows[k].corrected_doy - 0.5), 'l-4 7h8z', C.silver, g); });
+      doc.extended.forEach((x, k) => { if (x.hold && k < doc.rows.length - 1) tri(DR.pos0 - 10, at(doc.rows[k].corrected_doy - 0.5), 'l-4 7h8z', C.dlCount, g); });
     }
     // R4 the 294-day correction cycle: 7 × 42 × (7 × 6), anticlockwise; the hold opens each cycle
     { const { g, at, layer } = ring('correction', 294, -1, (x) => x.phases.correction, (DR.cor0 + DR.cor1) / 2);
-      el('circle', { r: DR.cor0, fill: 'none', stroke: C.silverDim, 'stroke-width': 0.6 }, g);
-      el('circle', { r: DR.cor1, fill: 'none', stroke: C.silverDim, 'stroke-width': 0.6 }, g);
+      el('circle', { r: DR.cor0, fill: 'none', stroke: C.dlCountDim, 'stroke-width': 0.6 }, g);
+      el('circle', { r: DR.cor1, fill: 'none', stroke: C.dlCountDim, 'stroke-width': 0.6 }, g);
       let t6 = '', t42 = '';
       for (let k = 0; k < 294; k += 6) if (k % 42) t6 += `M${P(DR.cor0, at(k))}L${P(DR.cor0 + 6, at(k))}`; else t42 += `M${P(DR.cor0, at(k))}L${P(DR.cor1, at(k))}`;
-      el('path', { d: t6, stroke: C.silverDim, 'stroke-width': 0.7 }, g); el('path', { d: t42, stroke: C.silver, 'stroke-width': 1.1 }, g);
+      el('path', { d: t6, stroke: C.dlCountDim, 'stroke-width': 0.7 }, g); el('path', { d: t42, stroke: C.dlCount, 'stroke-width': 1.1 }, g);
       for (let w = 0; w < 7; w++) layer.label((DR.cor0 + DR.cor1) / 2 + 2, at(w * 42 + 21), `${w + 1}`, { class: w + 1 === e.correction_42 ? 'dl-cor dl-on' : 'dl-cor' });
-      el('path', { d: sectorPath(DR.cor0, DR.cor1, at(e.correction_day - 1), at(e.correction_day)), fill: C.silver }, g);
-      tri(DR.cor1 - 2, at(0), 'l-5 9h10z', C.silver, g);
+      el('path', { d: sectorPath(DR.cor0, DR.cor1, at(e.correction_day - 1), at(e.correction_day)), fill: C.dlCount }, g);
+      tri(DR.cor1 - 2, at(0), 'l-5 9h10z', C.dlCount, g);
     }
-    // R3 the 24 priestly courses, anticlockwise; each course is one week, so its sector holds the
-    // seven days Sunday → Sabbath (inner cells, the Sabbath darker) and the Sun's line sweeps one a day
+    // R3 the 24 priestly courses, anticlockwise; each course is one week. Read at a glance: its number, the course now a lit window. To zoom into: its
+    // name, and the week's seven days as beads along its inner edge (served, filled; today, the large one; the Sabbath, a ring)
     { const { g, at, layer } = ring('courses', 24, -1, (x) => x.phases.courses, (DR.crs0 + DR.crs1) / 2);
+      const lit = rgrad('lit', DR.crs0, DR.crs1, [C.dlLitEdge, C.dlLit, C.dlLitEdge]);
       doc.priests.courses.forEach((c, k) => {
         const a0 = at(k + 1), a1 = at(k), on = c.n === e.course;
-        el('path', { d: sectorPath(DR.dy1 + 1, DR.crs1, Math.min(a0, a1) + 0.4, Math.max(a0, a1) - 0.4), fill: on ? C.gold : k % 2 ? C.dlCell : C.dlCell2 }, g);
-        layer.label(DR.crs1 - 13, (a0 + a1) / 2, c.name, { class: on ? 'dl-course dl-on-dark' : 'dl-course' });
-        layer.label(DR.dy1 + 11, (a0 + a1) / 2, String(c.n), { class: on ? 'dl-num dl-on-dark' : 'dl-num' });
+        el('path', { d: sectorPath(DR.crs0, DR.crs1, Math.min(a0, a1) + 0.4, Math.max(a0, a1) - 0.4), fill: on ? lit : alpha('dlGlass', k % 2 ? 0.11 : 0.06, C), filter: on ? glow('soft') : undefined,
+          'data-course': on ? 'on' : undefined }, g);
+        layer.label(DR.crs1 - 6, (a0 + a1) / 2, c.name, { class: on ? 'dl-cname dl-on-dark' : 'dl-cname' });
+        layer.label(DR.crs0 + 14, (a0 + a1) / 2, String(c.n), { class: on ? 'dl-cnum dl-on-dark' : 'dl-cnum' });
         for (let d = 0; d < 7; d++) {
-          const b0 = at(k + (d + 1) / 7), b1 = at(k + d / 7), today = on && d + 1 === e.weekday;
-          el('path', { d: sectorPath(DR.dy0, DR.dy1, Math.min(b0, b1) + 0.15, Math.max(b0, b1) - 0.15), 'data-day': today ? 'on' : undefined,
-            fill: today ? C.goldHi : d === 6 ? (on ? C.bronze : C.dlSabbath) : on ? C.goldDim : C.dlDay }, g);
+          const [bx, by] = polar(DR.crs0 + 2.5, at(k + (d + 0.5) / 7)), today = on && d + 1 === e.weekday, past = on && d + 1 < e.weekday, sab = d === 6;
+          const bead = on ? C.onGold : alpha('dlGlass', 0.75, C);
+          el('circle', { cx: bx.toFixed(2), cy: by.toFixed(2), r: today ? 2.3 : 1.35, fill: today || past ? bead : sab ? 'none' : on ? alpha('onGold', 0.35, C) : alpha('dlGlass', 0.4, C),
+            stroke: sab && !today ? bead : 'none', 'stroke-width': 0.6, 'data-day': today ? 'on' : undefined }, g);
         }
+      });
+      for (const r of [DR.crs0, DR.crs1]) hair(r, C.dlCourse, 0.28, g); }
+    // R2 the week, Sunday to the Sabbath, anticlockwise, a turn a week: each day's arc is that day's sky, sunrise round to the next sunrise, by its own
+    // measure of light (a day begins at sunrise). Today's is lit; the others the same sky, dimmed
+    { const { g, at, layer } = ring('weekday', 7, -1, (x) => x.phases.weekday, (DR.wk0 + DR.wk1) / 2);
+      WEEK.forEach((name, d) => {
+        const a0 = at(d + 1), a1 = at(d), today = d + 1 === e.weekday, sab = d === 6;
+        const dp = doc.extended[s.i - (e.weekday - 1) + d]?.day_parts ?? s.dayParts;
+        if (today && !ink) skyArc(g, DR.wk0 - 3, DR.wk1 + 3, (f) => at(d + f), 2, dp, { opacity: 0.16 });   // its light, spread (shapes, not a blur: this ring turns every frame)
+        skyArc(g, DR.wk0, DR.wk1, (f) => at(d + f), today ? 4 : 2, dp, { opacity: today ? 1 : sab ? 0.5 : 0.3, 'data-weekday': today ? 'on' : undefined });
+        el('path', { d: `M${P(DR.wk0, a1)}L${P(DR.wk1, a1)}`, stroke: C.dlSpace2, 'stroke-width': 1.6 }, g);   // the sunrise that begins it
+        layer.label((DR.wk0 + DR.wk1) / 2, (a0 + a1) / 2, name, { class: today ? 'dl-wk dl-on-dark' : sab ? 'dl-wk dl-sab' : 'dl-wk' });
       }); }
-    // R1 the 18 parts of the day, clockwise, gliding: daylight from the measured sunrise to sunset
+    // R1 the 18 parts of the day, clockwise, gliding: beside them the day's sky (its light from the measured sunrise to sunset, then its night); each part
+    // 20 degrees, ticked along the rim (a longer one every 5); the part now is lit and its degrees run so far a bar (update)
     { const { g, at, layer } = ring('parts', 18, 1, (x) => x.phases.parts, (DR.pt0 + DR.pt1) / 2);
-      el('path', { d: sectorPath(DR.day0, DR.day1, at(0), at(s.dayParts)), fill: C.gold, opacity: 0.85 }, g);
+      partHi = el('path', { class: 'dl-part-hi' }, g);
+      if (!ink) skyArc(g, DR.day0 - 3.5, DR.day1 + 3.5, (f) => at(18 * f), 2, s.dayParts, { opacity: 0.2 });   // the sky's light, spread
+      skyArc(g, DR.day0, DR.day1, (f) => at(18 * f), 5, s.dayParts, { 'data-sky': '1' });
       el('path', { d: sectorPath(DR.day0 - 4, DR.day0 - 2, at(0), at(s.textParts)), fill: C.bronze, opacity: 0.8 }, g);
       let sp = ''; for (let k = 0; k < 18; k++) {
         sp += `M${P(DR.pt0, at(k))}L${P(DR.pt1, at(k))}`;
         parts.push(layer.label((DR.pt0 + DR.pt1) / 2, at(k + 0.5), String(k + 1).padStart(2, '0'), { class: 'dl-part' }));
       }
-      el('path', { d: sp, stroke: C.ivory3, 'stroke-width': 0.6 }, g);
-      let fine = ''; for (let k = 0; k < 360; k++) fine += `M${P(DR.pt1 - (k % 20 === 0 ? 0 : 3), at(k / 20))}L${P(DR.pt1, at(k / 20))}`;
-      el('path', { d: fine, stroke: C.ivory3, 'stroke-width': 0.4 }, g);
+      el('path', { d: sp, stroke: C.dlLine, 'stroke-width': 0.6 }, g);
+      let fine = ''; for (let k = 0; k < 360; k++) fine += `M${P(DR.pt1 - (k % 20 === 0 ? 0 : k % 5 === 0 ? 6 : 3), at(k / 20))}L${P(DR.pt1, at(k / 20))}`;
+      el('path', { d: fine, stroke: C.dlLine, 'stroke-width': 0.55 }, g);
+      degRun = el('path', { class: 'dl-deg-run' }, g); degInk = el('path', { stroke: C.dlRunInk, 'stroke-width': 0.8, fill: 'none', class: 'dl-deg-ink' }, g);
     }
     needle = el('g', { class: 'dl-needle' }, root) as SVGGElement;
     built = keyOf(doc, s);
@@ -223,7 +293,13 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
       const [mx, my] = polar(r.markR, local); r.mark.setAttribute('cx', mx.toFixed(4)); r.mark.setAttribute('cy', my.toFixed(4));
       report.push({ name: r.name, rotation: rot, current: cur, units: r.units, dir: r.dir, centre: rot + local });
     }
-    parts.forEach((n, k) => n.setAttribute('class', k + 1 === s.time.part ? 'dl-part dl-on' : 'dl-part'));
+    // the part now, lit; its 20 degrees run so far, a bar along the rim with its ticks in ink over it; the numerals gold by day, periwinkle by night
+    const p = s.time.part, byDay = p - 0.5 < s.dayParts;
+    partHi!.setAttribute('d', sectorPath(DR.pt0, DR.pt1, (p - 1) * 20 + 0.6, p * 20 - 0.6)); partHi!.setAttribute('fill', alpha(byDay ? 'dlPday' : 'dlPnight', 0.24, C));
+    degRun!.setAttribute('d', sectorPath(DR.pt1 - 6.5, DR.pt1 + 0.8, (p - 1) * 20, Math.max((p - 1) * 20 + 0.3, s.part * 20))); degRun!.setAttribute('fill', byDay ? C.dlRunDay : C.dlRunNight);
+    let run = ''; for (let k = (p - 1) * 20; k <= Math.floor(s.part * 20); k++) run += `M${P(DR.pt1 - (k % 20 === 0 ? 6.5 : k % 5 === 0 ? 6 : 3.2), k)}L${P(DR.pt1 + 0.6, k)}`;
+    degInk!.setAttribute('d', run);
+    parts.forEach((n, k) => n.setAttribute('class', `dl-part ${k + 0.5 < s.dayParts ? 'dl-pday' : 'dl-pnight'}${k + 1 === s.time.part ? ' dl-on' : ''}`));
     world!.turn(s.F); centre!.turn(s.F);
     centre!.g.setAttribute('class', `dl-centre dl-centre-${sky.centre}`);
     drawBodies(s, sky); drawChart(s, sky); drawNeedle(s);
@@ -244,7 +320,8 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
       const [x, y] = polar(altRadius(st.alt), bear(st.az)), m = st.mag ?? 3, r = inkDot ? (m <= 3.2 ? Math.max(1.65, 3.6 - 0.6 * m) : 1.0) : Math.max(0.6, 2.6 - 0.5 * m), d = dot(x, y, r);
       if ((st.mag ?? 9) <= 3.2) stars += d; else faint += d;
     }
-    const g = starGain();
+    const g = inkDot ? 1 : Math.max(1.5, starGain());      // in light the Dial's stars are a step brighter than the catalogue's, and the brightest shine
+    if (!inkDot) for (const st of s.bright) if (st.alt > 0 && (st.mag ?? 9) <= 1.6) { const [x, y] = polar(altRadius(st.alt), bear(st.az)); el('circle', { cx: x, cy: y, r: 5 * Math.max(0.6, 2.6 - 0.5 * (st.mag ?? 3)), fill: `url(#${id}-glow)`, opacity: 0.5 }, B); }
     el('path', { d: faint, fill: C.starInk, opacity: inkDot ? 0.4 : Math.min(1, 0.32 * g) }, B);
     el('path', { d: stars, fill: C.starInk, opacity: inkDot ? 1 : Math.min(1, 0.55 * g) }, B);
     for (const st of s.bright) if (st.alt > 0 && (st.mag ?? 9) < 1.2 && st.name) lab(altRadius(st.alt) + 9, bear(st.az), st.name, 'dl-star');
@@ -301,7 +378,9 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
   function drawNeedle(s: DialState) {
     const G = needle!, N = s.needle; G.replaceChildren();
     const up = s.sun.alt > 0, sr = up ? altRadius(s.sun.alt) : DR.band0 + 3, [sx, sy] = polar(sr, N), [tx, ty] = polar(DR.band1, N);
-    el('line', { x1: 0, y1: 0, x2: tx, y2: ty, stroke: C.goldHi, 'stroke-width': 1.6, 'stroke-dasharray': up ? undefined : '6 4', opacity: 0.9, 'data-needle': '1' }, G);
+    const light = !paper();
+    if (light) for (const [w, o] of [[14, 0.07], [7, 0.16]] as const) el('line', { x1: 0, y1: 0, x2: tx, y2: ty, stroke: C.goldHi, 'stroke-width': w, opacity: o, 'stroke-linecap': 'round' }, G);   // its light (two wide strokes: a filter cannot blur a straight line, whose box has no width)
+    el('line', { x1: 0, y1: 0, x2: tx, y2: ty, stroke: C.goldHi, 'stroke-width': light ? 2 : 1.6, 'stroke-dasharray': up ? undefined : '6 4', opacity: light ? 1 : 0.9, 'data-needle': '1' }, G);
     tri(DR.mo1 + 2, N, 'l-6 -9h12z', C.goldHi, G);
     // the Sun's motion along the horizon: an arc arrow whose length is the azimuth rate (20 units per °/min)
     const len = Math.max(-40, Math.min(40, s.sun.rate * 20)), R = sr + 16;
@@ -310,7 +389,7 @@ export function createDial(svg: SVGSVGElement, C: Palette = PAGE) {
       el('path', { d: `M${P(R, N)}A${R} ${R} 0 0 ${len > 0 ? 1 : 0} ${ax.toFixed(2)} ${ay.toFixed(2)}`, fill: 'none', stroke: C.goldHi, 'stroke-width': 1.2, 'data-sun-rate': '1' }, G);
       tri(R, a1, len > 0 ? 'l-5 -4v8z' : 'l5 -4v8z', C.goldHi, G);
     }
-    el('circle', { cx: sx, cy: sy, r: 22, fill: `url(#${id}-glow)` }, G);
+    el('circle', { cx: sx, cy: sy, r: light ? 38 : 22, fill: `url(#${id}-glow)` }, G);
     el('circle', { cx: sx, cy: sy, r: 8, fill: up ? C.sunCore : 'none', stroke: C.sunCore, 'stroke-width': 1.5, 'data-body': 'sun' }, G);
     el('circle', { r: 4, fill: C.goldHi }, G);
   }

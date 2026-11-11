@@ -24,8 +24,8 @@ test('every theme block gives its colours as hex, and each --x-rgb is --x', () =
   }
 });
 test('with no page, the palette is the dark theme; alpha() tints a palette colour', () => {
-  assert.equal(C.goldHi, '#f4dc9f'); assert.equal(C.dlOx2, '#4a1a17');
-  assert.equal(cssVar('dlSageDim'), '--dl-sage-dim'); assert.equal(cssVar('ivory2'), '--ivory2');
+  assert.equal(C.goldHi, '#f4dc9f'); assert.equal(C.dlOx2, '#3b1e17');
+  assert.equal(cssVar('dlCountDim'), '--dl-count-dim'); assert.equal(cssVar('ivory2'), '--ivory2');
   assert.equal(alpha('gold', 0.28), 'rgba(214,178,106,0.28)');
 });
 

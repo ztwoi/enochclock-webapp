@@ -35,24 +35,29 @@
 .dl-skyopts dd { display: flex; flex-wrap: wrap; gap: 5px; } .dl-skyopts dt { align-self: center; }
 /* SVG typography (viewBox units) */
 .dl-card { font-family: var(--serif); font-size: 22px; fill: var(--ivory); font-weight: 600; }
-.dl-tiny { font-family: var(--mono); font-size: 9px; fill: var(--ivory3); }
-.dl-star { font-family: var(--serif); font-style: italic; font-size: 11px; fill: var(--ivory3); }
+.dl-tiny { font-family: var(--mono); font-size: 9px; fill: var(--dl-line); }
+.dl-star { font-family: var(--serif); font-style: italic; font-size: 11px; fill: var(--ivory2); }
 .dl-body { font-family: var(--mono); font-size: 10px; fill: var(--ivory2); }
 .dl-moon { font-family: var(--mono); font-size: 11px; fill: var(--ivory); }
 .dl-below { opacity: .45; }
-.dl-um { font-family: var(--mono); font-size: 13px; fill: var(--dl-sage-dim); } .dl-um.dl-on { fill: var(--dl-sage-hi); font-weight: 500; }
-.dl-month { font-family: var(--mono); font-size: 19px; fill: var(--dl-month); } .dl-month.dl-on { fill: var(--dl-month-on); }
-.dl-geez { font-family: var(--geez); font-size: 11px; fill: var(--dl-geez); }
-.dl-cor { font-family: var(--mono); font-size: 10px; fill: var(--silver-dim); } .dl-cor.dl-on { fill: var(--silver); }
-.dl-course { font-family: var(--cond); font-size: 11.5px; fill: var(--gold); letter-spacing: .02em; }
-.dl-num { font-family: var(--mono); font-size: 8.5px; fill: var(--gold-dim); }
-.dl-on-dark { fill: var(--on-gold) !important; font-weight: 600; }
-.dl-part { font-family: var(--mono); font-size: 14px; fill: var(--ivory2); } .dl-part.dl-on { fill: var(--gold-hi); font-weight: 500; }
+/* Read at a glance on a phone (about 9 px there): the months, the parts, the week's names, the courses' numbers. Fine engraving, to zoom into: the rest. */
+.dl-um { font-family: var(--mono); font-size: 13px; fill: var(--dl-count); } .dl-um.dl-on { fill: var(--ivory); font-weight: 600; }
+.dl-month { font-family: var(--mono); font-size: 21px; fill: var(--dl-month); } .dl-month.dl-on { fill: var(--dl-month-on); font-weight: 600; }
+.dl-geez { font-family: var(--geez); font-size: 11px; fill: var(--dl-geez); opacity: .75; }
+.dl-cor { font-family: var(--mono); font-size: 10px; fill: var(--dl-count); } .dl-cor.dl-on { fill: var(--ivory); }
+.dl-cnum { font-family: var(--mono); font-size: 17px; fill: var(--dl-course); }                       /* a course, by its number */
+.dl-cname { font-family: var(--cond); font-size: 7.5px; letter-spacing: .04em; fill: var(--dl-course-name); }   /* and its name, small */
+.dl-wk { font-family: var(--cond); font-size: 13.5px; font-weight: 500; letter-spacing: .14em; fill: var(--dl-week); } .dl-wk.dl-sab { fill: var(--dl-sab); }
+.dl-on-dark { fill: var(--on-gold) !important; font-weight: 600; }                                    /* words on what is lit: the course now, today */
+.dl-part { font-family: var(--mono); font-size: 19px; } .dl-pday { fill: var(--dl-pday); } .dl-pnight { fill: var(--dl-pnight); } .dl-part.dl-on { fill: var(--ivory); font-weight: 600; }
+.dl-pn { font-family: var(--mono); font-size: 9.5px; font-weight: 500; fill: var(--gold); } .dl-pn.dl-on { fill: var(--gold-hi); font-weight: 600; } .dl-pn-rim { font-size: 8.5px; }   /* a portal's number, 1 to 6 */
+/* What is now has its own light, where the theme draws in light (on paper, ink has none) */
+:is(.dl-part, .dl-month, .dl-um, .dl-pn).dl-on { filter: drop-shadow(0 0 2.5px rgba(var(--gold-hi-rgb),.95)) drop-shadow(0 0 7px rgba(var(--gold-rgb),.55)); }
+:is([data-theme=light], [data-theme=sepia]) :is(.dl-part, .dl-month, .dl-um, .dl-pn).dl-on { filter: none; }
 .dl-chart-lbl { font-family: var(--mono); font-size: 5.5px; fill: var(--ivory2); letter-spacing: .04em; }
 .dl-chart-card { font-family: var(--serif); font-size: 9px; fill: var(--ivory2); font-weight: 600; }
-.dl-centre-above .dl-portal { fill-opacity: .4; } .dl-centre-above .dl-cmp { opacity: .55; }
+.dl-centre-above .dl-portal { fill-opacity: .4; stroke-opacity: .5; } .dl-centre-above :is(.dl-cmp, .dl-pn) { opacity: .55; }
 .dl-centre-up { display: none; }
-.dl-geez-s { font-family: var(--geez); font-size: 10px; fill: var(--bronze); }
 .dl-cmp { font-family: var(--serif); font-size: 20px; fill: var(--ivory2); font-weight: 600; } .dl-north { fill: var(--vermilion); }
 .dl-trace { width: 100%; height: 170px; display: block; margin-top: 8px; }
 @media (max-width: 1100px), (max-aspect-ratio: 1/1) {
