@@ -16,7 +16,7 @@ import { aberrated, aberration, bodyDirection, createMoonClock, declinationOfDat
 import { PLANETS } from './dial/state';
 import { CONSTELLATION_NAMES } from './sky/constellationNames';
 import { easeHeading, mod360, wrap180 } from './sky/heading';
-import { dayIndexAt, GEEZ, H, PORTAL_ALT, pillars, W } from './model';
+import { dayIndexAt, H, PORTAL_ALT, pillars, W } from './model';
 import { bodyColor, INST as C, starGain } from './palette';       // Sky is an instrument: night in every theme
 import { createStage, hatchMaterial, headClearance, layoutRead, setLinePoints, sprite, svgEl, UNTILED, type Pt } from './stage';
 import type { Portal, YearDoc } from './types';
@@ -163,7 +163,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
         fixed.add(lineObj(pts, C.bronze, 1, 0.9, 2));
         const halo = lineObj(pts, C.goldHi, 5, 0.18, 2.5), core = lineObj(pts, C.goldHi, 1.6, 1, 3), outline = lineObj(pts, C.ivory, 1.4, 0.9, 3.2);
         halo.visible = core.visible = outline.visible = false; fixed.add(halo, core, outline);
-        const numeral = text(xm, SL.horizon + 40, GEEZ[p.portal], 'geez gold', { 'text-anchor': 'middle', 'font-size': 15, 'data-portal': p.portal }, fixedLabels);
+        const numeral = text(xm, SL.horizon + 40, String(p.portal), 'lbl-mono gold', { 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 500, 'data-portal': p.portal }, fixedLabels);   // numbered as on the Dial
         litArches.push({ portal: p.portal, east: P === doc.portals, lines: [halo, core], outline, numeral });
       }
       for (const [a, b] of pillars(P)) {
@@ -196,7 +196,9 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     daylight.layers.set(UNTILED);
   }
   const eclLine = line([[0, 0], [1, 0]], C.gold, 0.9, 0.55, [4, 4]);
-  const figGeom = new THREE.BufferGeometry(); const figures = new THREE.LineSegments(figGeom, new THREE.LineBasicMaterial({ color: C.ivory, transparent: true, opacity: 0.2 })); figures.position.z = 0.2; figures.frustumCulled = false; scene.add(figures);
+  // The figures' lines and names: how strong at night, and how much daylight takes from them (a little: they are the sky's map, kept readable by day)
+  const FIG_ALPHA = 0.32, FIG_NAME_ALPHA = 0.7, FIG_DAY = 0.3;
+  const figGeom = new THREE.BufferGeometry(); const figures = new THREE.LineSegments(figGeom, new THREE.LineBasicMaterial({ color: C.ivory, transparent: true, opacity: FIG_ALPHA })); figures.position.z = 0.2; figures.frustumCulled = false; scene.add(figures);
   const gain = starGain();                                // the stars a step brighter where the theme asks (Contrast, Red; and set into a paper page, for daylight)
   const starGeom = new THREE.BufferGeometry(); const points = new THREE.Points(starGeom, starMaterial()); points.position.z = 0.5; points.frustumCulled = false; scene.add(points);
   const sunHalo = sprite(90, 0.85), sunCore = new THREE.Mesh(new THREE.CircleGeometry(7, 40), new THREE.MeshBasicMaterial({ color: C.sunCore, side: THREE.DoubleSide, transparent: true }));
@@ -344,7 +346,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
       if (name && n * 2 >= g.to - g.from && x1 - x0 < 90 * K && x1 - x0 > w * 1.4) figNames.push({ name, x: (x0 + x1) / 2, y: (y0 + y1) / 2, w, span: x1 - x0 });
     }
     upload(figA, nSeg * 2); figGeom.setDrawRange(0, nSeg * 2);
-    (figures.material as THREE.LineBasicMaterial).opacity = 0.2 * (1 - 0.6 * twilight);
+    (figures.material as THREE.LineBasicMaterial).opacity = FIG_ALPHA * (1 - FIG_DAY * twilight);
     // ecliptic of date (computed); split where it leaves the frame
     const e = ecliptic(air(truth), 1).map((p) => ({ ...p, ok: inFrame(p.az, p.alt) }));
     const runs: Pt[][] = []; let run: Pt[] = [], prev = e[0];
@@ -398,7 +400,7 @@ export function createSky(host: HTMLElement, doc: YearDoc, cat: Catalogue, onSel
     for (const f of figNames.sort((a, b) => b.span - a.span)) {
       const box: [number, number, number, number] = [f.x - f.w / 2 - 4, f.y - 10, f.x + f.w / 2 + 4, f.y + 6];
       if (taken.some((t) => box[0] < t[2] && box[2] > t[0] && box[1] < t[3] && box[3] > t[1])) continue;
-      taken.push(box); text(f.x, f.y + 3, f.name, 'serif-it ivory2 halo', { 'font-size': 11, 'text-anchor': 'middle', 'letter-spacing': 1.2, opacity: 0.55 * (1 - 0.6 * twilight) }, dyn);
+      taken.push(box); text(f.x, f.y + 3, f.name, 'serif-it ivory2 halo', { 'font-size': 11, 'text-anchor': 'middle', 'letter-spacing': 1.2, opacity: FIG_NAME_ALPHA * (1 - FIG_DAY * twilight) }, dyn);
     }
     // selection
     let selected: SkyInfo['selected'];
